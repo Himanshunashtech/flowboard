@@ -1,10 +1,26 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Users, Filter, MoreHorizontal, Share2, Calendar, Table2, Kanban, Network, ChevronDown, History, Star, Settings } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { 
+  Plus, 
+  Users, 
+  Filter, 
+  MoreHorizontal, 
+  Share2, 
+  Calendar, 
+  Table2, 
+  Kanban, 
+  Network, 
+  ChevronDown, 
+  History as HistoryIcon, 
+  Star, 
+  Settings, 
+  BarChart3, 
+  Clock 
+} from 'lucide-react';
+import { supabase, getBoardChannel, removeBoardChannel } from '../lib/supabase';
 import {
   setActiveBoard,
   setLists,
@@ -12,16 +28,23 @@ import {
   setBoardMembers,
   setLabels,
   setLoading,
-  moveCard,
-  updateCard,
-  addCard,
-  deleteCard,
   addList,
   updateList,
   deleteList,
+  addCard,
+  updateCard,
+  deleteCard,
+  moveCard,
+  setStarredBoardIds,
+  toggleStar,
   setSprints,
-  setDependencies
+  setDependencies,
+  setPresence
 } from '../store/slices/boardSlice';
+import { addNotification, toggleModal } from '../store/slices/uiSlice';
+import { throttle } from '../lib/utils';
+import { Ordering } from '../lib/ordering';
+import LiveCursors from '../components/board/LiveCursors';
 import AppLayout from '../components/layout/AppLayout';
 import ListView from '../components/canvas/ListView';
 import CardDetailsModal from '../components/canvas/CardDetailsModal';
@@ -30,20 +53,27 @@ import TableView from '../components/board/TableView';
 import CalendarView from '../components/board/CalendarView';
 import TimelineView from '../components/board/TimelineView';
 import DependencyMap from '../components/board/DependencyMap';
-import InviteBoardMemberModal from '../components/modals/InviteBoardMemberModal';
-import BoardActivityDrawer from '../components/board/BoardActivityDrawer';
+import AnalyticsDashboard from '../components/board/AnalyticsDashboard';
 import BoardSettingsDrawer from '../components/board/BoardSettingsDrawer';
-import BoardAnalytics from '../components/board/BoardAnalytics';
-import { BarChart3, Clock } from 'lucide-react';
 import { BoardSkeleton } from '../components/ui/Skeleton';
+import { useUndoRedo } from '../hooks/useUndoRedo';
+import ActivitySidePanel from '../components/board/ActivitySidePanel';
 
 const BoardPage = () => {
   const { boardId } = useParams();
   const dispatch = useDispatch();
-  const { activeBoard, lists, cards, loading, sprints, members, labels } = useSelector((state) => state.board);
+  const { activeBoard, lists, cards, loading, members, presence, starredBoardIds } = useSelector((state) => state.board);
   const { modals } = useSelector((state) => state.ui);
-  const [showSprints, setShowSprints] = useState(false);
-  const [currentView, setCurrentView] = useState('kanban'); // kanban, table, calendar, timeline, dashboard
+  const { user, profile } = useSelector((state) => state.auth);
+  const channelRef = useRef(null);
+  const prevPresenceKeys = useRef([]);
+  const { pushAction } = useUndoRedo();
+  
+  const [selectedCardIds, setSelectedCardIds] = useState([]);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentView = searchParams.get('view') || 'kanban';
+  const setCurrentView = (view) => setSearchParams({ view });
+
   const [showMembersPanel, setShowMembersPanel] = useState(false);
   const [showActivityDrawer, setShowActivityDrawer] = useState(false);
   const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
@@ -55,126 +85,72 @@ const BoardPage = () => {
   const [scrollLeft, setScrollLeft] = useState(0);
 
   const handleMouseDown = (e) => {
-    // Only scroll if we click the background canvas itself
-    // Or if the target is something we know shouldn't block the scroll
     if (e.target.closest('.list-container') || e.target.closest('button')) return;
-    
     setIsDragging(true);
     setStartX(e.pageX - canvasRef.current.offsetLeft);
     setScrollLeft(canvasRef.current.scrollLeft);
   };
 
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
+  const handleMouseUp = () => setIsDragging(false);
 
   const handleMouseMove = (e) => {
     if (!isDragging) return;
     e.preventDefault();
     const x = e.pageX - canvasRef.current.offsetLeft;
-    const walk = (x - startX) * 2; // Speed multiplier
+    const walk = (x - startX) * 2;
     canvasRef.current.scrollLeft = scrollLeft - walk;
   };
 
   useEffect(() => {
     const fetchBoardData = async () => {
       dispatch(setLoading(true));
-
-      // Update last_viewed_at (Silent visit tracking)
-      supabase.from('boards').update({ last_viewed_at: new Date().toISOString() }).eq('id', boardId).then();
-
-      // Fetch Board
-      const { data: board } = await supabase
-        .from('boards')
-        .select('*')
-        .eq('id', boardId)
-        .single();
-
+      
+      const { data: board } = await supabase.from('boards').select('*').eq('id', boardId).single();
       if (board) dispatch(setActiveBoard(board));
 
-      // Fetch Lists
-      const { data: listData } = await supabase
-        .from('lists')
-        .select('*')
-        .eq('board_id', boardId)
-        .order('position');
-
+      const { data: listData } = await supabase.from('lists').select('*').eq('board_id', boardId).order('position');
       if (listData) dispatch(setLists(listData));
 
-      // Fetch Cards with joins
-      const { data: cardData } = await supabase
-        .from('cards')
-        .select(`
-          *,
-          card_labels (label_id),
-          card_assignments (user_id),
-          checklists (
-            checklist_items (id, title, is_completed)
-          )
-        `)
-        .eq('board_id', boardId)
-        .order('position');
-
+      const { data: cardData } = await supabase.from('cards')
+        .select('*, card_labels(label_id), card_assignments(user_id), checklists(checklist_items(id, title, is_completed))')
+        .eq('board_id', boardId).order('position');
       if (cardData) dispatch(setCards(cardData));
 
-      // Fetch Sprints
-      const { data: sprintData } = await supabase
-        .from('sprints')
-        .select('*')
-        .eq('board_id', boardId)
-        .order('created_at', { ascending: false });
-
-      if (sprintData) dispatch(setSprints(sprintData));
-
-      // Fetch Labels
-      const { data: labelData } = await supabase
-        .from('labels')
-        .select('*')
-        .eq('board_id', boardId);
-      if (labelData) dispatch(setLabels(labelData));
-
-      // Fetch Members
-      const { data: memberData } = await supabase
-        .from('board_members')
-        .select(`
-          *,
-          profiles (*)
-        `)
-        .eq('board_id', boardId);
+      const { data: memberData } = await supabase.from('board_members').select('*, profiles(*)').eq('board_id', boardId);
       if (memberData) dispatch(setBoardMembers(memberData));
-
-      // Fetch Dependencies
-      const { data: depData } = await supabase
-        .from('card_dependencies')
-        .select('*')
-        .in('blocked_card_id', cardData?.map(c => c.id) || []);
-      if (depData) dispatch(setDependencies(depData));
 
       dispatch(setLoading(false));
     };
 
     if (boardId) {
       fetchBoardData();
+      const channel = getBoardChannel(boardId);
+      channelRef.current = channel;
 
-      // Real-time Subscriptions
-      const channel = supabase
-        .channel(`board:${boardId}`)
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'cards',
-          filter: `board_id=eq.${boardId}`
-        }, (payload) => {
+      channel
+        .on('presence', { event: 'sync' }, () => {
+          const newState = channel.presenceState();
+          const cursorMap = {};
+          const currentKeys = Object.keys(newState);
+          
+          Object.keys(newState).forEach((key) => {
+            const data = newState[key][newState[key].length - 1];
+            if (data.user) {
+              cursorMap[data.user.id] = data;
+              if (data.user.id !== user?.id && !prevPresenceKeys.current.includes(data.user.id)) {
+                dispatch(addNotification({ message: `${data.user.full_name} joined the board`, type: 'info' }));
+              }
+            }
+          });
+          prevPresenceKeys.current = currentKeys.map(k => newState[k][0]?.user?.id).filter(Boolean);
+          dispatch(setPresence(cursorMap));
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'cards', filter: `board_id=eq.${boardId}` }, (payload) => {
           if (payload.eventType === 'INSERT') dispatch(addCard(payload.new));
           if (payload.eventType === 'UPDATE') dispatch(updateCard(payload.new));
           if (payload.eventType === 'DELETE') dispatch(deleteCard(payload.old.id));
         })
-        .on('postgres_changes', {
-          event: '*',
-          schema: 'public',
-          table: 'lists',
-          filter: `board_id=eq.${boardId}`
-        }, (payload) => {
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'lists', filter: `board_id=eq.${boardId}` }, (payload) => {
           if (payload.eventType === 'INSERT') dispatch(addList(payload.new));
           if (payload.eventType === 'UPDATE') dispatch(updateList(payload.new));
           if (payload.eventType === 'DELETE') dispatch(deleteList(payload.old.id));
@@ -182,334 +158,189 @@ const BoardPage = () => {
         .subscribe();
 
       return () => {
-        supabase.removeChannel(channel);
+        removeBoardChannel(boardId);
+        channelRef.current = null;
       };
     }
-  }, [boardId, dispatch]);
+  }, [boardId, dispatch, user, profile]);
+
+  const updatePresence = useCallback(
+    throttle((data) => {
+      if (channelRef.current) {
+        channelRef.current.track({
+          user: { id: user?.id, full_name: profile?.full_name || user?.email, avatar_url: profile?.avatar_url },
+          ...data,
+          lastActive: Date.now()
+        });
+      }
+    }, 100),
+    [user, profile]
+  );
+
+  const handleBoardMouseMove = (e) => updatePresence({ cursor: { x: e.pageX, y: e.pageY } });
+
+  const handleCardClick = (e, cardId) => {
+    if (e.shiftKey) {
+      e.preventDefault();
+      e.stopPropagation();
+      setSelectedCardIds(prev => prev.includes(cardId) ? prev.filter(id => id !== cardId) : [...prev, cardId]);
+    }
+  };
 
   const onDragEnd = async (result) => {
     const { destination, source, draggableId, type } = result;
-
-    if (!destination) return;
-    if (destination.droppableId === source.droppableId && destination.index === source.index) return;
+    if (!destination || (destination.droppableId === source.droppableId && destination.index === source.index)) return;
 
     if (type === 'card') {
       const cardId = draggableId;
       const newListId = destination.droppableId;
       const newIndex = destination.index;
 
-      // Optimistic Update
-      dispatch(moveCard({ cardId, newListId, newPosition: newIndex }));
+      const destCards = cards.filter(c => c.list_id === newListId).sort((a, b) => String(a.position || '').localeCompare(String(b.position || '')));
+      const newPosition = Ordering.between(destCards[newIndex - 1]?.position, destCards[newIndex]?.position);
 
-      // Persist to Supabase
-      await supabase
-        .from('cards')
-        .update({ list_id: newListId, position: newIndex })
-        .eq('id', cardId);
+      pushAction({
+        label: 'Move Card',
+        undo: async () => {
+           await supabase.from('cards').update({ list_id: source.droppableId }).eq('id', cardId);
+           dispatch(addNotification({ message: 'Moved card back', type: 'info' }));
+        }
+      });
+
+      dispatch(updateCard({ id: cardId, list_id: newListId, position: newPosition }));
+      await supabase.from('cards').update({ list_id: newListId, position: newPosition }).eq('id', cardId);
     }
   };
 
-  if (loading && !activeBoard) {
-    return (
-      <AppLayout>
-        <BoardSkeleton />
-      </AppLayout>
-    );
-  }
+  if (loading && !activeBoard) return <AppLayout><BoardSkeleton /></AppLayout>;
 
   const getBackgroundStyle = () => {
     if (!activeBoard) return {};
-
+    const val = activeBoard.background_value;
     switch (activeBoard.background_type) {
-      case 'COLOR':
-        return { backgroundColor: activeBoard.background_value };
-      case 'GRADIENT':
-        return { background: activeBoard.background_value };
-      case 'IMAGE':
-        const val = activeBoard.background_value;
-        return {
-          backgroundImage: val?.startsWith('url') ? val : `url("${val}")`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
-        };
-      default:
-        return {};
+      case 'COLOR': return { backgroundColor: val };
+      case 'GRADIENT': return { background: val };
+      case 'IMAGE': return { backgroundImage: `url("${val}")`, backgroundSize: 'cover', backgroundPosition: 'center' };
+      default: return {};
     }
   };
 
   return (
     <AppLayout>
-      <div
-        className="flex flex-col h-full overflow-hidden transition-all duration-700"
-        style={getBackgroundStyle()}
-      >
-        {/* Board Header */}
+      <div className="flex flex-col h-full overflow-hidden transition-all duration-700" style={getBackgroundStyle()} onMouseMove={handleBoardMouseMove}>
+        <LiveCursors />
         <header className="h-14 border-b border-border-light flex items-center justify-between px-6 bg-white/80 backdrop-blur-md shrink-0">
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 group/star">
               <h2 className="text-2xl font-black text-text-primary tracking-tighter">{activeBoard?.title}</h2>
-              <button className="p-1.5 text-text-tertiary hover:text-brand-primary transition-all rounded-lg hover:bg-bg-secondary">
-                <Star size={18} className={activeBoard?.is_favorite ? 'fill-brand-primary text-brand-primary' : ''} />
-              </button>
-            </div>
-            {/* Board Members */}
-            <div className="flex items-center">
-              <div className="flex -space-x-2">
-                {members?.slice(0, 4).map((m, i) => (
-                  <div
-                    key={m.user_id}
-                    title={m.profiles?.full_name || m.profiles?.email}
-                    className="w-7 h-7 rounded-full border-2 border-white bg-brand-primary flex items-center justify-center text-[10px] font-bold text-white shadow-sm cursor-pointer hover:z-10 hover:scale-110 transition-transform"
-                    onClick={() => setShowMembersPanel(true)}
-                  >
-                    {(m.profiles?.full_name || m.profiles?.email || '?')[0].toUpperCase()}
-                  </div>
-                ))}
-                {members?.length > 4 && (
-                  <div className="w-7 h-7 rounded-full border-2 border-white bg-gray-200 flex items-center justify-center text-[10px] font-bold text-gray-600 shadow-sm">
-                    +{members.length - 4}
-                  </div>
-                )}
-              </div>
-              <button
-                onClick={() => setShowMembersPanel(true)}
-                className="w-7 h-7 rounded-full border-2 border-dashed border-border-medium flex items-center justify-center text-text-tertiary ml-2 hover:bg-bg-secondary hover:text-brand-primary hover:border-brand-primary/50 transition-all"
-                title="Manage board members"
+              <button 
+                onClick={async () => {
+                  const isStarred = starredBoardIds.includes(activeBoard.id);
+                  dispatch(toggleStar(activeBoard.id));
+                  if (isStarred) {
+                    await supabase.from('board_stars').delete().eq('board_id', activeBoard.id).eq('user_id', user.id);
+                  } else {
+                    await supabase.from('board_stars').insert({ board_id: activeBoard.id, user_id: user.id });
+                  }
+                }}
+                className={`p-2 rounded-xl transition-all ${starredBoardIds.includes(activeBoard?.id) ? 'text-yellow-500 bg-yellow-500/10' : 'text-text-tertiary hover:bg-bg-secondary opacity-0 group-hover/star:opacity-100'}`}
               >
-                <Plus size={14} />
+                <Star size={20} fill={starredBoardIds.includes(activeBoard?.id) ? 'currentColor' : 'none'} />
               </button>
             </div>
-
-            {/* View Switcher Moved to Right Section */}
+            <div className="flex -space-x-2">
+              {members?.slice(0, 4).map(m => (
+                <div key={m.user_id} className="w-7 h-7 rounded-full border-2 border-white bg-brand-primary flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
+                  {(m.profiles?.full_name || m.profiles?.email || '?')[0].toUpperCase()}
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              onClick={async () => {
-                const title = prompt('Enter list title:');
-                if (title) {
-                  await supabase.from('lists').insert({
-                    board_id: boardId,
-                    title,
-                    position: lists.length > 0 ? Math.max(...lists.map(l => l.position)) + 65535 : 65535
-                  });
-                }
-              }}
-              className="px-4 py-2 bg-bg-secondary hover:bg-bg-tertiary text-text-primary rounded-xl text-xs font-black uppercase tracking-widest transition-all border border-border-light shadow-sm flex items-center gap-2"
-            >
-              <Plus size={14} />
-              <span>Add New List</span>
-            </button>
-
-            <div className="w-px h-6 bg-border-light mx-2" />
-
-            <div className="flex items-center bg-bg-secondary rounded-xl p-1 shadow-sm border border-border-light/50 font-medium">
+            <div className="flex items-center bg-bg-secondary rounded-xl p-1 shadow-sm border border-border-light/50 font-medium overflow-x-auto max-w-[500px] no-scrollbar">
               {[
                 { id: 'kanban', icon: Kanban, label: 'Board' },
                 { id: 'table', icon: Table2, label: 'Table' },
                 { id: 'calendar', icon: Calendar, label: 'Calendar' },
                 { id: 'timeline', icon: Clock, label: 'Timeline' },
-                { id: 'dashboard', icon: BarChart3, label: 'Dashboard' },
-              ].map((view) => (
-                <button
-                  key={view.id}
-                  onClick={() => setCurrentView(view.id)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-all ${currentView === view.id ? 'bg-white text-brand-primary shadow-sm ring-1 ring-black/5' : 'text-text-tertiary hover:text-text-primary hover:bg-white/50'}`}
+                { id: 'map', icon: Network, label: 'Map' },
+                { id: 'dashboard', icon: BarChart3, label: 'Analytics' }
+              ].map(view => (
+                <button 
+                  key={view.id} 
+                  onClick={() => setCurrentView(view.id)} 
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-all whitespace-nowrap ${currentView === view.id ? 'bg-white text-brand-primary shadow-sm' : 'text-text-tertiary hover:bg-white/50'}`}
                 >
-                  <view.icon size={13} className={currentView === view.id ? 'text-brand-primary' : 'text-text-tertiary'} />
+                  <view.icon size={13} />
                   <span className="uppercase">{view.label}</span>
                 </button>
               ))}
             </div>
-
-            <div className="w-px h-6 bg-border-light mx-2" />
-
-            <button
-              className={`p-2 rounded-xl transition-all ${showSettingsDrawer ? 'bg-brand-primary text-white shadow-lg' : 'hover:bg-bg-secondary text-text-tertiary hover:text-text-primary border border-transparent'}`}
-              onClick={() => setShowSettingsDrawer(!showSettingsDrawer)}
-              title="Board settings"
-            >
-              <Settings size={18} />
+            <button className={`p-2 rounded-xl transition-all ${showActivityDrawer ? 'bg-brand-primary text-white' : 'text-text-tertiary hover:bg-bg-secondary'}`} onClick={() => setShowActivityDrawer(!showActivityDrawer)}>
+              <HistoryIcon size={18} />
             </button>
-            <button className="p-2 hover:bg-bg-secondary rounded-md text-text-tertiary hover:text-text-primary transition-colors">
-              <MoreHorizontal size={18} />
+            <button className={`p-2 rounded-xl transition-all ${showSettingsDrawer ? 'bg-brand-primary text-white' : 'text-text-tertiary hover:bg-bg-secondary'}`} onClick={() => setShowSettingsDrawer(true)}>
+              <Settings size={18} />
             </button>
           </div>
         </header>
 
-        {/* Dynamic Board Views */}
         <div className="flex-1 overflow-hidden relative">
           <AnimatePresence mode="wait">
             {currentView === 'kanban' && (
-              <motion.div
-                key="kanban"
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.02 }}
-                transition={{ duration: 0.2 }}
-                className="absolute inset-0"
-              >
+              <motion.div key="kanban" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0">
                 <DragDropContext onDragEnd={onDragEnd}>
-                  <motion.div
-                    ref={canvasRef}
-                    onMouseDown={handleMouseDown}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseUp}
-                    onMouseMove={handleMouseMove}
-                    initial="hidden"
-                    animate="visible"
-                    variants={{
-                      hidden: { opacity: 0 },
-                      visible: {
-                        opacity: 1,
-                        transition: {
-                          staggerChildren: 0.1
-                        }
-                      }
-                    }}
-                    className={`canvas items-start bg-transparent ${isDragging ? 'snap-none' : 'snap-x snap-mandatory'}`}
-                  >
-                    {lists.map((list) => (
-                      <motion.div
-                        key={list.id}
-                        variants={{
-                          hidden: { opacity: 0, x: -20 },
-                          visible: { opacity: 1, x: 0 }
-                        }}
-                      >
-                        <ListView
-                          list={list}
-                          cards={cards.filter(c => c.list_id === list.id)}
-                        />
-                      </motion.div>
+                  <div ref={canvasRef} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onMouseMove={handleMouseMove} className="canvas items-start bg-transparent p-6">
+                    {lists.map(list => (
+                      <ListView 
+                        key={list.id} 
+                        list={list} 
+                        cards={cards.filter(c => c.list_id === list.id)} 
+                        onCardClick={handleCardClick} 
+                        selectedIds={selectedCardIds}
+                        listStyle={activeBoard?.settings?.list_style || 'solid'}
+                        cardStyle={activeBoard?.settings?.card_style || 'modern'}
+                      />
                     ))}
-
-                    <button
-                      onClick={async () => {
-                        const title = prompt('Enter list title:');
-                        if (title) {
-                          const { data, error } = await supabase
-                            .from('lists')
-                            .insert({
-                              board_id: boardId,
-                              title,
-                              position: lists.length > 0 ? Math.max(...lists.map(l => l.position)) + 65535 : 65535
-                            })
-                            .select()
-                            .single();
-                          // No need to dispatch here, Realtime listener in useEffect handles it
-                        }
-                      }}
-                      className="w-72 shrink-0 p-4 bg-bg-secondary/50 border-2 border-dashed border-border-medium rounded-2xl flex items-center justify-center gap-2 text-text-tertiary hover:text-brand-primary hover:border-brand-primary/50 hover:bg-bg-secondary transition-all font-bold text-sm group"
-                    >
-                      <div className="p-1 rounded-full border border-current group-hover:bg-brand-primary group-hover:text-white group-hover:border-transparent transition-all">
-                        <Plus size={16} />
-                      </div>
-                      Add another list
-                    </button>
-                  </motion.div>
+                  </div>
                 </DragDropContext>
               </motion.div>
             )}
-
             {currentView === 'table' && (
-              <motion.div
-                key="table"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="absolute inset-0 bg-white"
-              >
+              <motion.div key="table" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute inset-0 bg-white">
                 <TableView />
               </motion.div>
             )}
-
             {currentView === 'calendar' && (
-              <motion.div
-                key="calendar"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                className="absolute inset-0 bg-white"
-              >
+              <motion.div key="calendar" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute inset-0 bg-white">
                 <CalendarView />
               </motion.div>
             )}
-
-            {currentView === 'map' && (
-              <motion.div
-                key="map"
-                initial={{ opacity: 0, scale: 1.05 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="absolute inset-0 bg-white"
-              >
-                <DependencyMap />
-              </motion.div>
-            )}
-
             {currentView === 'timeline' && (
-              <motion.div
-                key="timeline"
-                initial={{ opacity: 0, scale: 1.02 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.98 }}
-                className="absolute inset-0 bg-white"
-              >
+              <motion.div key="timeline" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="absolute inset-0 bg-white">
                 <TimelineView />
               </motion.div>
             )}
-
+            {currentView === 'map' && (
+              <motion.div key="map" initial={{ opacity: 0, scale: 1.05 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="absolute inset-0 bg-white">
+                <DependencyMap />
+              </motion.div>
+            )}
             {currentView === 'dashboard' && (
-              <motion.div
-                key="dashboard"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="absolute inset-0 p-10 overflow-y-auto custom-scrollbar bg-white"
-              >
-                <BoardAnalytics boardId={boardId} />
+              <motion.div key="dashboard" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="absolute inset-0 bg-white">
+                <AnalyticsDashboard boardId={boardId} />
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
+        {showActivityDrawer && <ActivitySidePanel isOpen={showActivityDrawer} onClose={() => setShowActivityDrawer(false)} boardId={boardId} />}
+        {showSettingsDrawer && <BoardSettingsDrawer isOpen={showSettingsDrawer} onClose={() => setShowSettingsDrawer(false)} board={activeBoard} />}
         {modals.cardDetails && <CardDetailsModal />}
-        {showSprints && <SprintManager onClose={() => setShowSprints(false)} />}
-        {showMembersPanel && (
-          <InviteBoardMemberModal
-            boardId={boardId}
-            onClose={() => setShowMembersPanel(false)}
-          />
-        )}
-
-        <AnimatePresence>
-          {showActivityDrawer && (
-            <BoardActivityDrawer
-              boardId={boardId}
-              onClose={() => setShowActivityDrawer(false)}
-            />
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {showSettingsDrawer && (
-            <BoardSettingsDrawer
-              board={activeBoard}
-              onClose={() => setShowSettingsDrawer(false)}
-            />
-          )}
-        </AnimatePresence>
       </div>
     </AppLayout>
   );
 };
 
 export default BoardPage;
-
-
-
-
-
-

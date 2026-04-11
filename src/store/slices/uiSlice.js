@@ -9,6 +9,7 @@ const initialState = {
     boardSettings: false,
     memberInvite: false,
   },
+  modalData: {},
   activeCardId: null,
   sidebarOpen: true,
   notifications: [],
@@ -20,8 +21,9 @@ const uiSlice = createSlice({
   initialState,
   reducers: {
     toggleModal: (state, action) => {
-      const { modalName, isOpen } = action.payload;
+      const { modalName, isOpen, data } = action.payload;
       state.modals[modalName] = isOpen !== undefined ? isOpen : !state.modals[modalName];
+      if (data) state.modalData[modalName] = data;
     },
     setActiveCardId: (state, action) => {
       state.activeCardId = action.payload;

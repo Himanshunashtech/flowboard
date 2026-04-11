@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from '../Sidebar';
 import Header from '../Header';
 import UniversalSearch from '../ui/UniversalSearch';
+import ToastContainer from '../ui/ToastContainer';
 import '../../styles/index.css';
 
 const AppLayout = ({ children }) => {
@@ -28,6 +29,7 @@ const AppLayout = ({ children }) => {
         </main>
       </div>
       <UniversalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      <ToastContainer />
     </div>
   );
 };

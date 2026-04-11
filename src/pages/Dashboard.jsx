@@ -25,25 +25,7 @@ const Dashboard = () => {
     const fetchData = async () => {
       dispatch(setLoading(true));
 
-      // Fetch Workspaces with Boards and Members (incl. Profiles)
-      const { data: wsData } = await supabase
-        .from('workspaces')
-        .select(`
-          *,
-          boards (*),
-          workspace_members (
-            user_id,
-            role,
-            profiles (id, full_name, email, avatar_url)
-          )
-        `)
-        .order('last_viewed_at', { foreignTable: 'boards', ascending: false });
-
-      if (wsData) {
-        dispatch(setWorkspaces(wsData));
-      }
-
-      // Fetch Recent Activity
+      // FETCH RECENT ACTIVITY (Specific to Dashboard)
       const { data: logData } = await supabase
         .from('activity_logs')
         .select(`
@@ -58,7 +40,7 @@ const Dashboard = () => {
       if (logData) {
         setRecentLogs(logData);
       }
-
+      
       dispatch(setLoading(false));
     };
 

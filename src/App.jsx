@@ -2,7 +2,8 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { supabase } from './lib/supabase';
-import { setSession, setLoading, setProfile } from './store/slices/authSlice';
+import { setSession, setLoading as setAuthLoading, setProfile } from './store/slices/authSlice';
+import { setWorkspaces, setLoading as setWorkspaceLoading } from './store/slices/workspaceSlice';
 
 import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
@@ -57,11 +58,33 @@ function App() {
       }
     };
 
+    const fetchWorkspaces = async () => {
+      dispatch(setWorkspaceLoading(true));
+      const { data } = await supabase
+        .from('workspaces')
+        .select(`
+          *,
+          boards (*),
+          workspace_members (
+            user_id,
+            role,
+            profiles (id, full_name, email, avatar_url)
+          )
+        `)
+        .order('name');
+      
+      if (data) {
+        dispatch(setWorkspaces(data));
+      }
+      dispatch(setWorkspaceLoading(false));
+    };
+
     // Check initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       dispatch(setSession(session));
       if (session?.user) {
         fetchProfile(session.user.id);
+        fetchWorkspaces();
       }
     });
 
@@ -70,6 +93,7 @@ function App() {
       dispatch(setSession(session));
       if (session?.user) {
         fetchProfile(session.user.id);
+        fetchWorkspaces();
       }
     });
 

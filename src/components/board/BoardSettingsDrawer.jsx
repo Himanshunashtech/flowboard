@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { updateBoard } from '../../store/slices/boardSlice';
 import { compressImage } from '../../lib/imageUtils';
 import BoardCustomFields from './BoardCustomFields';
+import BoardIntegrations from './BoardIntegrations';
 
 const GRADIENTS = [
   { name: 'Oceanic', value: 'linear-gradient(135deg, #00B4DB 0%, #0083B0 100%)' },
@@ -61,6 +62,23 @@ const BoardSettingsDrawer = ({ board, onClose }) => {
   const handleArchive = async () => {
     await updateSettings({ is_archived: !board.is_archived });
     onClose();
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm('Are you absolutely sure? This action is permanent.')) return;
+    setLoading(true);
+    const { error } = await supabase
+      .from('boards')
+      .delete()
+      .eq('id', board.id);
+    
+    if (error) {
+      console.error('Board deletion failed:', error);
+      alert('Failed to delete board.');
+      setLoading(false);
+    } else {
+      window.location.href = '/dashboard';
+    }
   };
   
   const handleBackgroundUpload = async (e) => {
@@ -235,6 +253,9 @@ const BoardSettingsDrawer = ({ board, onClose }) => {
         {/* Custom Fields */}
         <BoardCustomFields boardId={board.id} />
 
+        {/* GitHub Integrations */}
+        <BoardIntegrations boardId={board.id} />
+
         {/* Visibility */}
         <section className="space-y-4">
           <div className="flex items-center gap-2 text-xs font-black uppercase tracking-widest text-text-tertiary">
@@ -289,7 +310,7 @@ const BoardSettingsDrawer = ({ board, onClose }) => {
             <ChevronRight size={14} className="text-text-tertiary" />
           </button>
 
-          {!showDeleteConfirm ? (
+          {user?.id === board?.created_by && !showDeleteConfirm && (
             <button 
               onClick={() => setShowDeleteConfirm(true)}
               className="w-full flex items-center justify-between p-4 rounded-2xl border-2 border-dashed border-danger/20 hover:border-danger/50 hover:bg-danger/5 transition-all group"
@@ -300,26 +321,32 @@ const BoardSettingsDrawer = ({ board, onClose }) => {
               </div>
               <ChevronRight size={14} className="text-danger/40" />
             </button>
-          ) : (
+          )}
+
+          {user?.id === board?.created_by && showDeleteConfirm && (
             <div className="p-4 rounded-2xl bg-danger/5 border-2 border-danger space-y-4 animate-in zoom-in-95 duration-200">
-              <div className="flex items-center gap-2 text-danger">
-                <AlertTriangle size={18} />
-                <p className="text-xs font-black uppercase tracking-tight">Are you sure?</p>
-              </div>
-              <p className="text-[11px] text-danger/80 font-medium leading-relaxed">
-                Deleting a board is permanent and cannot be undone. All lists, cards, and activity will be lost.
-              </p>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1 py-2 text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:text-text-primary"
-                >
-                  Cancel
-                </button>
-                <button className="flex-1 py-2 bg-danger text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-danger/20">
-                  Delete Forever
-                </button>
-              </div>
+               <div className="flex items-center gap-2 text-danger">
+                 <AlertTriangle size={18} />
+                 <p className="text-xs font-black uppercase tracking-tight">Are you sure?</p>
+               </div>
+               <p className="text-[11px] text-danger/80 font-medium leading-relaxed">
+                 Deleting a board is permanent and cannot be undone. All lists, cards, and activity will be lost.
+               </p>
+               <div className="flex gap-2">
+                 <button 
+                   onClick={() => setShowDeleteConfirm(false)}
+                   className="flex-1 py-2 text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:text-text-primary"
+                 >
+                   Cancel
+                 </button>
+                 <button 
+                   onClick={handleDelete}
+                   disabled={loading}
+                   className="flex-1 py-2 bg-danger text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-danger/20 disabled:opacity-50"
+                 >
+                   {loading ? 'Deleting...' : 'Delete Forever'}
+                 </button>
+               </div>
             </div>
           )}
         </section>

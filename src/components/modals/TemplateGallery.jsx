@@ -9,16 +9,22 @@ import {
   ArrowRight,
   Sparkles,
   Zap,
-  ShieldCheck
+  ShieldCheck,
+  Github,
+  ClipboardList,
+  FileText
 } from 'lucide-react';
 
-const TEMPLATES = [
+export const TEMPLATES = [
   {
     id: 'product-roadmap',
     name: 'Product Roadmap',
     description: 'Perfect for agile teams tracking features and releases.',
     icon: Rocket,
     color: 'bg-brand-primary',
+    background: '#0052CC',
+    listStyle: 'solid',
+    cardStyle: 'modern',
     lists: ['Backlog', 'In Discovery', 'Ready for Dev', 'In Progress', 'Done']
   },
   {
@@ -27,6 +33,9 @@ const TEMPLATES = [
     description: 'Coordinate multi-channel campaigns with ease.',
     icon: Target,
     color: 'bg-orange-500',
+    background: 'linear-gradient(135deg, #F093FB 0%, #F5576C 100%)',
+    listStyle: 'solid',
+    cardStyle: 'shadowed',
     lists: ['Strategy', 'Creative Assets', 'Ad Ops', 'Published', 'Reporting']
   },
   {
@@ -35,6 +44,9 @@ const TEMPLATES = [
     description: 'Track leads through your customized sales funnel.',
     icon: ShieldCheck,
     color: 'bg-success',
+    background: '#36B37E',
+    listStyle: 'solid',
+    cardStyle: 'compact',
     lists: ['Incoming Leads', 'Qualified', 'Negotiation', 'Won', 'Lost']
   },
   {
@@ -43,7 +55,43 @@ const TEMPLATES = [
     description: 'Stay organized with a clean, daily task tracker.',
     icon: Zap,
     color: 'bg-indigo-500',
+    background: 'linear-gradient(135deg, #667EEA 0%, #764BA2 100%)',
+    listStyle: 'solid',
+    cardStyle: 'modern',
     lists: ['Today', 'Upcoming', 'Waiting on', 'Completed']
+  },
+  {
+    id: 'github-workflow',
+    name: 'GitHub Workflow',
+    description: 'Sync your issues and PRs into a unified kanban flow.',
+    icon: Github,
+    color: 'bg-slate-900',
+    background: '#1A1A1B',
+    listStyle: 'solid',
+    cardStyle: 'modern',
+    lists: ['Incoming Issues', 'Active Pull Requests', 'In Review', 'Ready to Merge', 'Closed']
+  },
+  {
+    id: 'agile-scrub',
+    name: 'Agile Scrub',
+    description: 'A fast-paced Scrum variant for high-velocity teams.',
+    icon: ClipboardList,
+    color: 'bg-blue-600',
+    background: 'linear-gradient(135deg, #2AF598 0%, #009EFD 100%)',
+    listStyle: 'solid',
+    cardStyle: 'compact',
+    lists: ['Product Backlog', 'Sprint Planning', 'In Progress', 'QA / UAT', 'Done']
+  },
+  {
+    id: 'content-pipeline',
+    name: 'File & Content Pipeline',
+    description: 'Track assets from drafting to final publication.',
+    icon: FileText,
+    color: 'bg-emerald-600',
+    background: '#00875A',
+    listStyle: 'solid',
+    cardStyle: 'shadowed',
+    lists: ['Resources / Assets', 'Drafting', 'Internal Review', 'Final Polish', 'Published']
   }
 ];
 
@@ -84,7 +132,7 @@ const TemplateGallery = ({ isOpen, onClose, onSelect }) => {
                 >
                    <div className="flex items-start justify-between relative z-10">
                       <div className={`p-4 rounded-2xl ${template.color} text-white shadow-lg`}>
-                         <template.icon size={28} />
+                         {template.icon ? <template.icon size={28} /> : <Layout size={28} />}
                       </div>
                       <div className="px-3 py-1 bg-bg-secondary rounded-lg text-[10px] font-black uppercase tracking-widest text-text-tertiary group-hover:bg-brand-primary group-hover:text-white transition-all">
                         {template.lists.length} Lists
@@ -109,13 +157,22 @@ const TemplateGallery = ({ isOpen, onClose, onSelect }) => {
                       )}
                    </div>
 
-                   <div className="flex items-center gap-2 text-brand-primary font-black text-[10px] uppercase tracking-widest group-hover:gap-4 transition-all relative z-10">
-                      Start with template
-                      <ArrowRight size={14} />
+                   <div className="mt-auto flex items-center justify-between pt-4 border-t border-border-light group-hover:border-brand-primary/20">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 bg-bg-tertiary rounded text-[8px] font-black uppercase text-text-tertiary">{template.listStyle}</span>
+                        <span className="px-2 py-0.5 bg-bg-tertiary rounded text-[8px] font-black uppercase text-text-tertiary">{template.cardStyle}</span>
+                      </div>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelect(template);
+                        }}
+                        className="flex items-center gap-2 bg-brand-primary text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-brand-primary/20"
+                      >
+                         Use Template
+                         <ArrowRight size={12} />
+                      </button>
                    </div>
-
-                   {/* Subtle hover background logic */}
-                   <div className={`absolute inset-0 opacity-0 group-hover:opacity-[0.03] transition-opacity ${template.color}`} />
                 </motion.div>
               ))}
             </div>

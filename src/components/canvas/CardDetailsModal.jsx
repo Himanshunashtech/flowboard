@@ -10,11 +10,13 @@ import {
 } from 'lucide-react';
 import { toggleModal, setActiveCardId } from '../../store/slices/uiSlice';
 import { updateCard } from '../../store/slices/boardSlice';
-import { supabase } from '../../lib/supabase';
+import { supabase, getBoardChannel } from '../../lib/supabase';
+import { throttle } from '../../lib/utils';
 import { compressImage } from '../../lib/imageUtils';
 import RichTextEditor from '../ui/RichTextEditor';
 import { format, isPast, formatDistanceToNow } from 'date-fns';
 import CardActivityList from './CardActivityList';
+import CardGithubModule from '../board/CardGithubModule';
 
 // ─── Priority Config ──────────────────────────────────────────────────────────
 const PRIORITY_CONFIG = {
@@ -114,14 +116,14 @@ const ChecklistProgress = ({ items }) => {
   );
 };
 
-// ─── Sidebar Action Button ────────────────────────────────────────────────────
-const SidebarBtn = ({ icon: Icon, label, onClick, danger, active }) => (
+// ─── Navigation Action Button ────────────────────────────────────────────────────
+const NavBtn = ({ icon: Icon, label, onClick, danger, active }) => (
   <button
     onClick={onClick}
-    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold transition-all text-left
-      ${danger ? 'text-red-600 hover:bg-red-50' : active ? 'bg-brand-primary/10 text-brand-primary' : 'text-text-secondary hover:bg-bg-secondary hover:text-text-primary'}`}
+    className={`px-3 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider flex items-center gap-2 transition-all border
+      ${danger ? 'border-red-100 bg-red-50 text-red-600 hover:bg-red-100' : active ? 'border-brand-primary/20 bg-brand-primary/10 text-brand-primary shadow-sm' : 'border-transparent text-text-secondary hover:bg-bg-secondary hover:text-text-primary'}`}
   >
-    <Icon size={16} className="shrink-0" />
+    <Icon size={14} className="shrink-0" />
     <span>{label}</span>
   </button>
 );
@@ -129,9 +131,12 @@ const SidebarBtn = ({ icon: Icon, label, onClick, danger, active }) => (
 // ─── Main Modal ───────────────────────────────────────────────────────────────
 const CardDetailsModal = () => {
   const dispatch = useDispatch();
-  const { activeBoard, lists, cards, members, labels } = useSelector(s => s.board);
+  const { activeBoard, lists, cards, members, labels, presence } = useSelector(s => s.board);
   const { activeCardId } = useSelector(s => s.ui);
-  const { user } = useSelector(s => s.auth);
+  const { user, profile } = useSelector(s => s.auth);
+
+  const viewers = Object.values(presence || {}).filter(p => p.activeCardId === activeCardId && p.user?.id !== user?.id);
+  const typers = viewers.filter(p => p.typing);
 
   const [card, setCard] = useState(null);
   const [list, setList] = useState(null);
@@ -190,13 +195,13 @@ const CardDetailsModal = () => {
       const filePath = `${card.board_id}/${card.id}/${fileName}`;
 
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('attachments')
+        .from('card-attachments')
         .upload(filePath, fileToUpload);
 
       if (uploadError) throw uploadError;
 
       const { data: publicUrlData } = supabase.storage
-        .from('attachments')
+        .from('card-attachments')
         .getPublicUrl(filePath);
 
       const { data: attachment, error: attachError } = await supabase
@@ -205,6 +210,7 @@ const CardDetailsModal = () => {
           card_id: card.id,
           name: fileToUpload.name || 'compressed-image.jpg',
           url: publicUrlData.publicUrl,
+          storage_path: filePath,
           mime_type: fileToUpload.type,
           size_bytes: fileToUpload.size,
           uploaded_by: user.id
@@ -223,21 +229,53 @@ const CardDetailsModal = () => {
     }
   };
 
-  const removeAttachment = async (id, url) => {
-    // Try to delete from storage if we can parse the path
-    try {
-      const urlParts = url.split('attachments/');
-      if (urlParts.length > 1) {
-        const filePath = urlParts[1];
-        await supabase.storage.from('attachments').remove([filePath]);
-      }
-    } catch (e) { console.error('Storage delete failed', e); }
+  const removeAttachment = async (id, storagePath) => {
+    // 1. Remove from Storage
+    if (storagePath) {
+      await supabase.storage.from('card-attachments').remove([storagePath]);
+    }
 
+    // 2. Remove from Database
     const { error } = await supabase.from('attachments').delete().eq('id', id);
     if (!error) {
       setAttachments(prev => prev.filter(a => a.id !== id));
     }
   };
+
+  // ── Presence Tracking ──
+  const presenceUpdate = useCallback(
+    throttle((data) => {
+      if (!card) return;
+      const channel = getBoardChannel(card.board_id);
+      channel.track({
+        user: {
+          id: user?.id,
+          full_name: profile?.full_name || user?.email,
+          avatar_url: profile?.avatar_url
+        },
+        activeCardId: card.id,
+        lastActive: Date.now(),
+        ...data
+      });
+    }, 500),
+    [card, user, profile]
+  );
+
+  useEffect(() => {
+    if (card) {
+      presenceUpdate({ typing: false });
+    }
+  }, [card, presenceUpdate]);
+
+  useEffect(() => {
+    if (commentText.length > 0) {
+      presenceUpdate({ typing: true });
+      const timer = setTimeout(() => presenceUpdate({ typing: false }), 2000);
+      return () => clearTimeout(timer);
+    } else {
+      presenceUpdate({ typing: false });
+    }
+  }, [commentText, presenceUpdate]);
 
   // ── Load Card Data ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -442,7 +480,7 @@ const CardDetailsModal = () => {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 20 }}
           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-          className="w-full max-w-5xl bg-white rounded-[32px] shadow-2xl overflow-hidden mb-12"
+          className="w-full max-w-7xl bg-white rounded-[40px] shadow-2xl overflow-hidden mb-12 border border-white/20 backdrop-blur-xl"
           onClick={e => e.stopPropagation()}
         >
           {/* Cover Strip */}
@@ -463,6 +501,31 @@ const CardDetailsModal = () => {
                   ))}
                 </div>
               )}
+              {/* Viewing Stakeholders */}
+              {viewers.length > 0 && (
+                <div className="flex items-center gap-2 mb-4 px-2">
+                  <div className="flex -space-x-2">
+                    {viewers.map(v => (
+                      <div key={v.user.id} className="group relative">
+                        {v.user.avatar_url ? (
+                          <img src={v.user.avatar_url} alt={v.user.full_name} className="w-7 h-7 rounded-full border-2 border-white ring-1 ring-black/5 object-cover" />
+                        ) : (
+                          <div className="w-7 h-7 rounded-full bg-brand-primary border-2 border-white ring-1 ring-black/5 flex items-center justify-center text-[10px] font-bold text-white uppercase">
+                            {v.user.full_name?.[0] || 'U'}
+                          </div>
+                        )}
+                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-gray-900 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap shadow-xl z-10 pointer-events-none">
+                          {v.user.full_name} is viewing
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <span className="text-[11px] font-bold text-text-tertiary uppercase tracking-widest animate-pulse">
+                    Currently Viewing
+                  </span>
+                </div>
+              )}
+
               <input
                 key={card.id}
                 defaultValue={card.title}
@@ -511,15 +574,154 @@ const CardDetailsModal = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-1 shrink-0">
-              <button onClick={handleClose} className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                <X size={20} />
+            <div className="flex items-center gap-1 shrink-0 px-6 pt-6">
+              <button onClick={handleClose} className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-all">
+                <X size={24} />
               </button>
             </div>
           </div>
 
-          {/* Body */}
-          <div className="flex gap-0 overflow-hidden">
+          {/* New Horizontal Navbar */}
+          <div className="px-8 py-4 border-y border-gray-100 bg-gray-50/30 flex items-center flex-wrap gap-2">
+            <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary mr-2">Quick Actions</p>
+            <NavBtn icon={UserPlus} label="Members" onClick={() => setShowMemberPanel(p => !p)} active={showMemberPanel} />
+            <NavBtn icon={Tag} label="Labels" onClick={() => setShowLabelPanel(p => !p)} active={showLabelPanel} />
+            <NavBtn icon={CheckSquare} label="Checklist" onClick={() => setAddingChecklist(true)} />
+            <NavBtn icon={Calendar} label="Dates" onClick={() => setShowDatePanel(p => !p)} active={showDatePanel} />
+            <NavBtn icon={Palette} label="Cover" onClick={() => setShowCoverPanel(p => !p)} active={showCoverPanel} />
+            <NavBtn icon={Paperclip} label="Attachment" onClick={() => fileInputRef.current?.click()} />
+            
+            <div className="h-6 w-px bg-gray-200 mx-2" />
+            
+            <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary mr-2">Card</p>
+            <NavBtn icon={ArrowRight} label="Move" onClick={() => {}} />
+            <NavBtn icon={Copy} label="Copy" onClick={() => {}} />
+            <NavBtn icon={Archive} label="Archive" onClick={() => updateField({ is_archived: true }).then(handleClose)} danger />
+          </div>
+
+          {/* Expandable Action Panels */}
+          <div className="px-8 bg-gray-50/50">
+            {/* Cover Panel */}
+            <AnimatePresence>
+              {showCoverPanel && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden py-4 border-b border-gray-100">
+                  <div className="flex items-center justify-between mb-3 px-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Select Card Cover Color</p>
+                    <button onClick={() => setShowCoverPanel(false)} className="text-text-tertiary hover:text-text-primary"><X size={14}/></button>
+                  </div>
+                  <div className="flex flex-wrap gap-3 px-1">
+                    {['#F4F5F7', '#0052CC', '#36B37E', '#FFab00', '#FF5630', '#00B8D9', '#6554C0', '#FF8B00'].map(c => (
+                      <button 
+                        key={c}
+                        onClick={() => updateField({ cover_type: 'COLOR', cover_value: c })}
+                        className={`w-10 h-10 rounded-xl border-2 transition-all ${card.cover_value === c ? 'border-brand-primary ring-4 ring-brand-primary/10 scale-110' : 'border-transparent hover:scale-110 shadow-sm'}`}
+                        style={{ backgroundColor: c }}
+                      />
+                    ))}
+                    <button 
+                      onClick={() => updateField({ cover_type: 'NONE', cover_value: null })}
+                      className="w-10 h-10 rounded-xl bg-white border-2 border-dashed border-border-light flex items-center justify-center text-text-tertiary hover:text-text-primary hover:border-brand-primary transition-all"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Member Panel */}
+            <AnimatePresence>
+              {showMemberPanel && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden py-4 border-b border-gray-100">
+                  <div className="flex items-center justify-between mb-3 px-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Assign Board Members</p>
+                    <button onClick={() => setShowMemberPanel(false)} className="text-text-tertiary hover:text-text-primary"><X size={14}/></button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {members?.map(m => {
+                      const assigned = cardAssignees.some(a => a.user_id === m.user_id);
+                      const name = m.profiles?.full_name || m.profiles?.email || 'User';
+                      return (
+                        <button key={m.user_id} onClick={() => toggleAssignee(m)}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all border ${assigned ? 'bg-brand-primary/5 border-brand-primary/20 text-brand-primary font-bold shadow-sm' : 'bg-white border-gray-100 hover:border-gray-300 text-gray-700 shadow-sm'}`}>
+                          <div className="w-6 h-6 rounded-full bg-brand-primary flex items-center justify-center text-white text-[10px] font-black shrink-0">
+                            {name[0].toUpperCase()}
+                          </div>
+                          <span className="text-xs">{name}</span>
+                          {assigned && <Check size={12} className="ml-1 shrink-0" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Label Panel */}
+            <AnimatePresence>
+              {showLabelPanel && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden py-4 border-b border-gray-100">
+                   <div className="flex items-center justify-between mb-3 px-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Manage Labels</p>
+                    <button onClick={() => setShowLabelPanel(false)} className="text-text-tertiary hover:text-text-primary"><X size={14}/></button>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {labels?.map(l => {
+                      const active = cardLabels.includes(l.id);
+                      return (
+                        <button key={l.id} onClick={() => toggleLabel(l.id)}
+                          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all border-2 ${active ? 'shadow-lg scale-105' : 'opacity-60 hover:opacity-100'}`}
+                          style={{ backgroundColor: active ? l.color : l.color + '15', color: active ? 'white' : l.color, borderColor: l.color }}>
+                          <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${active ? 'bg-white' : ''}`} style={{ backgroundColor: active ? 'none' : l.color }} />
+                          {l.name}
+                          {active && <Check size={12} className="ml-1" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Dates Panel */}
+            <AnimatePresence>
+              {showDatePanel && (
+                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden py-4 border-b border-gray-100 max-w-2xl">
+                   <div className="flex items-center justify-between mb-3 px-1">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Scheduling & Priority</p>
+                    <button onClick={() => setShowDatePanel(false)} className="text-text-tertiary hover:text-text-primary"><X size={14}/></button>
+                  </div>
+                  <div className="flex flex-wrap gap-6 px-1">
+                    <div className="space-y-2 flex-1 min-w-[200px]">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Due Date</p>
+                      <input 
+                        type="datetime-local"
+                        defaultValue={card.due_date ? card.due_date.slice(0, 16) : ''}
+                        onChange={e => updateField({ due_date: e.target.value ? new Date(e.target.value).toISOString() : null })}
+                        className="w-full text-xs bg-white border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-4 focus:ring-brand-primary/5 focus:border-brand-primary/40 transition-all font-bold text-gray-700 shadow-sm"
+                      />
+                    </div>
+                    <div className="space-y-2 flex-[2] min-w-[300px]">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Priority Level</p>
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(PRIORITY_CONFIG).map(([key, cfg]) => (
+                          <button key={key} onClick={() => updateField({ priority: key })}
+                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-black transition-all border ${card.priority === key ? cfg.bg + ' ' + cfg.color + ' border-current' : 'bg-white border-gray-100 hover:border-gray-300 text-gray-500 shadow-sm'}`}>
+                            <div className={`w-2 h-2 rounded-full ${cfg.dot}`} />
+                            {cfg.label}
+                            {card.priority === key && <Check size={12} className="ml-1" />}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          {/* Body Split */}
+          <div className="flex flex-1 overflow-hidden min-h-[600px]">
             {/* ── Main Content ── */}
             <div className="flex-1 px-8 pb-8 overflow-y-auto max-h-[calc(90vh-180px)] space-y-8">
               
@@ -700,6 +902,11 @@ const CardDetailsModal = () => {
                 </div>
               </section>
 
+              {/* ── GitHub Development ── */}
+              <section className="pl-6">
+                <CardGithubModule cardId={card.id} boardId={card.board_id} />
+              </section>
+
               {/* ── Attachments ── */}
               <section>
                 <div className="flex items-center justify-between mb-4">
@@ -767,7 +974,7 @@ const CardDetailsModal = () => {
                                Open
                              </a>
                              <button 
-                               onClick={() => removeAttachment(att.id, att.url)}
+                               onClick={() => removeAttachment(att.id, att.storage_path)}
                                className="text-[10px] font-black uppercase tracking-widest text-danger hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
                              >
                                Delete
@@ -862,164 +1069,63 @@ const CardDetailsModal = () => {
                 </div>
               </section>
 
-              {/* ── Activity Feed ── */}
-              <section>
-                <div className="space-y-6">
-                  {/* Comment composer */}
-                  <div className="flex gap-4">
-                    <div className="w-9 h-9 rounded-2xl bg-brand-primary flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-lg shadow-brand-primary/20">
-                      {(user?.email || 'U')[0].toUpperCase()}
-                    </div>
-                    <div className="flex-1">
-                      <div className="relative group">
-                        <textarea
-                          rows={2}
-                          value={commentText}
-                          onChange={e => setCommentText(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); postComment(); } }}
-                          placeholder="Write a comment... (Enter to post)"
-                          className="w-full text-sm bg-bg-secondary border-none rounded-2xl px-5 py-3 outline-none focus:bg-white focus:ring-4 focus:ring-brand-primary/5 transition-all resize-none placeholder:text-text-tertiary font-medium"
-                        />
-                        <div className="absolute right-3 bottom-3 flex gap-2 opacity-0 group-focus-within:opacity-100 transition-opacity">
-                          <button onClick={postComment} className="p-2 bg-brand-primary text-white rounded-xl shadow-lg shadow-brand-primary/20 hover:scale-105 transition-all">
-                            <MessageCircle size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Unified Activity List */}
-                  <CardActivityList cardId={card.id} />
-                </div>
-              </section>
             </div>
 
-            {/* ── Sidebar ── */}
-            <div className="w-52 shrink-0 border-l border-gray-100 bg-gray-50/50 px-4 py-6 overflow-y-auto max-h-[calc(90vh-180px)] space-y-6">
-              {/* Add to card */}
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 px-1">Add to card</p>
-                <div className="space-y-0.5">
-                  <SidebarBtn icon={UserPlus} label="Members" onClick={() => setShowMemberPanel(p => !p)} active={showMemberPanel} />
-                  <SidebarBtn icon={Tag} label="Labels" onClick={() => setShowLabelPanel(p => !p)} active={showLabelPanel} />
-                  <SidebarBtn icon={CheckSquare} label="Checklist" onClick={() => setAddingChecklist(true)} />
-                  <SidebarBtn icon={Calendar} label="Dates" onClick={() => setShowDatePanel(p => !p)} active={showDatePanel} />
-                  <SidebarBtn icon={Palette} label="Cover" onClick={() => setShowCoverPanel(p => !p)} active={showCoverPanel} />
-                  <SidebarBtn icon={Paperclip} label="Attachment" onClick={() => fileInputRef.current?.click()} />
-                </div>
-              </div>
-
-              {/* ── Cover Panel ── */}
-              <AnimatePresence>
-                {showCoverPanel && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary mb-3 px-1">Card Cover</p>
-                    <div className="grid grid-cols-4 gap-2 px-1">
-                      {['#F4F5F7', '#0052CC', '#36B37E', '#FFab00', '#FF5630', '#00B8D9', '#6554C0', '#FF8B00'].map(c => (
-                        <button 
-                          key={c}
-                          onClick={() => updateField({ cover_type: 'COLOR', cover_value: c })}
-                          className={`aspect-square rounded-lg border-2 transition-all ${card.cover_value === c ? 'border-brand-primary ring-2 ring-brand-primary/20 scale-110' : 'border-transparent hover:scale-110'}`}
-                          style={{ backgroundColor: c }}
-                        />
-                      ))}
-                      <button 
-                        onClick={() => updateField({ cover_type: 'NONE', cover_value: null })}
-                        className="aspect-square rounded-lg bg-white border border-border-light flex items-center justify-center text-text-tertiary hover:text-text-primary"
-                      >
-                        <X size={12} />
-                      </button>
+            {/* ── Side Nav: Activity & Timeline ── */}
+            <div className="w-[380px] shrink-0 border-l border-gray-100 bg-gray-50/40 flex flex-col h-full overflow-hidden">
+               <div className="p-6 border-b border-gray-100 bg-white/50">
+                  <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-2">
+                       <Sparkles size={18} className="text-brand-primary" />
+                       <h3 className="text-sm font-black uppercase tracking-widest text-gray-800">Timeline</h3>
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                    <button className="p-2 text-gray-400 hover:bg-gray-100 rounded-xl transition-all">
+                       <MoreHorizontal size={18} />
+                    </button>
+                  </div>
 
-              {/* ── Member Panel ── */}
-              <AnimatePresence>
-                {showMemberPanel && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 px-1">Assign Members</p>
-                    <div className="space-y-1">
-                      {members?.map(m => {
-                        const assigned = cardAssignees.some(a => a.user_id === m.user_id);
-                        const name = m.profiles?.full_name || m.profiles?.email || 'User';
-                        return (
-                          <button key={m.user_id} onClick={() => toggleAssignee(m)}
-                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-all ${assigned ? 'bg-brand-primary/10 text-brand-primary font-semibold' : 'hover:bg-gray-100 text-gray-700'}`}>
-                            <div className="w-6 h-6 rounded-full bg-brand-primary flex items-center justify-center text-white text-[10px] font-bold shrink-0">
-                              {name[0].toUpperCase()}
+                  {/* Comment composer moved here */}
+                  <div className="space-y-4">
+                      <div className="flex gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-brand-primary flex items-center justify-center text-white font-black text-[10px] shrink-0 shadow-lg shadow-brand-primary/20">
+                          {(user?.email || 'U')[0].toUpperCase()}
+                        </div>
+                        <div className="flex-1">
+                          <div className="relative group">
+                            <textarea
+                              rows={3}
+                              value={commentText}
+                              onChange={e => setCommentText(e.target.value)}
+                              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); postComment(); } }}
+                              placeholder="Add to timeline..."
+                              className="w-full text-[13px] bg-white border border-gray-100 rounded-2xl px-4 py-3 outline-none focus:ring-4 focus:ring-brand-primary/5 focus:border-brand-primary/40 transition-all resize-none placeholder:text-text-tertiary font-bold shadow-sm"
+                            />
+                            <div className="absolute right-2 bottom-2 flex gap-2 opacity-0 group-focus-within:opacity-100 transition-opacity">
+                              <button onClick={postComment} className="p-2 bg-brand-primary text-white rounded-xl shadow-lg shadow-brand-primary/20 hover:scale-110 transition-all">
+                                <Plus size={14} strokeWidth={3} />
+                              </button>
                             </div>
-                            <span className="text-xs truncate">{name}</span>
-                            {assigned && <Check size={12} className="ml-auto shrink-0" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* ── Label Panel ── */}
-              <AnimatePresence>
-                {showLabelPanel && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 px-1">Labels</p>
-                    <div className="space-y-1">
-                      {labels?.map(l => {
-                        const active = cardLabels.includes(l.id);
-                        return (
-                          <button key={l.id} onClick={() => toggleLabel(l.id)}
-                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-xs font-bold transition-all ${active ? 'ring-2' : 'opacity-70 hover:opacity-100'}`}
-                            style={{ backgroundColor: l.color + '20', color: l.color, ringColor: l.color }}>
-                            <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: l.color }} />
-                            {l.name}
-                            {active && <Check size={11} className="ml-auto" />}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* ── Dates Panel ── */}
-              <AnimatePresence>
-                {showDatePanel && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 px-1">Due Date</p>
-                    <input 
-                      type="datetime-local"
-                      defaultValue={card.due_date ? card.due_date.slice(0, 16) : ''}
-                      onChange={e => updateField({ due_date: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                      className="w-full text-xs bg-white border border-gray-200 rounded-lg px-2 py-1.5 outline-none focus:ring-2 focus:ring-brand-primary/20"
-                    />
-                    <div className="mt-2">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1 px-1">Priority</p>
-                      <div className="space-y-1">
-                        {Object.entries(PRIORITY_CONFIG).map(([key, cfg]) => (
-                          <button key={key} onClick={() => updateField({ priority: key })}
-                            className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${card.priority === key ? cfg.bg + ' ' + cfg.color : 'hover:bg-gray-100 text-gray-500'}`}>
-                            <div className={`w-2 h-2 rounded-full ${cfg.dot}`} />
-                            {cfg.label}
-                            {card.priority === key && <Check size={10} className="ml-auto" />}
-                          </button>
-                        ))}
+                            {typers.length > 0 && (
+                              <div className="absolute left-2 -bottom-5 flex items-center gap-1.5">
+                                <div className="flex gap-0.5">
+                                  <span className="w-1 h-1 bg-brand-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
+                                  <span className="w-1 h-1 bg-brand-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
+                                  <span className="w-1 h-1 bg-brand-primary rounded-full animate-bounce" />
+                                </div>
+                                <span className="text-[9px] font-black text-brand-primary uppercase tracking-widest">
+                                  {typers[0].user.full_name.split(' ')[0]} typing...
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                  </div>
+               </div>
 
-              {/* Actions */}
-              <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 px-1">Actions</p>
-                <div className="space-y-0.5">
-                  <SidebarBtn icon={ArrowRight} label="Move" onClick={() => {}} />
-                  <SidebarBtn icon={Copy} label="Copy" onClick={() => {}} />
-                  <SidebarBtn icon={Archive} label="Archive" onClick={() => updateField({ is_archived: true }).then(handleClose)} danger />
-                </div>
-              </div>
+               <div className="flex-1 overflow-y-auto px-6 py-6 scrollbar-thin">
+                  <CardActivityList cardId={card.id} />
+               </div>
             </div>
           </div>
         </motion.div>

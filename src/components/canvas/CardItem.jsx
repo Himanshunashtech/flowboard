@@ -14,13 +14,16 @@ const PRIORITY_STYLES = {
   NONE:     { color: 'text-gray-400',  bg: '',             label: '' },
 };
 
-const CardItem = ({ card, index }) => {
+const CardItem = ({ card, index, onClick, isSelected, stylePreset = 'modern' }) => {
   const dispatch = useDispatch();
   const { labels: boardLabels, members: boardMembers } = useSelector(s => s.board);
   const priority = PRIORITY_STYLES[card.priority] || PRIORITY_STYLES.NONE;
 
-  const handleOpen = (e) => {
-    e.stopPropagation();
+  const handleClick = (e) => {
+    if (onClick) {
+      onClick(e, card.id);
+      if (e.shiftKey) return; // Don't open modal if selecting
+    }
     dispatch(setActiveCardId(card.id));
     dispatch(toggleModal({ modalName: 'cardDetails', isOpen: true }));
   };
@@ -41,6 +44,18 @@ const CardItem = ({ card, index }) => {
   const assignedUserIds = card.card_assignments?.map(ca => ca.user_id) || [];
   const assignees = boardMembers.filter(m => assignedUserIds.includes(m.user_id));
 
+  const getCardStyleClasses = () => {
+    switch (stylePreset) {
+      case 'compact':
+        return "rounded-xl shadow-sm hover:shadow-md border-border-light";
+      case 'shadowed':
+        return "rounded-[32px] shadow-xl hover:shadow-2xl border-transparent mb-6";
+      case 'modern':
+      default:
+        return "rounded-[28px] shadow-md hover:shadow-2xl border-border-light transition-all duration-400";
+    }
+  };
+
   return (
     <Draggable draggableId={card.id} index={index}>
       {(provided, snapshot) => {
@@ -49,16 +64,37 @@ const CardItem = ({ card, index }) => {
             ref={provided.innerRef}
             {...provided.draggableProps}
             {...provided.dragHandleProps}
-            onClick={handleOpen}
-            className={`relative bg-white rounded-[28px] border border-border-light shadow-md mb-4 cursor-pointer select-none 
-              hover:shadow-2xl hover:-translate-y-1 transition-all duration-400 group
+            onClick={handleClick}
+            className={`relative bg-white border cursor-pointer select-none group overflow-hidden transition-all duration-300
+              ${getCardStyleClasses()}
+              ${isSelected ? 'ring-4 ring-brand-primary border-transparent' : ''}
+              group-hover:border-black
               ${snapshot.isDragging ? 'shadow-2xl ring-4 ring-brand-primary/20 rotate-1 scale-[1.03] z-[9999]' : ''}`}
             style={{
               ...provided.draggableProps.style,
             }}
           >
-            {/* Card Content wrapper */}
-            <div className="p-5">
+            {/* Card Cover */}
+            {card.cover_type !== 'NONE' && (
+              <div className="absolute top-0 left-0 right-0 h-8 overflow-hidden z-0">
+                {card.cover_type === 'IMAGE' && card.cover_image_url ? (
+                  <img 
+                    src={card.cover_image_url} 
+                    alt="" 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                ) : (
+                  <div 
+                    className="w-full h-full" 
+                    style={{ backgroundColor: card.cover_value || '#eee' }} 
+                  />
+                )}
+                <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </div>
+            )}
+
+            {/* Content wrapper with internal padding */}
+            <div className={`relative z-10 flex flex-col p-5 ${card.cover_type !== 'NONE' ? 'pt-10' : ''}`}>
               {/* Header: Title + More */}
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex items-start gap-2.5 flex-1 min-w-0">

@@ -21,12 +21,12 @@ on conflict (id) do nothing;
 -- Card attachments — public read
 insert into storage.buckets (id, name, public, file_size_limit)
 values (
-  'attachments',
-  'attachments',
-  true,    -- Changed to true for direct public read access
+  'card-attachments',
+  'card-attachments',
+  true,
   102400   -- 100 KB
 )
-on conflict (id) do nothing;
+on conflict (id) do update set public = true;
 
 -- Board backgrounds — public read
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
@@ -98,19 +98,19 @@ create policy "avatars: own delete"
 
 -- ============================================================
 -- ATTACHMENTS: Storage Policies
--- Path convention: attachments/{board_id}/{card_id}/{filename}
+-- Path convention: card-attachments/{board_id}/{card_id}/{filename}
 -- ============================================================
 
 drop policy if exists "attachments: public read" on storage.objects;
 create policy "attachments: public read"
   on storage.objects for select
-  using (bucket_id = 'attachments');
+  using (bucket_id = 'card-attachments');
 
 drop policy if exists "attachments: board member upload" on storage.objects;
 create policy "attachments: board member upload"
   on storage.objects for insert
   with check (
-    bucket_id = 'attachments'
+    bucket_id = 'card-attachments'
     and auth.uid() is not null
     and exists (
       select 1 from board_members bm
@@ -123,7 +123,7 @@ drop policy if exists "attachments: uploader delete" on storage.objects;
 create policy "attachments: uploader delete"
   on storage.objects for delete
   using (
-    bucket_id = 'attachments'
+    bucket_id = 'card-attachments'
     and auth.uid() = owner
   );
 

@@ -4,9 +4,25 @@ import { Droppable } from '@hello-pangea/dnd';
 import { MoreHorizontal, Plus, X, UserPlus, Check } from 'lucide-react';
 import CardItem from './CardItem';
 import { supabase } from '../../lib/supabase';
+import { Ordering } from '../../lib/ordering';
+import { addCard } from '../../store/slices/boardSlice';
 import { AnimatePresence, motion } from 'framer-motion';
+import { updateList } from '../../store/slices/boardSlice';
 
-const ListView = ({ list, cards }) => {
+const LIST_COLORS = [
+  { name: 'Green',  value: '#61bd4f' },
+  { name: 'Yellow', value: '#f2d600' },
+  { name: 'Orange', value: '#ff9f1a' },
+  { name: 'Red',    value: '#eb5a46' },
+  { name: 'Purple', value: '#c377e0' },
+  { name: 'Blue',   value: '#0079bf' },
+  { name: 'Sky',    value: '#00c2e0' },
+  { name: 'Lime',   value: '#51e898' },
+  { name: 'Pink',   value: '#ff78cb' },
+  { name: 'Gray',   value: '#838c91' }
+];
+
+const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', cardStyle = 'modern' }) => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { members } = useSelector((state) => state.board);
@@ -18,6 +34,26 @@ const ListView = ({ list, cards }) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [listTitle, setListTitle] = useState(list.title);
   const [assigningUser, setAssigningUser] = useState(null);
+  const [isUpdatingColor, setIsUpdatingColor] = useState(false);
+
+  const handleUpdateColor = async (color) => {
+    // Optimistic Update
+    dispatch(updateList({ id: list.id, color }));
+
+    setIsUpdatingColor(true);
+    const { error } = await supabase
+      .from('lists')
+      .update({ color })
+      .eq('id', list.id);
+    
+    if (error) {
+      console.error('Error updating list color:', error);
+      // Revert if error (not strictly required for prototype but good practice)
+      dispatch(updateList({ id: list.id, color: list.color }));
+    }
+    setIsUpdatingColor(false);
+    setShowMenu(false);
+  };
 
   const handleAddCard = async (e) => {
     e.preventDefault();
@@ -32,12 +68,18 @@ const ListView = ({ list, cards }) => {
           board_id: list.board_id,
           created_by: user.id,
           title,
-          position: cards.length > 0 ? Math.max(...cards.map(c => c.position)) + 65535 : 65535
+          position: Ordering.last(cards[cards.length - 1]?.position)
         })
         .select()
         .single();
 
       if (error) throw error;
+      
+      // Step: Instant UI Update (Optimistic-hybrid)
+      if (data) {
+        dispatch(addCard(data));
+      }
+
       setTitle('');
       setIsAdding(false);
     } catch (error) {
@@ -84,8 +126,28 @@ const ListView = ({ list, cards }) => {
     setShowMenu(false);
   };
 
+  const getListStyleClasses = () => {
+    if (list.color) return ""; // User color overrides presets
+    switch (listStyle) {
+      case 'glass':
+        return "bg-white/40 backdrop-blur-xl border-white/20 shadow-2xl shadow-black/[0.03]";
+      case 'minimal':
+        return "bg-transparent border-none shadow-none p-0";
+      case 'solid':
+      default:
+        return "bg-[#f1f2f4] border-border-light shadow-sm";
+    }
+  };
+
   return (
-    <div className="list-container w-80 shrink-0 bg-white/70 backdrop-blur-xl rounded-[40px] flex flex-col h-full snap-center border border-white/40 shadow-2xl shadow-black/[0.03] relative animate-in fade-in slide-in-from-bottom-2 duration-500 overflow-hidden">
+    <div 
+      className={`list-container w-96 shrink-0 ${getListStyleClasses()} rounded-[40px] flex flex-col h-full snap-center border relative animate-in fade-in slide-in-from-bottom-2 duration-500 overflow-hidden`}
+      style={{ 
+        backgroundColor: list.color ? `${list.color}26` : undefined, // 15% opacity
+        borderTop: list.color ? `4px solid ${list.color}` : '1px solid transparent',
+        borderColor: list.color ? 'rgba(0,0,0,0.05)' : undefined
+      }}
+    >
       {/* List Header */}
       <div className="px-6 py-5 flex items-center justify-between">
         <div className="flex items-center gap-3 flex-1 min-w-0 group/title">
@@ -128,14 +190,15 @@ const ListView = ({ list, cards }) => {
         </div>
       </div>
 
-      {/* People Panel */}
+      {/* Interaction Panels */}
       <AnimatePresence>
         {showPeoplePanel && (
           <motion.div
+            key="people-panel"
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="mx-3 mb-2 bg-white border border-border-light rounded-xl shadow-lg overflow-hidden"
+            className="mx-3 mb-2 bg-white border border-border-light rounded-xl shadow-lg overflow-hidden relative z-50"
           >
             <div className="p-3">
               <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary mb-2.5">
@@ -172,6 +235,68 @@ const ListView = ({ list, cards }) => {
             </div>
           </motion.div>
         )}
+
+        {showMenu && (
+          <motion.div
+            key="color-menu"
+            initial={{ opacity: 0, scale: 0.95, y: -10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -10 }}
+            className="mx-3 mb-2 bg-white border border-border-light rounded-[24px] shadow-2xl overflow-hidden relative z-50"
+          >
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">
+                  Change list color
+                </p>
+                <button onClick={() => setShowMenu(false)} className="text-text-tertiary hover:text-text-primary">
+                  <X size={14} />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-5 gap-2 mb-4">
+                {LIST_COLORS.map((c) => (
+                  <button
+                    key={c.value}
+                    onClick={() => handleUpdateColor(c.value)}
+                    className="group relative w-full aspect-square rounded-lg transition-all hover:scale-110 active:scale-95 shadow-sm overflow-hidden"
+                    style={{ backgroundColor: c.value }}
+                    title={c.name}
+                  >
+                    {list.color === c.value && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/10 text-white">
+                        <Check size={14} strokeWidth={4} />
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => handleUpdateColor(null)}
+                className="w-full flex items-center justify-center gap-2 py-3 bg-bg-secondary hover:bg-bg-tertiary rounded-xl text-[10px] font-black uppercase tracking-widest text-text-secondary transition-all"
+              >
+                <X size={14} />
+                Remove color
+              </button>
+            </div>
+
+            <div className="border-t border-border-light p-3 bg-bg-secondary/30">
+               <button 
+                onClick={archiveAllCards}
+                className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:text-danger hover:bg-danger/5 rounded-lg transition-all"
+               >
+                 Archive all cards
+               </button>
+               <button 
+                onClick={deleteList}
+                className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:text-danger hover:bg-danger/5 rounded-lg transition-all"
+               >
+                 Delete list
+               </button>
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       {/* Cards */}
@@ -183,7 +308,14 @@ const ListView = ({ list, cards }) => {
             className={`flex-1 overflow-y-auto px-3 py-1 min-h-[50px] transition-colors ${snapshot.isDraggingOver ? 'bg-brand-primary/5 rounded-2xl' : ''}`}
           >
             {cards.map((card, index) => (
-              <CardItem key={card.id} card={card} index={index} />
+              <CardItem 
+                key={card.id} 
+                card={card} 
+                index={index} 
+                onClick={onCardClick}
+                isSelected={selectedIds?.includes(card.id)}
+                stylePreset={cardStyle}
+              />
             ))}
             {provided.placeholder}
           </div>

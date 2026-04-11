@@ -8,6 +8,8 @@ const initialState = {
   members: [],
   labels: [],
   dependencies: [],
+  starredBoardIds: [],
+  presence: {}, // userId -> { cursor: {x, y}, user: {name, avatar, id}, lastActive }
   loading: false,
   error: null,
 };
@@ -16,6 +18,17 @@ const boardSlice = createSlice({
   name: 'board',
   initialState,
   reducers: {
+    setStarredBoardIds: (state, action) => {
+      state.starredBoardIds = action.payload;
+    },
+    toggleStar: (state, action) => {
+      const boardId = action.payload;
+      if (state.starredBoardIds.includes(boardId)) {
+        state.starredBoardIds = state.starredBoardIds.filter(id => id !== boardId);
+      } else {
+        state.starredBoardIds.push(boardId);
+      }
+    },
     setActiveBoard: (state, action) => {
       state.activeBoard = action.payload;
     },
@@ -25,10 +38,14 @@ const boardSlice = createSlice({
       }
     },
     setLists: (state, action) => {
-      state.lists = action.payload.sort((a, b) => a.position - b.position);
+      state.lists = action.payload.sort((a, b) => 
+        String(a.position || '').localeCompare(String(b.position || ''))
+      );
     },
     setCards: (state, action) => {
-      state.cards = action.payload.sort((a, b) => a.position - b.position);
+      state.cards = action.payload.sort((a, b) => 
+        String(a.position || '').localeCompare(String(b.position || ''))
+      );
     },
     setBoardMembers: (state, action) => {
       state.members = action.payload;
@@ -49,8 +66,11 @@ const boardSlice = createSlice({
     
     // Optimistic / Real-time updates
     addList: (state, action) => {
-      state.lists.push(action.payload);
-      state.lists.sort((a, b) => a.position - b.position);
+      const exists = state.lists.some(l => l.id === action.payload.id);
+      if (!exists) {
+        state.lists.push(action.payload);
+        state.lists.sort((a, b) => String(a.position || '').localeCompare(String(b.position || '')));
+      }
     },
     updateList: (state, action) => {
       const index = state.lists.findIndex(l => l.id === action.payload.id);
@@ -64,15 +84,18 @@ const boardSlice = createSlice({
     },
     
     addCard: (state, action) => {
-      state.cards.push(action.payload);
-      state.cards.sort((a, b) => a.position - b.position);
+      const exists = state.cards.some(c => c.id === action.payload.id);
+      if (!exists) {
+        state.cards.push(action.payload);
+        state.cards.sort((a, b) => String(a.position || '').localeCompare(String(b.position || '')));
+      }
     },
     updateCard: (state, action) => {
       const index = state.cards.findIndex(c => c.id === action.payload.id);
       if (index !== -1) {
         state.cards[index] = { ...state.cards[index], ...action.payload };
       }
-      state.cards.sort((a, b) => a.position - b.position);
+      state.cards.sort((a, b) => String(a.position || '').localeCompare(String(b.position || '')));
     },
     deleteCard: (state, action) => {
       state.cards = state.cards.filter(c => c.id !== action.payload);
@@ -84,7 +107,7 @@ const boardSlice = createSlice({
         card.list_id = newListId;
         card.position = newPosition;
       }
-      state.cards.sort((a, b) => a.position - b.position);
+      state.cards.sort((a, b) => String(a.position || '').localeCompare(String(b.position || '')));
     },
 
     // Sprint Management
@@ -102,6 +125,19 @@ const boardSlice = createSlice({
     },
     deleteSprint: (state, action) => {
       state.sprints = state.sprints.filter(s => s.id !== action.payload);
+    },
+    
+    // Presence
+    setPresence: (state, action) => {
+      state.presence = action.payload;
+    },
+    updateUserPresence: (state, action) => {
+      const { userId, data } = action.payload;
+      state.presence[userId] = {
+        ...state.presence[userId],
+        ...data,
+        lastActive: Date.now()
+      };
     }
   },
 });
@@ -123,10 +159,14 @@ export const {
   updateCard,
   deleteCard,
   moveCard,
+  setStarredBoardIds,
+  toggleStar,
   setSprints,
   addSprint,
   updateSprint,
-  deleteSprint
+  deleteSprint,
+  setPresence,
+  updateUserPresence
 } = boardSlice.actions;
 
 export default boardSlice.reducer;

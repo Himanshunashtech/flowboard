@@ -5,19 +5,34 @@ import { toggleModal } from '../../store/slices/uiSlice';
 import { setActiveBoard } from '../../store/slices/boardSlice';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import TemplateGallery from './TemplateGallery';
-import { Sparkles } from 'lucide-react';
+import TemplateGallery, { TEMPLATES } from './TemplateGallery';
+import { Sparkles, Check } from 'lucide-react';
+import { useEffect } from 'react';
 
 const CreateBoardModal = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const { activeWorkspace } = useSelector((state) => state.workspaces);
+  const { workspaces, activeWorkspace } = useSelector((state) => state.workspaces);
+  const { modals, modalData } = useSelector((state) => state.ui);
   const [title, setTitle] = useState('');
   const [visibility, setVisibility] = useState('WORKSPACE');
   const [background, setBackground] = useState('#0052CC');
   const [loading, setLoading] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+
+  useEffect(() => {
+    const data = modalData?.createBoard;
+    if (data?.templateId) {
+      const template = TEMPLATES.find(t => t.id === data.templateId);
+      if (template) {
+        setSelectedTemplate(template);
+        const ws = activeWorkspace || (workspaces && workspaces[0]);
+        setTitle(`${template.name} - ${ws?.name || 'New'}`);
+      }
+    }
+  }, [modalData, activeWorkspace, workspaces]);
 
   const colors = [
     '#0052CC', '#0747A6', '#0065FF', '#2684FF', 
@@ -31,7 +46,7 @@ const CreateBoardModal = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title || loading || !activeWorkspace) return;
+    if (!title || loading || !effectiveWorkspace) return;
 
     setLoading(true);
 
@@ -40,16 +55,20 @@ const CreateBoardModal = () => {
         .from('boards')
         .insert({
           title,
-          workspace_id: activeWorkspace.id,
+          workspace_id: effectiveWorkspace.id,
           created_by: user.id,
           visibility,
-          background_type: 'COLOR',
-          background_value: background,
+          background_type: selectedTemplate 
+            ? (selectedTemplate.background.includes('gradient') ? 'GRADIENT' : 'COLOR')
+            : 'COLOR',
+          background_value: selectedTemplate ? selectedTemplate.background : background,
           settings: {
             card_covers: true,
             voting: false,
             aging: false,
-            calendar_feed: false
+            calendar_feed: false,
+            list_style: selectedTemplate?.listStyle || 'solid',
+            card_style: selectedTemplate?.cardStyle || 'modern'
           }
         })
         .select()
@@ -57,19 +76,24 @@ const CreateBoardModal = () => {
 
       if (error) throw error;
 
-      // Add standard lists for a new board
-      const standardLists = ['Backlog', 'In Progress', 'Done'];
-      await Promise.all(standardLists.map((ltitle, index) => 
+      // 2. Provision Lists (either from template or standard)
+      const listBlueprint = selectedTemplate ? selectedTemplate.lists : ['Backlog', 'In Progress', 'Done'];
+      
+      await Promise.all(listBlueprint.map((ltitle, index) => 
         supabase.from('lists').insert({
           board_id: board.id,
           title: ltitle,
-          position: index * 65535
+          position: `a${index}`
         })
       ));
 
       dispatch(setActiveBoard(board));
       handleClose();
-      navigate(`/w/${activeWorkspace.slug}/b/${board.id}`);
+      if (effectiveWorkspace?.slug) {
+        navigate(`/w/${effectiveWorkspace.slug}/b/${board.id}`);
+      } else {
+        navigate(`/dashboard`);
+      }
     } catch (error) {
       console.error('Error creating board:', error);
       alert(error.message);
@@ -79,7 +103,7 @@ const CreateBoardModal = () => {
   };
 
   const handleApplyTemplate = async (template) => {
-    if (loading || !activeWorkspace) return;
+    if (loading || !effectiveWorkspace) return;
     setLoading(true);
 
     try {
@@ -87,16 +111,18 @@ const CreateBoardModal = () => {
       const { data: board, error } = await supabase
         .from('boards')
         .insert({
-          title: `${template.name} - ${activeWorkspace.name}`,
-          workspace_id: activeWorkspace.id,
+          title: `${template.name} - ${effectiveWorkspace.name}`,
+          workspace_id: effectiveWorkspace.id,
           created_by: user.id,
           visibility: 'WORKSPACE',
-          background_type: 'COLOR',
-          background_value: '#6554C0', // Default template purple
+          background_type: template.background.includes('gradient') ? 'GRADIENT' : 'COLOR',
+          background_value: template.background,
           settings: {
             card_covers: true,
             voting: false,
-            aging: false
+            aging: false,
+            list_style: template.listStyle,
+            card_style: template.cardStyle
           }
         })
         .select()
@@ -109,14 +135,18 @@ const CreateBoardModal = () => {
         supabase.from('lists').insert({
           board_id: board.id,
           title: ltitle,
-          position: index * 65535
+          position: `a${index}`
         })
       ));
 
       dispatch(setActiveBoard(board));
       setShowTemplates(false);
       handleClose();
-      navigate(`/w/${activeWorkspace.slug}/b/${board.id}`);
+      if (effectiveWorkspace?.slug) {
+        navigate(`/w/${effectiveWorkspace.slug}/b/${board.id}`);
+      } else {
+        navigate(`/dashboard`);
+      }
     } catch (err) {
       console.error('Template Error:', err);
     } finally {
@@ -124,7 +154,29 @@ const CreateBoardModal = () => {
     }
   };
 
-  if (!activeWorkspace) return null;
+  // If no active workspace is selected, try to use the first one available
+  const effectiveWorkspace = activeWorkspace || (workspaces && workspaces[0]);
+
+  if (!effectiveWorkspace && !loading) {
+    // We can't create a board without a workspace
+    return (
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[9999] flex items-center justify-center p-6 animate-in fade-in duration-300">
+        <div className="w-full max-w-md bg-white rounded-[40px] p-12 text-center shadow-2xl">
+          <div className="w-20 h-20 bg-brand-primary/10 rounded-3xl flex items-center justify-center text-brand-primary mx-auto mb-6">
+            <Layout size={40} />
+          </div>
+          <h2 className="text-2xl font-black text-text-primary mb-4">No Team Found</h2>
+          <p className="text-text-secondary font-medium mb-8">You need to be part of a team (workspace) to create a board.</p>
+          <button 
+            onClick={handleClose}
+            className="btn btn-primary w-full !h-14 !rounded-2xl font-black uppercase tracking-widest text-xs"
+          >
+            Got it
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[9999] flex items-center justify-center p-6 animate-in fade-in duration-300">
@@ -151,7 +203,26 @@ const CreateBoardModal = () => {
 
           <div className="mb-12 relative">
             <h2 className="text-4xl font-black text-text-primary tracking-tighter mb-4">Create board</h2>
-            <p className="text-text-secondary leading-relaxed font-medium">A board is where you and your team visualize your workflow, from initial idea to successful shipment.</p>
+            {selectedTemplate ? (
+              <div className="flex items-center gap-3 p-4 bg-brand-primary/5 border border-brand-primary/20 rounded-2xl animate-in slide-in-from-left-4 duration-500">
+                <div className={`p-2 rounded-xl scale-75 ${selectedTemplate.color} text-white`}>
+                  {selectedTemplate.icon ? <selectedTemplate.icon size={20} /> : <Layout size={20} />}
+                </div>
+                <div className="flex-1">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary mb-0.5">Applied Blueprint</p>
+                  <p className="text-xs font-bold text-text-primary">{selectedTemplate.name}</p>
+                </div>
+                <button 
+                  type="button" 
+                  onClick={() => setSelectedTemplate(null)}
+                  className="p-2 text-text-tertiary hover:text-danger"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ) : (
+              <p className="text-text-secondary leading-relaxed font-medium">A board is where you and your team visualize your workflow, from initial idea to successful shipment.</p>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8 relative">
