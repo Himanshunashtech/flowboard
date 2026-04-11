@@ -113,22 +113,28 @@ const CardItem = ({ card, index, onClick, isSelected, stylePreset = 'modern' }) 
                 </button>
               </div>
 
-              {/* Labels & Priority Area */}
-              <div className="flex flex-wrap items-center gap-2 mb-4">
-                {priority.label && (
-                   <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm border border-current/10 ${priority.bg} ${priority.color}`}>
-                     {priority.label}
-                   </span>
-                )}
-                {cardLabels.map(label => (
-                  <span 
-                    key={label.id}
-                    className="px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest bg-bg-tertiary text-text-secondary border border-border-medium hover:bg-white transition-colors"
-                  >
-                    {label.name}
+              {/* Labels Area (Small color bars at top) */}
+              {cardLabels.length > 0 && (
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {cardLabels.map(label => (
+                    <div 
+                      key={label.id}
+                      className="h-2 w-10 rounded-full shadow-sm ring-1 ring-black/5"
+                      style={{ backgroundColor: label.color }}
+                      title={label.name}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Priority Pill */}
+              {priority.label && (
+                <div className="mb-4">
+                  <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm border border-current/10 ${priority.bg} ${priority.color}`}>
+                    {priority.label}
                   </span>
-                ))}
-              </div>
+                </div>
+              )}
 
               {/* Enhanced Checklist & Meta Section */}
               {totalItems > 0 && (
@@ -151,17 +157,34 @@ const CardItem = ({ card, index, onClick, isSelected, stylePreset = 'modern' }) 
 
               {/* Card Footer: Metadata (Comments, Date, Assignees) */}
               <div className="flex items-center justify-between pt-2 border-t border-border-light">
-                <div className="flex items-center gap-3 text-[10px] font-bold text-text-tertiary">
+                <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold text-text-tertiary">
                   {dueDateObj && (
-                    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all ${isOverdue && !card.is_completed ? 'bg-red-50 text-red-600' : 'bg-bg-secondary text-text-secondary'}`}>
+                    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all ${isOverdue && !card.is_completed ? 'bg-red-50 text-red-600' : 'bg-bg-secondary text-text-secondary'}`} title="Due date">
                       <Clock size={12} />
                       <span className="tabular-nums tracking-widest uppercase">{dueDateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
                     </div>
                   )}
+                  {card.description_text && (
+                    <div className="flex items-center gap-1 opacity-60" title="Has description">
+                      <Circle size={10} className="fill-brand-primary text-brand-primary" />
+                    </div>
+                  )}
+                  {card.attachments?.length > 0 && (
+                    <div className="flex items-center gap-1 hover:text-brand-primary transition-colors cursor-help" title={`${card.attachments.length} attachment(s)`}>
+                      <Paperclip size={12} />
+                      <span className="tabular-nums">{card.attachments.length}</span>
+                    </div>
+                  )}
                   {card.comments?.length > 0 && (
-                    <div className="flex items-center gap-1 hover:text-brand-primary transition-colors">
+                    <div className="flex items-center gap-1 hover:text-brand-primary transition-colors cursor-help" title={`${card.comments.length} comment(s)`}>
                       <MessageSquare size={12} />
                       <span className="tabular-nums">{card.comments.length}</span>
+                    </div>
+                  )}
+                  {card.time_entries?.some(t => !t.ended_at) && (
+                    <div className="flex items-center gap-1 text-brand-primary animate-pulse" title="Timer is running">
+                      <Clock size={12} className="fill-brand-primary/20" />
+                      <span className="text-[9px] font-black uppercase tracking-widest">Live</span>
                     </div>
                   )}
                 </div>

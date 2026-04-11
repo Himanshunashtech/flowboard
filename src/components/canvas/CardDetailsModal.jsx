@@ -9,7 +9,7 @@ import {
   Sparkles, AlertCircle, CheckCircle2, Palette, Loader2, ExternalLink
 } from 'lucide-react';
 import { toggleModal, setActiveCardId } from '../../store/slices/uiSlice';
-import { updateCard } from '../../store/slices/boardSlice';
+import { updateCard, setLabels } from '../../store/slices/boardSlice';
 import { supabase, getBoardChannel } from '../../lib/supabase';
 import { throttle } from '../../lib/utils';
 import { compressImage } from '../../lib/imageUtils';
@@ -17,6 +17,8 @@ import RichTextEditor from '../ui/RichTextEditor';
 import { format, isPast, formatDistanceToNow } from 'date-fns';
 import CardActivityList from './CardActivityList';
 import CardGithubModule from '../board/CardGithubModule';
+import LabelsPopover from './LabelsPopover';
+import EditLabelPopover from './EditLabelPopover';
 
 // ─── Priority Config ──────────────────────────────────────────────────────────
 const PRIORITY_CONFIG = {
@@ -28,7 +30,7 @@ const PRIORITY_CONFIG = {
 };
 
 // ─── Timer Hook ───────────────────────────────────────────────────────────────
-function useTimer(cardId, userId, onStop) {
+function useTimer(cardId, userId, onStart, onStop) {
   const [running, setRunning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [activeEntry, setActiveEntry] = useState(null);
@@ -69,7 +71,11 @@ function useTimer(cardId, userId, onStop) {
       .from('time_entries')
       .insert({ card_id: cardId, user_id: userId, started_at: new Date().toISOString() })
       .select().single();
-    if (data) { setActiveEntry(data); setRunning(true); }
+    if (data) { 
+      setActiveEntry(data); 
+      setRunning(true); 
+      if (onStart) onStart(data);
+    }
   };
 
   const stop = async () => {
@@ -162,10 +168,26 @@ const CardDetailsModal = () => {
   const [commentText, setCommentText] = useState('');
   const [commentDraft, setCommentDraft] = useState(null);
   const [timeEntries, setTimeEntries] = useState([]);
+  
+  // Label management state
+  const [labelSubView, setLabelSubView] = useState('list'); // 'list', 'create', 'edit'
+  const [editingLabel, setEditingLabel] = useState(null);
 
-  const timer = useTimer(card?.id, user?.id, (newEntry) => {
-    setTimeEntries(prev => [newEntry, ...prev]);
-  });
+  const timer = useTimer(card?.id, user?.id, 
+    (newEntry) => {
+      // Update board store for real-time icon
+      const newEntries = [...(card.time_entries || []), newEntry];
+      dispatch(updateCard({ id: card.id, time_entries: newEntries }));
+    },
+    (stoppedEntry) => {
+      setTimeEntries(prev => [stoppedEntry, ...prev]);
+      // Update board store (mark all as ended or just update the one)
+      const newEntries = (card.time_entries || []).map(t => 
+        t.id === stoppedEntry.id ? stoppedEntry : t
+      );
+      dispatch(updateCard({ id: card.id, time_entries: newEntries }));
+    }
+  );
 
   const fileInputRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -221,6 +243,10 @@ const CardDetailsModal = () => {
       if (attachError) throw attachError;
 
       setAttachments(prev => [attachment, ...prev]);
+      
+      // Update board store to reflect count on card item immediately
+      const newAttachments = [...(card.attachments || []), attachment];
+      dispatch(updateCard({ id: card.id, attachments: newAttachments }));
     } catch (err) {
       console.error('Upload failed:', err);
       alert('Failed to upload attachment.');
@@ -239,6 +265,10 @@ const CardDetailsModal = () => {
     const { error } = await supabase.from('attachments').delete().eq('id', id);
     if (!error) {
       setAttachments(prev => prev.filter(a => a.id !== id));
+      
+      // Update board store
+      const newAttachments = (card.attachments || []).filter(a => a.id !== id);
+      dispatch(updateCard({ id: card.id, attachments: newAttachments }));
     }
   };
 
@@ -345,9 +375,53 @@ const CardDetailsModal = () => {
     if (cardLabels.includes(labelId)) {
       await supabase.from('card_labels').delete().eq('card_id', card.id).eq('label_id', labelId);
       setCardLabels(prev => prev.filter(id => id !== labelId));
+      
+      // Update store for real-time consistency on card item
+      const newLabels = card.card_labels?.filter(cl => cl.label_id !== labelId) || [];
+      dispatch(updateCard({ id: card.id, card_labels: newLabels }));
     } else {
       await supabase.from('card_labels').insert({ card_id: card.id, label_id: labelId });
       setCardLabels(prev => [...prev, labelId]);
+      
+      // Update store
+      const newLabels = [...(card.card_labels || []), { label_id: labelId }];
+      dispatch(updateCard({ id: card.id, card_labels: newLabels }));
+    }
+  };
+
+  const saveLabel = async (labelData) => {
+    if (labelData.id) {
+      // Update
+      const { data, error } = await supabase.from('labels')
+        .update({ name: labelData.name, color: labelData.color })
+        .eq('id', labelData.id)
+        .select()
+        .single();
+      if (!error && data) {
+         // Update Redux labels
+         const newLabels = (labels || []).map(l => l.id === data.id ? data : l);
+         dispatch(setLabels(newLabels));
+         setLabelSubView('list');
+      }
+    } else {
+      // Create
+      const { data, error } = await supabase.from('labels')
+        .insert({ board_id: card.board_id, name: labelData.name, color: labelData.color })
+        .select()
+        .single();
+      if (!error && data) {
+         dispatch(setLabels([...(labels || []), data]));
+         setLabelSubView('list');
+      }
+    }
+  };
+
+  const deleteLabel = async (labelId) => {
+    const { error } = await supabase.from('labels').delete().eq('id', labelId);
+    if (!error) {
+      dispatch(setLabels((labels || []).filter(l => l.id !== labelId)));
+      setCardLabels(prev => prev.filter(id => id !== labelId));
+      setLabelSubView('list');
     }
   };
 
@@ -450,6 +524,10 @@ const CardDetailsModal = () => {
     if (data) {
       setComments(prev => [...prev, data]);
       setCommentText('');
+      
+      // Update board store
+      const newComments = [...(card.comments || []), data];
+      dispatch(updateCard({ id: card.id, comments: newComments }));
     }
   };
 
@@ -657,28 +735,33 @@ const CardDetailsModal = () => {
               )}
             </AnimatePresence>
 
-            {/* Label Panel */}
+            {/* Label Panel (New Popover Style) */}
             <AnimatePresence>
               {showLabelPanel && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden py-4 border-b border-gray-100">
-                   <div className="flex items-center justify-between mb-3 px-1">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Manage Labels</p>
-                    <button onClick={() => setShowLabelPanel(false)} className="text-text-tertiary hover:text-text-primary"><X size={14}/></button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {labels?.map(l => {
-                      const active = cardLabels.includes(l.id);
-                      return (
-                        <button key={l.id} onClick={() => toggleLabel(l.id)}
-                          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all border-2 ${active ? 'shadow-lg scale-105' : 'opacity-60 hover:opacity-100'}`}
-                          style={{ backgroundColor: active ? l.color : l.color + '15', color: active ? 'white' : l.color, borderColor: l.color }}>
-                          <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${active ? 'bg-white' : ''}`} style={{ backgroundColor: active ? 'none' : l.color }} />
-                          {l.name}
-                          {active && <Check size={12} className="ml-1" />}
-                        </button>
-                      );
-                    })}
-                  </div>
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95, y: -20 }} 
+                  animate={{ opacity: 1, scale: 1, y: 0 }} 
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }} 
+                  className="absolute left-40 top-48 z-[210]"
+                >
+                  {labelSubView === 'list' ? (
+                    <LabelsPopover 
+                      labels={labels}
+                      cardLabels={cardLabels}
+                      onToggleLabel={toggleLabel}
+                      onEditLabel={(l) => { setEditingLabel(l); setLabelSubView('edit'); }}
+                      onCreateNewLabel={() => { setEditingLabel(null); setLabelSubView('create'); }}
+                      onClose={() => setShowLabelPanel(false)}
+                    />
+                  ) : (
+                    <EditLabelPopover 
+                      label={editingLabel}
+                      onSave={saveLabel}
+                      onDelete={() => deleteLabel(editingLabel?.id)}
+                      onBack={() => setLabelSubView('list')}
+                      onClose={() => setShowLabelPanel(false)}
+                    />
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>

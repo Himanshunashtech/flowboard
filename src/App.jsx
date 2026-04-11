@@ -14,6 +14,7 @@ import ClientPortal from './pages/ClientPortal';
 import OnboardingPage from './pages/OnboardingPage';
 import SettingsPage from './pages/SettingsPage';
 import TeamPage from './pages/TeamPage';
+import ScrollToTop from './components/utils/ScrollToTop';
 
 // Marketing Pages
 import FeaturesPage from './pages/marketing/FeaturesPage';
@@ -117,6 +118,7 @@ function App() {
 
   return (
     <Router>
+      <ScrollToTop />
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={!user ? <AuthPage type="login" /> : <Navigate to="/dashboard" />} />
@@ -126,7 +128,7 @@ function App() {
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/w/:workspaceSlug" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/w/:workspaceSlug/team" element={<ProtectedRoute><TeamPage /></ProtectedRoute>} />
-        <Route path="/w/:workspaceSlug/b/:boardId" element={<ProtectedRoute><BoardPage /></ProtectedRoute>} />
+        <Route path="/w/:workspaceSlug/b/:boardId" element={<BoardPage />} />
         <Route path="/automations" element={<ProtectedRoute><AutomationBuilder /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 

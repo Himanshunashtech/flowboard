@@ -58,16 +58,27 @@ const AutomationLogs = ({ automationId }) => {
 };
 
 const AutomationBuilder = () => {
-  const { activeBoard } = useSelector((state) => state.board);
+  const { activeBoard, lists } = useSelector((state) => state.board);
   const { user } = useSelector((state) => state.auth);
   const [automations, setAutomations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [expandedLogs, setExpandedLogs] = useState({});
+  const [newProtocol, setNewProtocol] = useState({
+    name: '',
+    trigger: 'CARD_CREATED',
+    action: 'NOTIFY_USER',
+    targetListId: ''
+  });
 
   useEffect(() => {
-    if (activeBoard) fetchAutomations();
-  }, [activeBoard]);
+    if (activeBoard) {
+      fetchAutomations();
+      if (lists?.length > 0) {
+        setNewProtocol(prev => ({ ...prev, targetListId: lists[0].id }));
+      }
+    }
+  }, [activeBoard, lists]);
 
   const fetchAutomations = async () => {
     setLoading(true);
@@ -280,59 +291,114 @@ const AutomationBuilder = () => {
                 <div className="space-y-8">
                   <div className="space-y-3">
                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary ml-1">Protocol Name</label>
-                    <input className="w-full h-14 bg-bg-secondary border-none rounded-2xl px-6 font-bold text-text-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/5 transition-all outline-none" placeholder="e.g. Priority Auto-Escalation" id="rule-name" />
+                    <input 
+                      className="w-full h-14 bg-bg-secondary border-none rounded-2xl px-6 font-bold text-text-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/5 transition-all outline-none" 
+                      placeholder="e.g. Morning Ritual: Daily Review" 
+                      value={newProtocol.name}
+                      onChange={e => setNewProtocol({ ...newProtocol, name: e.target.value })}
+                    />
                   </div>
                   
                   <div className="grid grid-cols-2 gap-6">
                      <div className="space-y-3">
                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary ml-1">Trigger Event</label>
-                        <select className="w-full h-14 bg-bg-secondary border-none rounded-2xl px-6 font-bold text-xs appearance-none focus:bg-white focus:ring-4 focus:ring-brand-primary/5 transition-all outline-none" id="rule-trigger">
-                          <option value="CARD_CREATED">Task Created</option>
-                          <option value="CARD_MOVED_TO_LIST">Moved To List</option>
-                          <option value="CARD_ARCHIVED">Task Archived</option>
-                          <option value="LABEL_ADDED">Label Applied</option>
+                        <select 
+                          className="w-full h-14 bg-bg-secondary border-none rounded-2xl px-6 font-bold text-xs appearance-none focus:bg-white focus:ring-4 focus:ring-brand-primary/5 transition-all outline-none"
+                          value={newProtocol.trigger}
+                          onChange={e => setNewProtocol({ ...newProtocol, trigger: e.target.value })}
+                        >
+                          <optgroup label="Task Life Cycle">
+                            <option value="CARD_CREATED">Task Created</option>
+                            <option value="CARD_MOVED_TO_LIST">Moved To List</option>
+                            <option value="CARD_ARCHIVED">Task Archived</option>
+                            <option value="LABEL_ADDED">Label Applied</option>
+                          </optgroup>
+                          <optgroup label="GitHub Events">
+                            <option value="GITHUB_PR_OPENED">GitHub: PR Opened</option>
+                            <option value="GITHUB_PR_MERGED">GitHub: PR Merged</option>
+                            <option value="GITHUB_ISSUE_CLOSED">GitHub: Issue Closed</option>
+                          </optgroup>
+                          <optgroup label="Ritual Intervals">
+                            <option value="SCHEDULE_DAILY">Daily Ritual (Morning)</option>
+                            <option value="SCHEDULE_WEEKLY">Weekly Ritual (Monday)</option>
+                          </optgroup>
                         </select>
                      </div>
                      <div className="space-y-3">
                         <label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary ml-1">System Action</label>
-                        <select className="w-full h-14 bg-bg-secondary border-none rounded-2xl px-6 font-bold text-xs appearance-none focus:bg-white focus:ring-4 focus:ring-brand-primary/5 transition-all outline-none" id="rule-action">
+                        <select 
+                          className="w-full h-14 bg-bg-secondary border-none rounded-2xl px-6 font-bold text-xs appearance-none focus:bg-white focus:ring-4 focus:ring-brand-primary/5 transition-all outline-none"
+                          value={newProtocol.action}
+                          onChange={e => setNewProtocol({ ...newProtocol, action: e.target.value })}
+                        >
                           <option value="NOTIFY_USER">Notify Assignee</option>
                           <option value="ASSIGN_TAG">Apply Tag</option>
                           <option value="ARCHIVE">Archive Protocol</option>
                           <option value="SET_PRIORITY">Set Priority</option>
+                          <option value="CREATE_CARD">Create Recurring Task</option>
                         </select>
                      </div>
                   </div>
 
+                  {newProtocol.action === 'CREATE_CARD' && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      className="space-y-3 p-6 bg-white border border-border-light rounded-[32px] shadow-inner"
+                    >
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary ml-1">Target List for New Tasks</label>
+                      <select 
+                        className="w-full h-12 bg-bg-secondary border-none rounded-xl px-4 font-bold text-xs outline-none"
+                        value={newProtocol.targetListId}
+                        onChange={e => setNewProtocol({ ...newProtocol, targetListId: e.target.value })}
+                      >
+                        {lists.map(list => (
+                          <option key={list.id} value={list.id}>{list.title}</option>
+                        ))}
+                      </select>
+                    </motion.div>
+                  )}
+
                   <div className="p-6 bg-brand-primary/5 rounded-[32px] border border-brand-primary/10">
                      <p className="text-[10px] text-brand-primary font-black uppercase tracking-widest mb-2 flex items-center gap-2">
                         <AlertCircle size={14} />
-                        Engineering Note
+                        Protocol Validation
                      </p>
                      <p className="text-[11px] text-text-secondary leading-relaxed font-bold">
-                        This protocol will execute instantly across all board members. Ensure terminal conditions are set correctly to avoid infinite execution loops.
+                        {newProtocol.trigger.startsWith('SCHEDULE') 
+                          ? "This protocol will run automatically every morning (UTC). Ensure the target list is active."
+                          : "This protocol will execute instantly across all board members. Ensure terminal conditions are set correctly."}
                      </p>
                   </div>
 
                   <button 
                     onClick={async () => {
-                      const name = document.getElementById('rule-name').value;
-                      const trigger = document.getElementById('rule-trigger').value;
-                      const action = document.getElementById('rule-action').value;
-                      if (!name) return;
+                      if (!newProtocol.name) return;
                       
+                      const actionConfig = {};
+                      if (newProtocol.action === 'CREATE_CARD') {
+                        actionConfig.list_id = newProtocol.targetListId;
+                        actionConfig.title = newProtocol.name; // Use protocol name as task title by default
+                      }
+
                       const { data } = await supabase.from('automations').insert({
                         board_id: activeBoard.id,
                         created_by: user.id,
-                        name: name,
-                        trigger_type: trigger,
-                        actions: [{ type: action, config: {} }],
+                        name: newProtocol.name,
+                        trigger_type: newProtocol.trigger,
+                        actions: [{ type: newProtocol.action, config: actionConfig }],
                         is_enabled: true
                       }).select().single();
                       
                       if (data) {
                         setAutomations([data, ...automations]);
                         setIsCreating(false);
+                        setNewProtocol({
+                          name: '',
+                          trigger: 'CARD_CREATED',
+                          action: 'NOTIFY_USER',
+                          targetListId: lists?.[0]?.id || ''
+                        });
                       }
                     }}
                     className="w-full h-16 bg-brand-primary text-white rounded-[24px] font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-brand-primary/30 hover:scale-[1.02] active:scale-95 transition-all"

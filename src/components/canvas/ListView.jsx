@@ -22,7 +22,7 @@ const LIST_COLORS = [
   { name: 'Gray',   value: '#838c91' }
 ];
 
-const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', cardStyle = 'modern' }) => {
+const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', cardStyle = 'modern', isReadOnly = false }) => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { members } = useSelector((state) => state.board);
@@ -141,7 +141,7 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
 
   return (
     <div 
-      className={`list-container w-96 shrink-0 ${getListStyleClasses()} rounded-[40px] flex flex-col h-full snap-center border relative animate-in fade-in slide-in-from-bottom-2 duration-500 overflow-hidden`}
+      className={`list-container w-96 shrink-0 ${getListStyleClasses()} rounded-[28px] flex flex-col h-full snap-center border relative animate-in fade-in slide-in-from-bottom-2 duration-500 overflow-hidden`}
       style={{ 
         backgroundColor: list.color ? `${list.color}26` : undefined, // 15% opacity
         borderTop: list.color ? `4px solid ${list.color}` : '1px solid transparent',
@@ -172,20 +172,22 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
              <span className="text-[10px] font-black text-text-tertiary opacity-40">
                {cards.length}
              </span>
-             <div className="flex items-center gap-1 opacity-0 group-hover/title:opacity-100 transition-opacity">
-                <button
-                  onClick={() => setShowPeoplePanel(p => !p)}
-                  className={`p-1.5 rounded-lg transition-all ${showPeoplePanel ? 'bg-brand-primary/10 text-brand-primary' : 'text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary'}`}
-                >
-                  <UserPlus size={14} />
-                </button>
-                <button 
-                  onClick={() => setShowMenu(p => !p)}
-                  className={`p-1.5 rounded-lg transition-all ${showMenu ? 'bg-bg-tertiary text-text-primary' : 'text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary'}`}
-                >
-                  <MoreHorizontal size={16} />
-                </button>
-             </div>
+             {!isReadOnly && (
+               <div className="flex items-center gap-1 opacity-0 group-hover/title:opacity-100 transition-opacity">
+                  <button
+                    onClick={() => setShowPeoplePanel(p => !p)}
+                    className={`p-1.5 rounded-lg transition-all ${showPeoplePanel ? 'bg-brand-primary/10 text-brand-primary' : 'text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary'}`}
+                  >
+                    <UserPlus size={14} />
+                  </button>
+                  <button 
+                    onClick={() => setShowMenu(p => !p)}
+                    className={`p-1.5 rounded-lg transition-all ${showMenu ? 'bg-bg-tertiary text-text-primary' : 'text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary'}`}
+                  >
+                    <MoreHorizontal size={16} />
+                  </button>
+               </div>
+             )}
           </div>
         </div>
       </div>
@@ -305,7 +307,7 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`flex-1 overflow-y-auto px-3 py-1 min-h-[50px] transition-colors ${snapshot.isDraggingOver ? 'bg-brand-primary/5 rounded-2xl' : ''}`}
+            className={`flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-3 min-h-[50px] transition-colors ${snapshot.isDraggingOver ? 'bg-brand-primary/5 rounded-2xl' : ''}`}
           >
             {cards.map((card, index) => (
               <CardItem 
@@ -323,48 +325,50 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
       </Droppable>
 
       {/* Add Card */}
-      <div className="p-3">
-        {isAdding ? (
-          <form onSubmit={handleAddCard} className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
-            <textarea
-              autoFocus
-              placeholder="What needs to be done?"
-              className="w-full p-3 bg-white border border-border-medium rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-brand-primary/10 outline-none resize-none"
-              rows={3}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddCard(e); }
-                if (e.key === 'Escape') setIsAdding(false);
-              }}
-            />
-            <div className="flex items-center gap-2">
-              <button
-                type="submit"
-                disabled={!title || loading}
-                className="btn btn-primary !h-9 !px-4 !text-xs !rounded-lg"
-              >
-                {loading ? 'Adding...' : 'Add Card'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsAdding(false)}
-                className="p-2 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary rounded-lg transition-all"
-              >
-                <X size={16} />
-              </button>
-            </div>
-          </form>
-        ) : (
-          <button
-            onClick={() => setIsAdding(true)}
-            className="w-full flex items-center gap-2 px-3 py-2 text-sm font-bold text-text-secondary hover:bg-bg-tertiary hover:text-brand-primary rounded-xl transition-all group"
-          >
-            <Plus size={16} className="text-text-tertiary group-hover:text-brand-primary" />
-            <span>Add a card</span>
-          </button>
-        )}
-      </div>
+      {!isReadOnly && (
+        <div className="p-3">
+          {isAdding ? (
+            <form onSubmit={handleAddCard} className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+              <textarea
+                autoFocus
+                placeholder="What needs to be done?"
+                className="w-full p-3 bg-white border border-border-medium rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-brand-primary/10 outline-none resize-none"
+                rows={3}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddCard(e); }
+                  if (e.key === 'Escape') setIsAdding(false);
+                }}
+              />
+              <div className="flex items-center gap-2">
+                <button
+                  type="submit"
+                  disabled={!title || loading}
+                  className="btn btn-primary !h-9 !px-4 !text-xs !rounded-lg"
+                >
+                  {loading ? 'Adding...' : 'Add Card'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsAdding(false)}
+                  className="p-2 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary rounded-lg transition-all"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </form>
+          ) : (
+            <button
+              onClick={() => setIsAdding(true)}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm font-bold text-text-secondary hover:bg-bg-tertiary hover:text-brand-primary rounded-xl transition-all group"
+            >
+              <Plus size={16} className="text-text-tertiary group-hover:text-brand-primary" />
+              <span>Add a card</span>
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

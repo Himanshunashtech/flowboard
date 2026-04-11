@@ -11,7 +11,8 @@ import {
   Link as LinkIcon, 
   Star,
   Settings2,
-  X
+  X,
+  Calculator
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
@@ -23,6 +24,7 @@ const FIELD_TYPES = [
   { id: 'CHECKBOX', label: 'Checkbox', icon: CheckSquare, desc: 'Yes/No toggle' },
   { id: 'URL', label: 'URL', icon: LinkIcon, desc: 'Clickable link' },
   { id: 'RATING', label: 'Rating', icon: Star, desc: 'Star rating (1-5)' },
+  { id: 'FORMULA', label: 'Formula', icon: Calculator, desc: 'Calculated field' },
 ];
 
 const BoardCustomFields = ({ boardId }) => {
@@ -30,6 +32,7 @@ const BoardCustomFields = ({ boardId }) => {
   const [showAdd, setShowAdd] = useState(false);
   const [newFieldName, setNewFieldName] = useState('');
   const [newFieldType, setNewFieldType] = useState('TEXT');
+  const [newFormula, setNewFormula] = useState('{{priority_score}} * 10');
 
   useEffect(() => {
     fetchFields();
@@ -52,6 +55,7 @@ const BoardCustomFields = ({ boardId }) => {
         board_id: boardId,
         name: newFieldName,
         type: newFieldType,
+        options: newFieldType === 'FORMULA' ? { formula: newFormula } : null,
         position: fields.length
       })
       .select()
@@ -60,6 +64,7 @@ const BoardCustomFields = ({ boardId }) => {
     if (data) {
       setFields([...fields, data]);
       setNewFieldName('');
+      setNewFormula('{{priority_score}} * 10');
       setShowAdd(false);
     }
   };
@@ -161,6 +166,34 @@ const BoardCustomFields = ({ boardId }) => {
                     ))}
                   </div>
                 </div>
+
+                {newFieldType === 'FORMULA' && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-text-tertiary ml-1 leading-relaxed">
+                      Logic Formula
+                    </label>
+                    <div className="bg-bg-secondary p-4 rounded-2xl space-y-3">
+                      <textarea 
+                        value={newFormula}
+                        onChange={e => setNewFormula(e.target.value)}
+                        className="w-full bg-transparent border-none outline-none font-mono text-[11px] text-brand-primary placeholder:text-text-tertiary"
+                        rows={2}
+                        placeholder="e.g. {{days_left}} + 1"
+                      />
+                      <div className="pt-3 border-t border-border-light flex flex-wrap gap-1.5">
+                        {['{{days_left}}', '{{priority_score}}', '{{checklist_pct}}'].map(token => (
+                          <button 
+                            key={token}
+                            onClick={() => setNewFormula(prev => prev + ' ' + token)}
+                            className="px-2 py-1 bg-white border border-border-light rounded-lg text-[8px] font-black text-text-tertiary hover:border-brand-primary hover:text-brand-primary transition-all"
+                          >
+                            {token}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <button 

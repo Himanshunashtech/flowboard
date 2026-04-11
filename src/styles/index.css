@@ -57,3 +57,36 @@
     @apply flex-1 overflow-x-auto overflow-y-hidden p-6 flex gap-5 scroll-smooth snap-x snap-mandatory cursor-grab active:cursor-grabbing transition-colors duration-200;
   }
 }
+
+/* Print Styles */
+@media print {
+  nav, aside, header .flex.items-center.gap-3:last-child, 
+  button, .btn, .no-print {
+    display: none !important;
+  }
+
+  body, .flex-1 {
+    overflow: visible !important;
+    background: white !important;
+  }
+
+  .canvas {
+    display: block !important;
+    overflow: visible !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .list-container {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    margin-bottom: 40px;
+    border: 1px solid #eee !important;
+    box-shadow: none !important;
+  }
+
+  header h2 {
+    font-size: 24pt !important;
+    margin-bottom: 20px !important;
+  }
+}

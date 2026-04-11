@@ -166,12 +166,10 @@ const Dashboard = () => {
               <section>
                 <div className="flex items-center justify-between mb-10">
                   <h2 className="text-xs font-black text-text-tertiary uppercase tracking-[0.3em]">Your Teams</h2>
-                  <button 
-                    onClick={() => dispatch(toggleModal({ modalName: 'workspaceSettings', isOpen: true }))}
-                    className="text-xs font-black text-brand-primary uppercase tracking-widest hover:underline"
-                  >
-                    Manage
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse" />
+                    <span className="text-[10px] font-black uppercase text-brand-primary tracking-widest">Active Ops</span>
+                  </div>
                 </div>
 
                 <div className="space-y-6">
@@ -198,28 +196,28 @@ const Dashboard = () => {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-6">
-                        <div className="flex -space-x-3">
-                          {ws.workspace_members?.slice(0, 4).map((member, i) => (
-                            <div
-                              key={member.user_id}
-                              className="w-10 h-10 rounded-full border-4 border-white bg-bg-tertiary overflow-hidden shadow-sm group-hover:scale-110 transition-transform flex items-center justify-center"
-                              title={member.profiles?.full_name}
-                              style={{ transitionDelay: `${i * 100}ms` }}
-                            >
-                               {member.profiles?.avatar_url ? (
-                                 <img src={member.profiles.avatar_url} alt="" className="w-full h-full object-cover" />
-                               ) : (
-                                 <span className="text-[10px] font-black">{member.profiles?.full_name?.[0].toUpperCase()}</span>
-                               )}
-                            </div>
-                          ))}
-                          {ws.workspace_members?.length > 4 && (
-                            <div className="w-10 h-10 rounded-full border-4 border-white bg-bg-secondary flex items-center justify-center text-[10px] font-black text-text-tertiary shadow-sm">
-                              +{ws.workspace_members.length - 4}
-                            </div>
-                          )}
-                        </div>
+                      <div className="flex items-center gap-4">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            dispatch(setActiveWorkspace(ws));
+                            dispatch(toggleModal({ modalName: 'workspaceSettings', isOpen: true, data: { tab: 'members' } }));
+                          }}
+                          className="w-12 h-12 rounded-2xl bg-bg-secondary flex items-center justify-center text-text-tertiary hover:bg-indigo-50 hover:text-indigo-600 transition-all group/team"
+                          title="Team Directory"
+                        >
+                          <Users size={20} className="group-hover/team:scale-110 transition-transform" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            dispatch(setActiveWorkspace(ws));
+                            dispatch(toggleModal({ modalName: 'workspaceSettings', isOpen: true }));
+                          }}
+                          className="w-12 h-12 rounded-2xl bg-bg-secondary flex items-center justify-center text-text-tertiary hover:bg-brand-primary/10 hover:text-brand-primary transition-all group/settings"
+                        >
+                          <Settings size={20} className="group-hover/settings:rotate-90 transition-transform duration-500" />
+                        </button>
                         <div className="w-12 h-12 rounded-2xl bg-bg-secondary flex items-center justify-center text-text-tertiary group-hover:bg-brand-primary group-hover:text-white transition-all">
                           <ArrowRight size={20} />
                         </div>

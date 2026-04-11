@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, HelpCircle, ChevronDown } from 'lucide-react';
+import { Search, HelpCircle, ChevronDown, Users2 } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import NotificationDropdown from './ui/NotificationDropdown';
@@ -26,6 +26,16 @@ const Header = ({ onOpenSearch }) => {
       </div>
 
       <div className="flex items-center gap-4">
+        <button 
+          className="p-2.5 text-text-tertiary hover:bg-indigo-50 hover:text-indigo-600 rounded-xl transition-all" 
+          title="Team Hub"
+          onClick={() => {
+             // We'll trust the modal to pull the active workspace
+             dispatch(toggleModal({ modalName: 'workspaceSettings', isOpen: true, data: { tab: 'members' } }));
+          }}
+        >
+          <Users2 size={20} />
+        </button>
         <button className="p-2.5 text-text-tertiary hover:bg-bg-secondary hover:text-text-primary rounded-xl transition-all" title="Help & Documentation">
           <HelpCircle size={20} />
         </button>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Zap } from 'lucide-react';
+import { Zap, Github, Mail } from 'lucide-react';
 
 const MarketingFooter = () => {
   return (
@@ -22,6 +22,7 @@ const MarketingFooter = () => {
             <li><Link to="/help" className="hover:text-brand-primary transition-colors">Help Center</Link></li>
             <li><Link to="/community" className="hover:text-brand-primary transition-colors">Community</Link></li>
             <li><Link to="/guides" className="hover:text-brand-primary transition-colors">Guides</Link></li>
+            <li><Link to="/contact" className="hover:text-brand-primary transition-colors text-brand-primary font-black">Contact Support</Link></li>
           </ul>
         </div>
         <div className="space-y-6">
@@ -51,7 +52,11 @@ const MarketingFooter = () => {
           © 2026 FlowBoard Inc. Made with <Zap size={10} className="inline fill-current text-warning" /> for high-performance teams.
         </div>
         <div className="flex gap-6 text-text-tertiary">
-           {/* Social icons Placeholder */}
+           <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="hover:text-brand-primary transition-colors"><Github size={20} /></a>
+           <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="hover:text-brand-primary transition-colors hover:scale-110 transition-transform">
+             <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+           </a>
+           <Link to="/contact" className="hover:text-brand-primary transition-colors"><Mail size={20} /></Link>
         </div>
       </div>
     </footer>

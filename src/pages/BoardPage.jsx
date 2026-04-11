@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { DragDropContext, Droppable } from '@hello-pangea/dnd';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,8 +18,12 @@ import {
   Star, 
   Settings, 
   BarChart3, 
-  Clock 
+  Clock,
+  ArrowRightCircle,
+  Shield 
 } from 'lucide-react';
+import BoardSharePopover from '../components/board/BoardSharePopover';
+import JoinWorkspaceModal from '../components/modals/JoinWorkspaceModal';
 import { supabase, getBoardChannel, removeBoardChannel } from '../lib/supabase';
 import {
   setActiveBoard,
@@ -64,7 +68,8 @@ const BoardPage = () => {
   const dispatch = useDispatch();
   const { activeBoard, lists, cards, loading, members, presence, starredBoardIds } = useSelector((state) => state.board);
   const { modals } = useSelector((state) => state.ui);
-  const { user, profile } = useSelector((state) => state.auth);
+  const { user, profile, loading: authLoading } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
   const channelRef = useRef(null);
   const prevPresenceKeys = useRef([]);
   const { pushAction } = useUndoRedo();
@@ -77,6 +82,11 @@ const BoardPage = () => {
   const [showMembersPanel, setShowMembersPanel] = useState(false);
   const [showActivityDrawer, setShowActivityDrawer] = useState(false);
   const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
+  const [showSharePopover, setShowSharePopover] = useState(false);
+  const shareBtnRef = useRef(null);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [targetWorkspace, setTargetWorkspace] = useState(null);
+  const [joining, setJoining] = useState(false);
 
   // --- Drag-to-Scroll Logic ---
   const canvasRef = useRef(null);
@@ -105,19 +115,60 @@ const BoardPage = () => {
     const fetchBoardData = async () => {
       dispatch(setLoading(true));
       
-      const { data: board } = await supabase.from('boards').select('*').eq('id', boardId).single();
-      if (board) dispatch(setActiveBoard(board));
+      const { data: board, error: boardError } = await supabase
+        .from('boards')
+        .select('*, workspace:workspaces(id, name)')
+        .eq('id', boardId)
+        .maybeSingle();
+      
+      // If no board found (could be RLS or invalid ID)
+      if (!board) {
+        if (!user) {
+          navigate('/login');
+          return;
+        }
+        
+        // If logged in but can't see board, check if it exists at all
+        // We'll try a fallback to see if we can get basic info
+        const { data: basic } = await supabase.from('boards').select('id, title, workspace_id').eq('id', boardId).maybeSingle();
+        if (basic) {
+          // If we see basic info but no full data, it's a join opportunity
+          const { data: ws } = await supabase.from('workspaces').select('name').eq('id', basic.workspace_id).maybeSingle();
+          setTargetWorkspace({ id: basic.workspace_id, name: ws?.name });
+          setShowJoinModal(true);
+        } else {
+          // Truly not found or absolutely private
+          dispatch(addNotification({ message: 'Board not found or no access', type: 'error' }));
+          navigate('/dashboard');
+        }
+        dispatch(setLoading(false));
+        return;
+      }
 
-      const { data: listData } = await supabase.from('lists').select('*').eq('board_id', boardId).order('position');
+      // Check membership
+      const { data: memberData } = await supabase.from('board_members').select('*, profiles(*)').eq('board_id', boardId);
+      const isMem = memberData?.some(m => m.user_id === user?.id);
+
+      if (board.visibility === 'PRIVATE' && !isMem && user) {
+        setTargetWorkspace({ id: board.workspace_id, name: board.workspace?.name });
+        setShowJoinModal(true);
+        dispatch(setLoading(false));
+        return;
+      }
+
+      dispatch(setActiveBoard(board));
+      if (memberData) dispatch(setBoardMembers(memberData));
+
+      const { data: listData, error: listError } = await supabase.from('lists').select('*').eq('board_id', boardId).order('position');
+      if (listError) console.error('RLS Error (Lists):', listError);
       if (listData) dispatch(setLists(listData));
 
-      const { data: cardData } = await supabase.from('cards')
-        .select('*, card_labels(label_id), card_assignments(user_id), checklists(checklist_items(id, title, is_completed))')
+      const { data: cardData, error: cardError } = await supabase.from('cards')
+        .select('*, card_labels(label_id), card_assignments(user_id), checklists(checklist_items(id, title, is_completed)), comments(id), attachments(id), time_entries(id, user_id, ended_at)')
         .eq('board_id', boardId).order('position');
+      
+      if (cardError) console.error('RLS Error (Cards):', cardError);
       if (cardData) dispatch(setCards(cardData));
-
-      const { data: memberData } = await supabase.from('board_members').select('*, profiles(*)').eq('board_id', boardId);
-      if (memberData) dispatch(setBoardMembers(memberData));
 
       dispatch(setLoading(false));
     };
@@ -144,6 +195,12 @@ const BoardPage = () => {
           });
           prevPresenceKeys.current = currentKeys.map(k => newState[k][0]?.user?.id).filter(Boolean);
           dispatch(setPresence(cursorMap));
+        })
+        .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+          // Handled by sync
+        })
+        .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+          // Handled by sync
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'cards', filter: `board_id=eq.${boardId}` }, (payload) => {
           if (payload.eventType === 'INSERT') dispatch(addCard(payload.new));
@@ -191,7 +248,7 @@ const BoardPage = () => {
     const { destination, source, draggableId, type } = result;
     if (!destination || (destination.droppableId === source.droppableId && destination.index === source.index)) return;
 
-    if (type === 'card') {
+    if (type === 'card' && !isReadOnly) {
       const cardId = draggableId;
       const newListId = destination.droppableId;
       const newIndex = destination.index;
@@ -212,6 +269,49 @@ const BoardPage = () => {
     }
   };
 
+  const handleAcceptJoin = async () => {
+    if (!targetWorkspace || !user) return;
+    setJoining(true);
+    try {
+      // 1. Join Workspace
+      const { error: wsError } = await supabase.from('workspace_members').insert({
+        workspace_id: targetWorkspace.id,
+        user_id: user.id,
+        role: 'MEMBER'
+      });
+      if (wsError && wsError.code !== '23505') throw wsError; // Ignore if already member
+
+      // 2. Join Board explicitly (if needed for board_members)
+      const { error: boardError } = await supabase.from('board_members').insert({
+        board_id: boardId,
+        user_id: user.id,
+        role: 'MEMBER'
+      });
+      if (boardError && boardError.code !== '23505') throw boardError;
+
+      setShowJoinModal(false);
+      dispatch(addNotification({ message: `Welcome to ${targetWorkspace.name}!`, type: 'success' }));
+      // Reload Board Data
+      window.location.reload(); // Simple reload to refresh everything
+    } catch (err) {
+      console.error('Join Error:', err);
+      dispatch(addNotification({ message: 'Failed to join workspace', type: 'error' }));
+    } finally {
+      setJoining(false);
+    }
+  };
+
+  const isMember = members.some(m => m.user_id === user?.id);
+  const isReadOnly = (activeBoard?.visibility === 'PUBLIC' && !isMember) || (!user);
+
+  const updateVisibility = async (newVisibility) => {
+    const { data, error } = await supabase.from('boards').update({ visibility: newVisibility }).eq('id', boardId).select().single();
+    if (!error && data) {
+      dispatch(setActiveBoard(data));
+      dispatch(addNotification({ message: 'Board visibility updated', type: 'success' }));
+    }
+  };
+
   if (loading && !activeBoard) return <AppLayout><BoardSkeleton /></AppLayout>;
 
   const getBackgroundStyle = () => {
@@ -229,7 +329,7 @@ const BoardPage = () => {
     <AppLayout>
       <div className="flex flex-col h-full overflow-hidden transition-all duration-700" style={getBackgroundStyle()} onMouseMove={handleBoardMouseMove}>
         <LiveCursors />
-        <header className="h-14 border-b border-border-light flex items-center justify-between px-6 bg-white/80 backdrop-blur-md shrink-0">
+        <header className="h-14 border-b border-border-light flex items-center justify-between px-6 bg-white/80 backdrop-blur-md shrink-0 z-[50] relative">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-3 group/star">
               <h2 className="text-2xl font-black text-text-primary tracking-tighter">{activeBoard?.title}</h2>
@@ -255,9 +355,48 @@ const BoardPage = () => {
                 </div>
               ))}
             </div>
+            {isReadOnly && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <Shield size={12} className="text-yellow-600" />
+                <span className="text-[9px] font-black uppercase text-yellow-700 tracking-widest">Read Only Mode</span>
+              </div>
+            )}
+            {!isMember && user && activeBoard?.visibility === 'PUBLIC' && (
+              <button 
+                className="btn btn-primary !h-8 !px-4 !rounded-lg text-[10px] uppercase font-black tracking-widest flex items-center gap-2"
+                onClick={() => dispatch(toggleModal({ modalName: 'memberInvite', isOpen: true }))}
+              >
+                <ArrowRightCircle size={14} />
+                Join Team
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
+             <div className="relative">
+                <button 
+                  ref={shareBtnRef}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${showSharePopover ? 'bg-brand-primary text-white shadow-lg' : 'bg-bg-secondary text-text-tertiary hover:bg-white hover:text-brand-primary border border-border-light'}`}
+                  onClick={() => setShowSharePopover(!showSharePopover)}
+                >
+                  <Share2 size={14} />
+                  <span>Share</span>
+                </button>
+                <AnimatePresence>
+                  {showSharePopover && (
+                    <div className="absolute right-0 top-12 z-[100]">
+                      <BoardSharePopover 
+                         board={activeBoard} 
+                         onClose={() => setShowSharePopover(false)}
+                         onUpdateVisibility={updateVisibility}
+                         members={members}
+                         lists={lists}
+                         cards={cards}
+                      />
+                    </div>
+                  )}
+                </AnimatePresence>
+             </div>
             <div className="flex items-center bg-bg-secondary rounded-xl p-1 shadow-sm border border-border-light/50 font-medium overflow-x-auto max-w-[500px] no-scrollbar">
               {[
                 { id: 'kanban', icon: Kanban, label: 'Board' },
@@ -301,6 +440,7 @@ const BoardPage = () => {
                         selectedIds={selectedCardIds}
                         listStyle={activeBoard?.settings?.list_style || 'solid'}
                         cardStyle={activeBoard?.settings?.card_style || 'modern'}
+                        isReadOnly={isReadOnly}
                       />
                     ))}
                   </div>
@@ -338,6 +478,14 @@ const BoardPage = () => {
         {showActivityDrawer && <ActivitySidePanel isOpen={showActivityDrawer} onClose={() => setShowActivityDrawer(false)} boardId={boardId} />}
         {showSettingsDrawer && <BoardSettingsDrawer isOpen={showSettingsDrawer} onClose={() => setShowSettingsDrawer(false)} board={activeBoard} />}
         {modals.cardDetails && <CardDetailsModal />}
+        {showJoinModal && (
+          <JoinWorkspaceModal 
+            workspaceName={targetWorkspace?.name} 
+            onAccept={handleAcceptJoin}
+            onReject={() => navigate('/dashboard')}
+            loading={joining}
+          />
+        )}
       </div>
     </AppLayout>
   );

@@ -1,13 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { X, Layout, Globe, Lock, Palette } from 'lucide-react';
+import { X, Layout, Globe, Lock, Palette, Sparkles, Check, Users, ChevronRight, Zap, Target } from 'lucide-react';
 import { toggleModal } from '../../store/slices/uiSlice';
 import { setActiveBoard } from '../../store/slices/boardSlice';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import TemplateGallery, { TEMPLATES } from './TemplateGallery';
-import { Sparkles, Check } from 'lucide-react';
-import { useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const CreateBoardModal = () => {
   const navigate = useNavigate();
@@ -19,7 +18,6 @@ const CreateBoardModal = () => {
   const [visibility, setVisibility] = useState('WORKSPACE');
   const [background, setBackground] = useState('#0052CC');
   const [loading, setLoading] = useState(false);
-  const [showTemplates, setShowTemplates] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
 
   useEffect(() => {
@@ -44,6 +42,8 @@ const CreateBoardModal = () => {
     dispatch(toggleModal({ modalName: 'createBoard', isOpen: false }));
   };
 
+  const effectiveWorkspace = activeWorkspace || (workspaces && workspaces[0]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title || loading || !effectiveWorkspace) return;
@@ -51,6 +51,7 @@ const CreateBoardModal = () => {
     setLoading(true);
 
     try {
+      // 1. Create Board
       const { data: board, error } = await supabase
         .from('boards')
         .insert({
@@ -76,7 +77,7 @@ const CreateBoardModal = () => {
 
       if (error) throw error;
 
-      // 2. Provision Lists (either from template or standard)
+      // 2. Provision Lists
       const listBlueprint = selectedTemplate ? selectedTemplate.lists : ['Backlog', 'In Progress', 'Done'];
       
       await Promise.all(listBlueprint.map((ltitle, index) => 
@@ -102,219 +103,194 @@ const CreateBoardModal = () => {
     }
   };
 
-  const handleApplyTemplate = async (template) => {
-    if (loading || !effectiveWorkspace) return;
-    setLoading(true);
-
-    try {
-      // 1. Create Board
-      const { data: board, error } = await supabase
-        .from('boards')
-        .insert({
-          title: `${template.name} - ${effectiveWorkspace.name}`,
-          workspace_id: effectiveWorkspace.id,
-          created_by: user.id,
-          visibility: 'WORKSPACE',
-          background_type: template.background.includes('gradient') ? 'GRADIENT' : 'COLOR',
-          background_value: template.background,
-          settings: {
-            card_covers: true,
-            voting: false,
-            aging: false,
-            list_style: template.listStyle,
-            card_style: template.cardStyle
-          }
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // 2. Provision Lists from Blueprint
-      await Promise.all(template.lists.map((ltitle, index) => 
-        supabase.from('lists').insert({
-          board_id: board.id,
-          title: ltitle,
-          position: `a${index}`
-        })
-      ));
-
-      dispatch(setActiveBoard(board));
-      setShowTemplates(false);
-      handleClose();
-      if (effectiveWorkspace?.slug) {
-        navigate(`/w/${effectiveWorkspace.slug}/b/${board.id}`);
-      } else {
-        navigate(`/dashboard`);
-      }
-    } catch (err) {
-      console.error('Template Error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // If no active workspace is selected, try to use the first one available
-  const effectiveWorkspace = activeWorkspace || (workspaces && workspaces[0]);
-
   if (!effectiveWorkspace && !loading) {
-    // We can't create a board without a workspace
     return (
       <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[9999] flex items-center justify-center p-6 animate-in fade-in duration-300">
-        <div className="w-full max-w-md bg-white rounded-[40px] p-12 text-center shadow-2xl">
+        <div className="w-full max-w-md bg-white rounded-[48px] p-12 text-center shadow-2xl">
           <div className="w-20 h-20 bg-brand-primary/10 rounded-3xl flex items-center justify-center text-brand-primary mx-auto mb-6">
             <Layout size={40} />
           </div>
-          <h2 className="text-2xl font-black text-text-primary mb-4">No Team Found</h2>
-          <p className="text-text-secondary font-medium mb-8">You need to be part of a team (workspace) to create a board.</p>
-          <button 
-            onClick={handleClose}
-            className="btn btn-primary w-full !h-14 !rounded-2xl font-black uppercase tracking-widest text-xs"
-          >
-            Got it
-          </button>
+          <h2 className="text-2xl font-black text-text-primary mb-4 tracking-tighter">No Access Found</h2>
+          <p className="text-text-secondary font-medium mb-8">You need to be part of a team (workspace) to initialize a new board project.</p>
+          <button onClick={handleClose} className="w-full h-14 bg-brand-primary text-white rounded-2xl font-black uppercase tracking-widest text-[10px]">Got it</button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[9999] flex items-center justify-center p-6 animate-in fade-in duration-300">
-      <div 
-        className="w-full max-w-xl max-h-[90vh] bg-white rounded-[40px] shadow-[0_32px_120px_rgba(0,0,0,0.4)] overflow-y-auto animate-in zoom-in-95 slide-in-from-bottom-10 duration-500 scrollbar-hide"
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[9999] flex items-center justify-center p-8 animate-in fade-in duration-300 overflow-y-auto">
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0, y: 40 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        className="w-full max-w-7xl bg-white rounded-[56px] shadow-[0_48px_120px_-24px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row min-h-[680px]"
         onClick={e => e.stopPropagation()}
       >
-        <div className="relative p-12">
-          <div className="absolute top-0 right-0 p-8 opacity-[0.03] text-brand-primary">
-            <Layout size={240} strokeWidth={1} />
-          </div>
+        {/* Panoramic Wing 1: The Identity (Form) */}
+        <div className="w-full md:w-[40%] p-16 flex flex-col justify-center bg-bg-secondary/40 border-r border-border-light relative overflow-hidden">
+           {/* Abstract Decoration */}
+           <div className="absolute top-0 right-0 p-12 opacity-[0.03] text-brand-primary pointer-events-none">
+              <Layout size={320} strokeWidth={1} />
+           </div>
 
-          <div className="flex items-center justify-between mb-10 relative">
-            <div className="p-4 bg-brand-primary/10 rounded-3xl text-brand-primary">
-              <Layout size={32} />
-            </div>
-            <button 
-              onClick={handleClose}
-              className="p-3 text-text-tertiary hover:bg-bg-secondary hover:text-text-primary rounded-2xl transition-all"
-            >
-              <X size={24} />
-            </button>
-          </div>
+           <div className="relative z-10 space-y-12">
+              <header className="space-y-4">
+                 <div className="w-14 h-14 bg-brand-primary rounded-[20px] shadow-xl shadow-brand-primary/20 flex items-center justify-center text-white mb-6">
+                    <Target size={28} />
+                 </div>
+                 <h2 className="text-5xl font-black text-text-primary tracking-tighter leading-[1] mb-4">
+                    Forge your <br/>workspace.
+                 </h2>
+                 <p className="text-text-tertiary text-lg font-medium leading-relaxed max-w-[280px]">
+                    Initialize a strategic roadmap where your team executes mission-critical tasks.
+                 </p>
+              </header>
 
-          <div className="mb-12 relative">
-            <h2 className="text-4xl font-black text-text-primary tracking-tighter mb-4">Create board</h2>
-            {selectedTemplate ? (
-              <div className="flex items-center gap-3 p-4 bg-brand-primary/5 border border-brand-primary/20 rounded-2xl animate-in slide-in-from-left-4 duration-500">
-                <div className={`p-2 rounded-xl scale-75 ${selectedTemplate.color} text-white`}>
-                  {selectedTemplate.icon ? <selectedTemplate.icon size={20} /> : <Layout size={20} />}
-                </div>
-                <div className="flex-1">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-brand-primary mb-0.5">Applied Blueprint</p>
-                  <p className="text-xs font-bold text-text-primary">{selectedTemplate.name}</p>
-                </div>
-                <button 
-                  type="button" 
-                  onClick={() => setSelectedTemplate(null)}
-                  className="p-2 text-text-tertiary hover:text-danger"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            ) : (
-              <p className="text-text-secondary leading-relaxed font-medium">A board is where you and your team visualize your workflow, from initial idea to successful shipment.</p>
-            )}
-          </div>
+              <form onSubmit={handleSubmit} className="space-y-8">
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary ml-1">Board Architecture</label>
+                    <input 
+                      autoFocus
+                      required
+                      placeholder="e.g. Kinetic Engine 2.0"
+                      className="w-full h-16 bg-white border border-border-light rounded-3xl px-8 text-lg font-black text-text-primary focus:border-brand-primary/50 focus:ring-8 focus:ring-brand-primary/5 transition-all outline-none shadow-sm"
+                      value={title}
+                      onChange={e => setTitle(e.target.value)}
+                    />
+                 </div>
 
-          <form onSubmit={handleSubmit} className="space-y-8 relative">
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary ml-1">Board Title</label>
-              <input 
-                autoFocus
-                required
-                placeholder="e.g. Product Roadmap 2026"
-                className="w-full h-16 bg-bg-secondary border-none rounded-3xl px-8 text-lg font-bold focus:bg-white focus:ring-4 focus:ring-brand-primary/5 transition-all outline-none placeholder:text-text-tertiary/50"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-              />
-            </div>
+                 <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary ml-1 leading-none">Security Group</label>
+                    <div className="flex bg-white rounded-2xl p-1 border border-border-light h-14">
+                      {[
+                        { id: 'PRIVATE', icon: Lock, label: 'Private' },
+                        { id: 'WORKSPACE', icon: Users, label: 'Team' },
+                        { id: 'PUBLIC', icon: Globe, label: 'Public' },
+                      ].map(type => (
+                        <button 
+                          key={type.id}
+                          type="button"
+                          onClick={() => setVisibility(type.id)}
+                          className={`flex-1 flex items-center justify-center gap-2 rounded-xl text-[10px] font-black uppercase tracking-tighter transition-all ${visibility === type.id ? 'bg-brand-primary text-white shadow-lg' : 'text-text-tertiary hover:bg-bg-secondary'}`}
+                        >
+                          <type.icon size={14} className={visibility === type.id ? 'animate-pulse' : ''} />
+                          <span>{type.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                 </div>
 
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary ml-1">Visibility</label>
-                <div className="flex bg-bg-secondary rounded-[20px] p-1 h-12">
-                  <button 
-                    type="button"
-                    onClick={() => setVisibility('WORKSPACE')}
-                    className={`flex-1 flex items-center justify-center gap-2 rounded-[16px] text-[10px] font-bold transition-all ${visibility === 'WORKSPACE' ? 'bg-white text-brand-primary shadow-sm' : 'text-text-tertiary'}`}
-                  >
-                    <Globe size={14} />
-                    <span>Workspace</span>
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => setVisibility('PRIVATE')}
-                    className={`flex-1 flex items-center justify-center gap-2 rounded-[16px] text-[10px] font-bold transition-all ${visibility === 'PRIVATE' ? 'bg-white text-brand-primary shadow-sm' : 'text-text-tertiary'}`}
-                  >
-                    <Lock size={14} />
-                    <span>Private</span>
-                  </button>
-                </div>
-              </div>
+                 <button 
+                    type="submit" 
+                    disabled={!title || loading}
+                    className="w-full h-16 bg-brand-primary text-white rounded-3xl font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-brand-primary/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                 >
+                    {loading ? <span className="animate-pulse">Provisioning...</span> : (
+                      <>
+                        <Zap size={18} className="fill-current" />
+                        <span>Launch Project</span>
+                        <ChevronRight size={16} className="opacity-40" />
+                      </>
+                    )}
+                 </button>
+              </form>
+           </div>
+        </div>
 
-              <div className="space-y-3">
-                 <label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary ml-1 flex items-center gap-2">
-                    <Palette size={12} /> Background
-                 </label>
-                 <div className="flex bg-bg-secondary rounded-[20px] p-1 h-12 items-center justify-center gap-2 overflow-x-auto">
-                    {colors.slice(0, 5).map(c => (
+        {/* Panoramic Wing 2: The Visuals (Blueprints & Backgrounds) */}
+        <div className="w-full md:w-[60%] p-16 flex flex-col bg-white relative">
+           <button 
+             onClick={handleClose}
+             className="absolute top-8 right-8 p-3 text-text-tertiary hover:bg-bg-secondary hover:text-text-primary rounded-2xl transition-all"
+           >
+             <X size={24} />
+           </button>
+
+           <div className="h-full flex flex-col gap-12">
+              <section className="space-y-6">
+                 <div>
+                    <h3 className="text-sm font-black uppercase tracking-[0.2em] text-text-primary mb-1">Visual DNA</h3>
+                    <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-normal">Define the chromatic identity of your command hub.</p>
+                 </div>
+                 
+                 <div className="flex flex-wrap gap-3">
+                    {colors.map(c => (
                       <button 
                         key={c}
                         type="button"
-                        onClick={() => setBackground(c)}
-                        className={`w-6 h-6 rounded-full shrink-0 transition-all border-2 ${background === c ? 'border-brand-primary scale-110 shadow-md' : 'border-transparent hover:scale-105'}`}
+                        onClick={() => {
+                          setBackground(c);
+                          setSelectedTemplate(null);
+                        }}
+                        className={`w-12 h-12 rounded-[18px] transition-all border-4 ${background === c && !selectedTemplate ? 'border-brand-primary scale-110 shadow-lg' : 'border-bg-secondary hover:scale-105'}`}
                         style={{ backgroundColor: c }}
-                      />
+                      >
+                         {background === c && !selectedTemplate && <Check size={18} className="text-white mx-auto shadow-sm" strokeWidth={4} />}
+                      </button>
                     ))}
                  </div>
-              </div>
+              </section>
 
-              <div className="pt-4">
+              <section className="flex-1 space-y-6">
+                 <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-black uppercase tracking-[0.2em] text-text-primary mb-1">Strategic Blueprints</h3>
+                      <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-normal underline decoration-brand-primary/20 decoration-2 underline-offset-4">Accelerate with pre-configured project workflows.</p>
+                    </div>
+                 </div>
+
+                 <div className="grid grid-cols-2 gap-4">
+                    {TEMPLATES.slice(0, 4).map(template => (
+                      <button
+                        key={template.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedTemplate(template);
+                          setTitle(`${template.name} - ${effectiveWorkspace.name}`);
+                          setBackground(template.background);
+                        }}
+                        className={`group relative p-6 rounded-[32px] border-2 text-left transition-all overflow-hidden ${selectedTemplate?.id === template.id ? 'border-brand-primary bg-brand-primary/5 ring-4 ring-brand-primary/5' : 'border-bg-secondary hover:border-border-light'}`}
+                      >
+                         <div className="flex items-center gap-4 relative z-10">
+                            <div className={`w-10 h-10 rounded-[14px] ${template.color} text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
+                               {template.icon ? <template.icon size={18} /> : <Zap size={18} />}
+                            </div>
+                            <div>
+                               <p className="text-[11px] font-black text-text-primary uppercase tracking-tight">{template.name}</p>
+                               <p className="text-[9px] font-bold text-text-tertiary uppercase opacity-60">Ready to Ship</p>
+                            </div>
+                         </div>
+                         {selectedTemplate?.id === template.id && (
+                            <div className="absolute top-4 right-4 text-brand-primary">
+                               <Check size={16} strokeWidth={3} />
+                            </div>
+                         )}
+                      </button>
+                    ))}
+                 </div>
+              </section>
+
+              <footer className="pt-8 border-t border-border-light flex items-center justify-between">
+                 <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-bg-secondary rounded-xl flex items-center justify-center text-text-tertiary">
+                       <Layout size={20} />
+                    </div>
+                    <div className="text-left">
+                       <p className="text-[10px] font-black text-text-tertiary uppercase tracking-wider">Targeting:</p>
+                       <p className="text-xs font-black text-brand-primary">{effectiveWorkspace.name}</p>
+                    </div>
+                 </div>
                  <button 
                   type="button"
-                  onClick={() => setShowTemplates(true)}
-                  className="w-full h-16 bg-brand-primary/5 border-2 border-dashed border-brand-primary/20 rounded-[30px] flex items-center justify-center gap-3 text-brand-primary hover:bg-brand-primary/10 transition-all font-black uppercase tracking-widest text-[10px]"
+                  onClick={handleClose}
+                  className="px-8 py-4 bg-bg-secondary hover:bg-bg-tertiary text-text-secondary rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all"
                  >
-                    <Sparkles size={18} />
-                    Start from blueprint
+                   Cancel Launch
                  </button>
-              </div>
-            </div>
-
-            <div className="flex gap-4 pt-10">
-              <button 
-                type="button" 
-                onClick={handleClose}
-                className="btn btn-secondary !flex-1 !h-16 !rounded-3xl font-black uppercase tracking-widest text-xs"
-              >
-                Cancel
-              </button>
-              <button 
-                type="submit" 
-                disabled={!title || loading}
-                className="btn btn-primary !flex-1 !h-16 !rounded-3xl font-black uppercase tracking-widest text-xs shadow-xl shadow-brand-primary/20 disabled:opacity-50"
-              >
-                {loading ? 'Creating...' : 'Create Board'}
-              </button>
-            </div>
-          </form>
+              </footer>
+           </div>
         </div>
-      </div>
-
-      <TemplateGallery 
-        isOpen={showTemplates} 
-        onClose={() => setShowTemplates(false)} 
-        onSelect={handleApplyTemplate}
-      />
+      </motion.div>
     </div>
   );
 };

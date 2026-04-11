@@ -57,20 +57,20 @@ serve(async (req) => {
           last_synced_at: new Date().toISOString()
         }).eq('id', item.id)
 
-        // AUTOMATION: Move to Done if Merged
-        if (pr.merged && data.action === 'closed') {
-          const { data: doneList } = await supabase
-            .from('lists')
-            .select('id')
-            .eq('board_id', item.cards.board_id)
-            .ilike('title', '%done%')
-            .single()
-
-          if (doneList) {
-            await supabase.from('cards')
-              .update({ list_id: doneList.id, is_completed: true })
-              .eq('id', item.card_id)
-          }
+        // AUTOMATION: Trigger the FlowBoard Automation Engine
+        if (data.action === 'closed') {
+          const trigger = pr?.merged ? 'GITHUB_PR_MERGED' : 'GITHUB_ISSUE_CLOSED';
+          await supabase.rpc('handle_external_trigger', {
+            p_card_id: item.card_id,
+            p_trigger_type: trigger,
+            p_trigger_data: data
+          });
+        } else if (data.action === 'opened') {
+          await supabase.rpc('handle_external_trigger', {
+            p_card_id: item.card_id,
+            p_trigger_type: 'GITHUB_PR_OPENED',
+            p_trigger_data: data
+          });
         }
       }
     }

@@ -1,5 +1,6 @@
 import React from 'react';
 import MarketingLayout from '../../components/layout/MarketingLayout';
+import { Link } from 'react-router-dom';
 import { Mail, MessageSquare, Phone, Globe, MapPin, Zap, ArrowRight, Shield, Heart, Share2 } from 'lucide-react';
 
 const ContactPage = () => {

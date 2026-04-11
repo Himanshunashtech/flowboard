@@ -1,5 +1,6 @@
 import React from 'react';
 import MarketingLayout from '../../components/layout/MarketingLayout';
+import { Link } from 'react-router-dom';
 import { Shield, Lock, Eye, FileText, UserCheck, Globe, HelpCircle, Mail, ArrowRight } from 'lucide-react';
 
 const PrivacyPage = () => {
