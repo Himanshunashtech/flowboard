@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply font-sans bg-bg-primary text-text-primary antialiased selection:bg-brand-primary/20;
+  }
+}
+
+@layer components {
+  /* Premium Vanishing Scrollbars */
+  ::-webkit-scrollbar {
+    @apply w-[6px] h-[6px];
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-text-tertiary/10 rounded-full border-2 border-transparent bg-clip-padding hover:bg-text-tertiary/20 transition-all;
+  }
+
+  /* Only show thumb when hovering over a scrollable area? No, standard is cleaner but subtle. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(156, 163, 175, 0.2) transparent;
+  }
+
+  /* Custom component classes if needed for quick migration */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md gap-2 transition-all whitespace-nowrap;
+  }
+
+  .btn-primary {
+    @apply bg-brand-primary text-white hover:bg-brand-primary-hover shadow-sm;
+  }
+
+  .btn-secondary {
+    @apply bg-bg-secondary text-text-primary border border-border-medium hover:bg-bg-tertiary;
+  }
+
+  .btn-ghost {
+    @apply text-text-secondary hover:bg-bg-secondary hover:text-text-primary;
+  }
+}
+
+@layer utilities {
+  .canvas {
+    @apply flex-1 overflow-x-auto overflow-y-hidden p-6 flex gap-5 scroll-smooth snap-x snap-mandatory cursor-grab active:cursor-grabbing transition-colors duration-200;
+  }
+}
