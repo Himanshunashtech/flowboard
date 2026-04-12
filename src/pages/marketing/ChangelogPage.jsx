@@ -65,37 +65,37 @@ const ChangelogPage = () => {
   return (
     <MarketingLayout>
       {/* 1. Hero Section */}
-      <section className="py-24 px-6 bg-white overflow-hidden relative border-b border-border-light">
+      <section className="py-20 md:py-24 px-6 bg-white overflow-hidden relative border-b border-border-light">
         <div className="absolute top-0 right-0 p-32 opacity-5 blur-3xl bg-brand-primary rounded-full -translate-y-1/2 translate-x-1/2"></div>
         <div className="max-w-7xl mx-auto text-center relative z-10">
           <span className="inline-flex items-center gap-2 px-5 py-2 mb-8 text-[10px] font-black text-brand-primary bg-brand-primary/10 rounded-full uppercase tracking-[0.2em]">
             <Clock size={12} />
             Version History
           </span>
-          <h1 className="text-5xl md:text-8xl font-black text-text-primary tracking-tighter leading-[0.9] mb-10">
+          <h1 className="text-4xl md:text-8xl font-black text-text-primary tracking-tighter leading-[0.9] mb-8">
             What's <span className="text-brand-primary">new.</span>
           </h1>
-          <p className="text-xl text-text-secondary max-w-2xl mx-auto mb-12 leading-relaxed font-medium">
+          <p className="text-base md:text-xl text-text-secondary max-w-2xl mx-auto mb-10 leading-relaxed font-medium px-4 md:px-0">
             We ship updates weekly. Keep up with the latest features, performance improvements, 
             and bug fixes we've pushed to the FlowBoard platform.
           </p>
-          <button className="btn btn-secondary !px-10 !py-5 !rounded-full font-bold flex items-center gap-3 mx-auto">
+          <button className="h-14 px-8 flex items-center justify-center bg-bg-secondary text-text-primary text-[10px] font-black uppercase tracking-widest rounded-full gap-3 mx-auto">
              <Github size={20} /> View Open Source Logs
           </button>
         </div>
       </section>
 
       {/* 2. Featured Release Spotlight */}
-      <section className="py-24 px-6 bg-bg-secondary/20">
+      <section className="py-20 md:py-32 px-4 md:px-6 bg-bg-secondary/20">
          <div className="max-w-7xl mx-auto">
-            <div className="bg-white rounded-[48px] p-12 md:p-24 border border-brand-primary shadow-2xl shadow-brand-primary/5 grid grid-cols-1 lg:grid-cols-2 gap-24 items-center relative overflow-hidden">
-               <div className="absolute top-0 right-0 p-8">
-                  <span className="px-4 py-1 bg-brand-primary text-white text-[10px] font-black uppercase tracking-widest rounded-full">Recent Highlight</span>
+            <div className="bg-white rounded-[40px] md:rounded-[48px] p-8 md:p-24 border border-brand-primary shadow-2xl shadow-brand-primary/5 grid grid-cols-1 lg:grid-cols-2 gap-12 md:gap-24 items-center relative overflow-hidden">
+               <div className="absolute top-0 right-0 p-6 md:p-8">
+                  <span className="px-3 py-1 bg-brand-primary text-white text-[9px] font-black uppercase tracking-widest rounded-full">Recent Highlight</span>
                </div>
-               <div className="space-y-10">
-                  <div className="w-16 h-16 bg-brand-primary/10 text-brand-primary rounded-2xl flex items-center justify-center font-black text-2xl">2.4</div>
-                  <h2 className="text-4xl md:text-6xl font-bold tracking-tight">Automation <br/> Workflow 2.0</h2>
-                  <p className="text-xl text-text-secondary leading-relaxed font-medium">
+               <div className="space-y-8 md:space-y-10">
+                  <div className="w-14 h-14 bg-brand-primary/10 text-brand-primary rounded-2xl flex items-center justify-center font-black text-xl">2.4</div>
+                  <h2 className="text-3xl md:text-6xl font-black tracking-tighter leading-tight">Automation <br className="hidden md:block"/> Workflow 2.0</h2>
+                  <p className="text-lg md:text-xl text-text-secondary leading-relaxed font-medium">
                      The biggest update to our workflow engine yet. Build complex, branching logic 
                      that runs across multiple boards and workspaces with zero latency.
                   </p>
@@ -106,15 +106,15 @@ const ChangelogPage = () => {
                         'Scheduled cron actions',
                         'External webhook inputs'
                      ].map((item, i) => (
-                        <li key={i} className="flex items-center gap-3 text-sm font-bold text-text-primary">
+                        <li key={i} className="flex items-center gap-3 text-sm font-bold text-text-primary uppercase tracking-widest">
                            <Zap size={16} className="text-warning fill-current" /> {item}
                         </li>
                      ))}
                   </ul>
-                  <button className="btn btn-primary !rounded-[20px] !px-10 !py-4 font-bold">Deep Dive into 2.4</button>
+                  <button className="h-14 px-8 flex items-center justify-center bg-brand-primary text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-brand-primary/20">Deep Dive into 2.4</button>
                </div>
-               <div className="bg-bg-secondary rounded-[40px] aspect-square relative group">
-                   <div className="absolute inset-8 bg-white/50 backdrop-blur-3xl rounded-[32px] border border-white shadow-xl flex items-center justify-center">
+               <div className="bg-bg-secondary rounded-[32px] md:rounded-[40px] aspect-square relative group hidden md:block">
+                   <div className="absolute inset-8 bg-white/50 backdrop-blur-3xl rounded-[24px] md:rounded-[32px] border border-white shadow-xl flex items-center justify-center">
                        <Zap size={100} className="text-brand-primary opacity-20 group-hover:scale-125 transition-transform duration-1000" />
                    </div>
                </div>
@@ -123,31 +123,31 @@ const ChangelogPage = () => {
       </section>
 
       {/* 3. Detailed Timeline */}
-      <section className="py-32 px-6 bg-white">
+      <section className="py-24 md:py-32 px-6 bg-white">
         <div className="max-w-5xl mx-auto">
-          <div className="space-y-24">
+          <div className="space-y-20 md:space-y-24">
             {updates.map((update, i) => (
-              <div key={i} className="relative pl-12 md:pl-24 group">
+              <div key={i} className="relative pl-10 md:pl-24 group">
                 {/* Timeline Line */}
                 <div className="absolute left-0 top-0 bottom-0 w-px bg-border-light group-last:bg-gradient-to-b group-last:from-border-light group-last:to-transparent"></div>
                 {/* Timeline Dot */}
-                <div className="absolute left-0 -translate-x-1/2 top-4 w-12 md:w-16 h-12 md:h-16 rounded-full bg-white border-4 border-bg-secondary shadow-lg flex items-center justify-center group-hover:border-brand-primary transition-colors">
+                <div className="absolute left-0 -translate-x-1/2 top-4 w-10 md:w-16 h-10 md:h-16 rounded-full bg-white border-4 border-bg-secondary shadow-lg flex items-center justify-center group-hover:border-brand-primary transition-colors">
                   {update.icon}
                 </div>
                 
-                <div className="space-y-8">
-                  <div className="flex flex-wrap items-center gap-4">
-                    <span className="text-xs font-black uppercase tracking-[0.2em] text-text-tertiary">{update.date}</span>
-                    <span className="px-3 py-1 bg-bg-secondary rounded-full text-[10px] font-black uppercase tracking-[0.1em]">{update.tag}</span>
-                    <span className="ml-auto text-sm font-black text-brand-primary tracking-widest">{update.version}</span>
+                <div className="space-y-6 md:space-y-8">
+                  <div className="flex flex-wrap items-center gap-3 md:gap-4">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">{update.date}</span>
+                    <span className="px-3 py-1 bg-bg-secondary rounded-full text-[9px] font-black uppercase tracking-[0.1em]">{update.tag}</span>
+                    <span className="ml-auto text-xs font-black text-brand-primary tracking-widest">{update.version}</span>
                   </div>
                   
-                  <h3 className="text-3xl md:text-5xl font-bold tracking-tight text-text-primary">{update.title}</h3>
-                  <p className="text-xl text-text-secondary leading-relaxed font-medium max-w-3xl">
+                  <h3 className="text-2xl md:text-5xl font-black tracking-tighter text-text-primary leading-tight">{update.title}</h3>
+                  <p className="text-base md:text-xl text-text-secondary leading-relaxed font-medium max-w-3xl">
                     {update.desc}
                   </p>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-bg-secondary/30 p-8 rounded-[32px] border border-border-light">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 bg-bg-secondary/30 p-6 md:p-8 rounded-[32px] border border-border-light">
                      {update.details.map((detail, j) => (
                         <div key={j} className="flex gap-4 text-sm font-medium text-text-secondary leading-relaxed">
                            <div className="w-1.5 h-1.5 rounded-full bg-brand-primary/40 mt-2 shrink-0"></div>

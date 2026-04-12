@@ -58,8 +58,8 @@ const BlogPage = () => {
                             <div className="inline-flex items-center gap-2 text-brand-primary font-black uppercase tracking-[0.2em] text-[10px]">
                                 <Star size={12} className="fill-current" /> featured post
                             </div>
-                            <h1 className="text-4xl md:text-6xl font-black tracking-tighter leading-[1.1]">
-                                Why velocity <br className="hidden lg:block"/> is the only <span className="text-brand-primary">metric.</span>
+                            <h1 className="text-4xl md:text-7xl lg:text-8xl font-black tracking-tighter leading-[0.9] text-text-primary">
+                                Why velocity <br className="hidden lg:block"/> is the only <span className="text-brand-primary italic">metric.</span>
                             </h1>
                             <p className="text-xl text-text-secondary leading-relaxed font-medium">
                                 In the modern tech landscape, speed isn't just an advantage—it's a survival mechanism. 
@@ -85,9 +85,9 @@ const BlogPage = () => {
             </section>
 
             {/* 2. Search & Category Filter */}
-            <section className="py-12 px-6 bg-bg-secondary/30 border-b border-border-light sticky top-[80px] z-[90] backdrop-blur-xl">
-                <div className="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-8">
-                    <div className="flex flex-wrap items-center gap-4">
+            <section className="py-6 px-6 bg-white/80 border-b border-border-light sticky top-[72px] md:top-[80px] z-[90] backdrop-blur-xl overflow-x-auto no-scrollbar">
+                <div className="max-w-7xl mx-auto flex items-center justify-between gap-8">
+                    <div className="flex items-center gap-3 shrink-0">
                         {['All Posts', 'Engineering', 'Design', 'Product', 'Culture', 'News'].map((cat, i) => (
                             <button key={i} className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all border ${i === 0 ? 'bg-text-primary text-white border-text-primary' : 'bg-white text-text-secondary border-border-light hover:border-brand-primary/40'}`}>
                                 {cat}
@@ -144,8 +144,8 @@ const BlogPage = () => {
                 <div className="absolute top-0 right-0 p-64 opacity-10 blur-3xl bg-brand-primary rounded-full -translate-y-1/2 translate-x-1/2"></div>
                 <div className="max-w-7xl mx-auto relative z-10 text-center">
                     <div className="max-w-3xl mx-auto space-y-10">
-                        <Mail size={64} className="mx-auto text-brand-primary animate-bounce-slow" />
-                        <h2 className="text-5xl md:text-7xl font-bold tracking-tighter leading-none">The Flow <br/><span className="text-brand-primary italic">Letter.</span></h2>
+                        <Mail size={48} className="mx-auto text-brand-primary animate-bounce-slow" />
+                        <h2 className="text-5xl md:text-8xl font-black tracking-tighter leading-[0.85]">The Flow <br/><span className="text-brand-primary italic">Letter.</span></h2>
                         <p className="text-xl text-white/50 leading-relaxed font-medium">
                             Join 45,000+ engineers and product leads who get our bi-weekly deep dives into 
                             high-performance engineering culture, design systems, and scaling strategy.

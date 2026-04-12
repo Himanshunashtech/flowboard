@@ -1,19 +1,31 @@
 import React from 'react';
-import { Search, HelpCircle, ChevronDown, Users2 } from 'lucide-react';
-import { useSelector } from 'react-redux';
+import { Search, HelpCircle, ChevronDown, Users2, PanelLeft, PanelRight } from 'lucide-react';
+import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
+import { toggleModal, toggleSidebar } from '../store/slices/uiSlice';
 import NotificationDropdown from './ui/NotificationDropdown';
 
 const Header = ({ onOpenSearch }) => {
+  const dispatch = useDispatch();
   const { user, profile } = useSelector((state) => state.auth);
+  const { sidebarOpen } = useSelector((state) => state.ui);
   
   const initials = profile?.full_name 
     ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
     : user?.email?.substring(0, 2).toUpperCase();
 
   return (
-    <header className="h-16 border-b border-border-light bg-white/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-40">
-      <div className="flex-1 max-w-2xl cursor-text" onClick={onOpenSearch}>
+    <header className="h-16 border-b border-border-light bg-white/80 backdrop-blur-md flex items-center justify-between px-6 sticky top-0 z-40">
+      <div className="flex items-center gap-4 flex-1">
+        <button 
+          onClick={() => dispatch(toggleSidebar())}
+          className="p-2.5 text-text-tertiary hover:bg-bg-secondary hover:text-brand-primary rounded-xl transition-all group"
+          title={sidebarOpen ? "Collapse Sidebar" : "Expand Sidebar"}
+        >
+          {sidebarOpen ? <PanelLeft size={22} /> : <PanelRight size={22} />}
+        </button>
+
+        <div className="flex-1 max-w-2xl cursor-text" onClick={onOpenSearch}>
         <div className="relative group pointer-events-none">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand-primary transition-colors" size={18} />
           <input 
@@ -24,6 +36,7 @@ const Header = ({ onOpenSearch }) => {
           />
         </div>
       </div>
+    </div>
 
       <div className="flex items-center gap-4">
         <button 

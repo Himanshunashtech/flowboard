@@ -15,6 +15,8 @@ import {
   Calculator
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { useDispatch } from 'react-redux';
+import { updateBoard } from '../../store/slices/boardSlice';
 
 const FIELD_TYPES = [
   { id: 'TEXT', label: 'Text', icon: Type, desc: 'Single line of text' },
@@ -28,6 +30,7 @@ const FIELD_TYPES = [
 ];
 
 const BoardCustomFields = ({ boardId }) => {
+  const dispatch = useDispatch();
   const [fields, setFields] = useState([]);
   const [showAdd, setShowAdd] = useState(false);
   const [newFieldName, setNewFieldName] = useState('');
@@ -62,7 +65,9 @@ const BoardCustomFields = ({ boardId }) => {
       .single();
 
     if (data) {
-      setFields([...fields, data]);
+      const newFields = [...fields, data];
+      setFields(newFields);
+      dispatch(updateBoard({ id: boardId, custom_fields: newFields }));
       setNewFieldName('');
       setNewFormula('{{priority_score}} * 10');
       setShowAdd(false);
@@ -74,7 +79,11 @@ const BoardCustomFields = ({ boardId }) => {
       .from('custom_fields')
       .delete()
       .eq('id', id);
-    if (!error) setFields(fields.filter(f => f.id !== id));
+    if (!error) {
+      const newFields = fields.filter(f => f.id !== id);
+      setFields(newFields);
+      dispatch(updateBoard({ id: boardId, custom_fields: newFields }));
+    }
   };
 
   return (

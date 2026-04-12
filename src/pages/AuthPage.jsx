@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Sparkles, Zap, Fingerprint, Target, Users, Shield, ArrowRight } from 'lucide-react';
+import { Eye, EyeOff, Sparkles, Zap, Fingerprint, Target, Users, Shield, ArrowRight, Github } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const AuthPage = ({ type }) => {
@@ -11,6 +11,23 @@ const AuthPage = ({ type }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+
+  const handleGitHubLogin = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+      if (error) throw error;
+    } catch (err) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -104,17 +121,15 @@ const AuthPage = ({ type }) => {
       </div>
 
       {/* Wing 2: Authentication Console (40%) */}
-      <div className="w-full lg:w-[40%] flex flex-col justify-center items-center p-8 md:p-24 relative">
-         {/* Mobile Logo Only */}
-         <div className="lg:hidden absolute top-12 flex items-center gap-3">
-            <div className="w-10 h-10 bg-brand-primary rounded-xl flex items-center justify-center text-white">
-               <Sparkles size={20} />
-            </div>
-            <span className="text-2xl font-black text-text-primary tracking-tighter">FlowBoard</span>
-         </div>
-
+      <div className="w-full lg:w-[40%] flex flex-col items-center p-8 md:p-24 pt-32 lg:justify-center relative overflow-y-auto">
          <div className="w-full max-w-sm space-y-12">
-            <header className="space-y-4">
+            <header className="space-y-6">
+               <div className="lg:hidden flex items-center justify-center gap-3 mb-12">
+                  <div className="w-12 h-12 bg-white flex items-center justify-center text-brand-primary rounded-2xl shadow-xl shadow-brand-primary/10 border border-border-light">
+                     <Sparkles size={24} />
+                  </div>
+                  <span className="text-2xl font-black text-text-primary tracking-tighter">FlowBoard</span>
+               </div>
                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-bg-secondary rounded-full text-[10px] font-black uppercase tracking-widest text-text-tertiary">
                   <Zap size={12} className="text-brand-primary" />
                   <span>Protocol Initialize</span>
@@ -139,6 +154,24 @@ const AuthPage = ({ type }) => {
                   {error}
                </motion.div>
             )}
+
+            <div className="space-y-4">
+               <button 
+                  type="button"
+                  onClick={handleGitHubLogin}
+                  disabled={loading}
+                  className="w-full h-16 bg-white border-2 border-border-light text-text-primary rounded-[32px] text-[11px] font-black uppercase tracking-[0.2em] shadow-lg shadow-black/5 hover:bg-bg-secondary hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-4 group"
+               >
+                  <Github size={20} className="group-hover:rotate-12 transition-transform" />
+                  <span>Continue with GitHub</span>
+               </button>
+
+               <div className="flex items-center gap-4 py-2">
+                  <div className="h-px flex-1 bg-border-light" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-text-tertiary">Or Nexus Protocol</span>
+                  <div className="h-px flex-1 bg-border-light" />
+               </div>
+            </div>
 
             <form onSubmit={handleAuth} className="space-y-6">
                <div className="space-y-3">

@@ -20,10 +20,14 @@ import {
   BarChart3, 
   Clock,
   ArrowRightCircle,
-  Shield 
+  Shield,
+  X,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import BoardSharePopover from '../components/board/BoardSharePopover';
 import JoinWorkspaceModal from '../components/modals/JoinWorkspaceModal';
+import PrismRulesDialog from '../components/modals/PrismRulesDialog';
 import { supabase, getBoardChannel, removeBoardChannel } from '../lib/supabase';
 import {
   setActiveBoard,
@@ -79,14 +83,60 @@ const BoardPage = () => {
   const currentView = searchParams.get('view') || 'kanban';
   const setCurrentView = (view) => setSearchParams({ view });
 
-  const [showMembersPanel, setShowMembersPanel] = useState(false);
-  const [showActivityDrawer, setShowActivityDrawer] = useState(false);
-  const [showSettingsDrawer, setShowSettingsDrawer] = useState(false);
   const [showSharePopover, setShowSharePopover] = useState(false);
   const shareBtnRef = useRef(null);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [targetWorkspace, setTargetWorkspace] = useState(null);
   const [joining, setJoining] = useState(false);
+  const [isAddingList, setIsAddingList] = useState(false);
+  const [newListTitle, setNewListTitle] = useState('');
+  const [isBoardCollapsed, setIsBoardCollapsed] = useState(false);
+
+  const handleCreateList = async () => {
+    if (!newListTitle.trim()) {
+      setIsAddingList(false);
+      return;
+    }
+
+    const pos = lists.length > 0 
+      ? Ordering.last(lists[lists.length - 1].position)
+      : Ordering.first(null);
+
+    const tempId = crypto.randomUUID();
+    const optimisticList = {
+      id: tempId,
+      board_id: boardId,
+      title: newListTitle.trim(),
+      position: pos
+    };
+
+    // Step 1: Optimistic Update
+    dispatch(addList(optimisticList));
+    setNewListTitle('');
+    setIsAddingList(false);
+
+    // Step 2: Remote Persistence
+    const { data, error } = await supabase
+      .from('lists')
+      .insert({
+        board_id: boardId,
+        title: newListTitle.trim(),
+        position: pos
+      })
+      .select()
+      .single();
+
+    if (error) {
+      dispatch(addNotification({ message: 'Failed to create list', type: 'error' }));
+      dispatch(deleteList(tempId)); // Rollback
+    } else {
+      // The real-time listener will eventually replace the tempId version with the real data
+      // but we can also manually replace it here if we want absolute certainty.
+      dispatch(deleteList(tempId));
+      dispatch(addList(data));
+    }
+  };
+
 
   // --- Drag-to-Scroll Logic ---
   const canvasRef = useRef(null);
@@ -117,7 +167,11 @@ const BoardPage = () => {
       
       const { data: board, error: boardError } = await supabase
         .from('boards')
-        .select('*, workspace:workspaces(id, name)')
+        .select(`
+          *,
+          workspace:workspaces(id, name),
+          custom_fields(*)
+        `)
         .eq('id', boardId)
         .maybeSingle();
       
@@ -304,6 +358,7 @@ const BoardPage = () => {
   const isMember = members.some(m => m.user_id === user?.id);
   const isReadOnly = (activeBoard?.visibility === 'PUBLIC' && !isMember) || (!user);
 
+
   const updateVisibility = async (newVisibility) => {
     const { data, error } = await supabase.from('boards').update({ visibility: newVisibility }).eq('id', boardId).select().single();
     if (!error && data) {
@@ -313,6 +368,7 @@ const BoardPage = () => {
   };
 
   if (loading && !activeBoard) return <AppLayout><BoardSkeleton /></AppLayout>;
+
 
   const getBackgroundStyle = () => {
     if (!activeBoard) return {};
@@ -361,15 +417,7 @@ const BoardPage = () => {
                 <span className="text-[9px] font-black uppercase text-yellow-700 tracking-widest">Read Only Mode</span>
               </div>
             )}
-            {!isMember && user && activeBoard?.visibility === 'PUBLIC' && (
-              <button 
-                className="btn btn-primary !h-8 !px-4 !rounded-lg text-[10px] uppercase font-black tracking-widest flex items-center gap-2"
-                onClick={() => dispatch(toggleModal({ modalName: 'memberInvite', isOpen: true }))}
-              >
-                <ArrowRightCircle size={14} />
-                Join Team
-              </button>
-            )}
+
           </div>
 
           <div className="flex items-center gap-3">
@@ -416,10 +464,25 @@ const BoardPage = () => {
                 </button>
               ))}
             </div>
-            <button className={`p-2 rounded-xl transition-all ${showActivityDrawer ? 'bg-brand-primary text-white' : 'text-text-tertiary hover:bg-bg-secondary'}`} onClick={() => setShowActivityDrawer(!showActivityDrawer)}>
+
+            <button 
+              onClick={() => setIsBoardCollapsed(!isBoardCollapsed)}
+              className={`p-2 rounded-xl transition-all shadow-sm border ${isBoardCollapsed ? 'bg-brand-primary text-white border-brand-primary' : 'bg-white text-text-tertiary hover:text-brand-primary border-border-light'}`}
+              title={isBoardCollapsed ? "Expand All Lists" : "Collapse All Lists"}
+            >
+              {isBoardCollapsed ? <Maximize2 size={18} /> : <Minimize2 size={18} />}
+            </button>
+
+            <button 
+              className={`p-2 rounded-xl transition-all ${modals.activityDrawer ? 'bg-brand-primary text-white' : 'text-text-tertiary hover:bg-bg-secondary'}`} 
+              onClick={() => dispatch(toggleModal({ modalName: 'activityDrawer', isOpen: !modals.activityDrawer }))}
+            >
               <HistoryIcon size={18} />
             </button>
-            <button className={`p-2 rounded-xl transition-all ${showSettingsDrawer ? 'bg-brand-primary text-white' : 'text-text-tertiary hover:bg-bg-secondary'}`} onClick={() => setShowSettingsDrawer(true)}>
+            <button 
+              className={`p-2 rounded-xl transition-all ${modals.boardSettings ? 'bg-brand-primary text-white' : 'text-text-tertiary hover:bg-bg-secondary'}`} 
+              onClick={() => dispatch(toggleModal({ modalName: 'boardSettings', isOpen: !modals.boardSettings }))}
+            >
               <Settings size={18} />
             </button>
           </div>
@@ -441,8 +504,69 @@ const BoardPage = () => {
                         listStyle={activeBoard?.settings?.list_style || 'solid'}
                         cardStyle={activeBoard?.settings?.card_style || 'modern'}
                         isReadOnly={isReadOnly}
+                        isCollapsed={isBoardCollapsed}
                       />
                     ))}
+
+                    {/* Add List Button */}
+                    {!isReadOnly && (
+                      <div className={`${isBoardCollapsed ? 'w-16 h-[280px]' : 'w-80 h-fit'} shrink-0 transition-all duration-500`}>
+                        {isAddingList ? (
+                          <div className={`bg-white/80 backdrop-blur-md rounded-2xl p-4 border border-border-light shadow-2xl ${isBoardCollapsed ? 'w-80 absolute z-[60]' : 'w-full'}`}>
+                            <input
+                              autoFocus
+                              type="text"
+                              placeholder="Enter list title..."
+                              value={newListTitle}
+                              onChange={e => setNewListTitle(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') handleCreateList();
+                                if (e.key === 'Escape') setIsAddingList(false);
+                              }}
+                              className="w-full px-4 py-3 bg-white border-2 border-brand-primary/20 rounded-xl font-bold text-sm outline-none focus:border-brand-primary transition-all mb-3"
+                            />
+                            <div className="flex items-center gap-2">
+                              <button 
+                                onClick={handleCreateList}
+                                className="flex-1 h-10 bg-brand-primary text-white text-xs font-black uppercase tracking-widest rounded-lg hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-brand-primary/20"
+                              >
+                                Add List
+                              </button>
+                              <button 
+                                onClick={() => setIsAddingList(false)}
+                                className="w-10 h-10 flex items-center justify-center text-text-tertiary hover:bg-bg-secondary rounded-lg transition-all"
+                              >
+                                <X size={18} />
+                              </button>
+                            </div>
+                          </div>
+                        ) : isBoardCollapsed ? (
+                          <button 
+                            onClick={() => setIsAddingList(true)}
+                            className={`w-full h-full border-2 border-dashed border-text-tertiary/20 rounded-[28px] flex flex-col items-center py-12 text-text-tertiary hover:border-brand-primary/40 hover:text-brand-primary hover:bg-white/40 transition-all group`}
+                          >
+                            <div className="p-2 bg-white/50 rounded-lg group-hover:bg-brand-primary group-hover:text-white transition-all shadow-sm mb-6">
+                              <Plus size={18} />
+                            </div>
+                            <div className="flex-1 flex items-center justify-center">
+                              <span className="whitespace-nowrap text-[9px] font-black uppercase tracking-[0.4em] origin-center -rotate-90 transform-gpu opacity-60 group-hover:opacity-100 transition-opacity">
+                                Add List
+                              </span>
+                            </div>
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => setIsAddingList(true)}
+                            className="w-full h-14 bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl flex items-center gap-3 px-6 text-text-primary/70 font-bold hover:bg-white/60 hover:text-brand-primary transition-all group shadow-sm"
+                          >
+                            <div className="p-1.5 bg-white/50 rounded-lg group-hover:bg-brand-primary group-hover:text-white transition-all shadow-sm">
+                              <Plus size={16} />
+                            </div>
+                            <span className="text-sm">Add another list</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </DragDropContext>
               </motion.div>
@@ -475,9 +599,34 @@ const BoardPage = () => {
           </AnimatePresence>
         </div>
 
-        {showActivityDrawer && <ActivitySidePanel isOpen={showActivityDrawer} onClose={() => setShowActivityDrawer(false)} boardId={boardId} />}
-        {showSettingsDrawer && <BoardSettingsDrawer isOpen={showSettingsDrawer} onClose={() => setShowSettingsDrawer(false)} board={activeBoard} />}
+        <AnimatePresence>
+          {modals.activityDrawer && (
+            <ActivitySidePanel 
+              isOpen={modals.activityDrawer} 
+              onClose={() => dispatch(toggleModal({ modalName: 'activityDrawer', isOpen: false }))} 
+              boardId={boardId} 
+            />
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {modals.boardSettings && (
+            <BoardSettingsDrawer 
+              isOpen={modals.boardSettings} 
+              onClose={() => dispatch(toggleModal({ modalName: 'boardSettings', isOpen: false }))} 
+              board={activeBoard} 
+            />
+          )}
+        </AnimatePresence>
+
         {modals.cardDetails && <CardDetailsModal />}
+        {modals.prismRules && (
+          <PrismRulesDialog 
+            isOpen={modals.prismRules} 
+            onClose={() => dispatch(toggleModal({ modalName: 'prismRules', isOpen: false }))} 
+            board={activeBoard} 
+          />
+        )}
         {showJoinModal && (
           <JoinWorkspaceModal 
             workspaceName={targetWorkspace?.name} 

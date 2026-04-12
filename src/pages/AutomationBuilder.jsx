@@ -16,9 +16,12 @@ import {
 } from 'lucide-react';
 import AppLayout from '../components/layout/AppLayout';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { formatDistanceToNow } from 'date-fns';
+import { setActiveBoard, setLists } from '../store/slices/boardSlice';
+import { BoardSkeleton } from '../components/ui/Skeleton';
 
 const AutomationLogs = ({ automationId }) => {
   const [logs, setLogs] = useState([]);
@@ -58,7 +61,10 @@ const AutomationLogs = ({ automationId }) => {
 };
 
 const AutomationBuilder = () => {
-  const { activeBoard, lists } = useSelector((state) => state.board);
+  const { boardId } = useParams();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { activeBoard, lists, loading: boardLoading } = useSelector((state) => state.board);
   const { user } = useSelector((state) => state.auth);
   const [automations, setAutomations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -71,16 +77,48 @@ const AutomationBuilder = () => {
     targetListId: ''
   });
 
+  // Hydrate Board Context if missing
   useEffect(() => {
-    if (activeBoard) {
+    const hydrateBoard = async () => {
+      if (!boardId) return;
+      
+      // If we already have the correct board, don't re-fetch
+      if (activeBoard?.id === boardId && lists.length > 0) return;
+
+      const { data: board } = await supabase
+        .from('boards')
+        .select('*')
+        .eq('id', boardId)
+        .maybeSingle();
+
+      if (board) {
+        dispatch(setActiveBoard(board));
+        const { data: listData } = await supabase
+          .from('lists')
+          .select('*')
+          .eq('board_id', boardId)
+          .order('position');
+        if (listData) dispatch(setLists(listData));
+      } else {
+        // Handle invalid board context
+        navigate('/dashboard');
+      }
+    };
+
+    hydrateBoard();
+  }, [boardId, activeBoard?.id, dispatch, navigate, lists.length]);
+
+  useEffect(() => {
+    if (activeBoard?.id) {
       fetchAutomations();
-      if (lists?.length > 0) {
+      if (lists?.length > 0 && lists[0]?.id) {
         setNewProtocol(prev => ({ ...prev, targetListId: lists[0].id }));
       }
     }
-  }, [activeBoard, lists]);
+  }, [activeBoard?.id, lists]);
 
   const fetchAutomations = async () => {
+    if (!activeBoard?.id) return;
     setLoading(true);
     const { data } = await supabase
       .from('automations')
@@ -112,6 +150,7 @@ const AutomationBuilder = () => {
   const runAutomationManually = async (auto) => {
     // Top 100 Engineer implementation: In a real system, this would call an Edge Function.
     // Here we'll simulate a manual execution log for the first card in the board.
+    if (!activeBoard?.id) return;
     const { data: cards } = await supabase.from('cards').select('id').eq('board_id', activeBoard.id).limit(1);
     if (!cards || cards.length === 0) {
       alert('Attach a card to the board to test this automation.');
@@ -128,8 +167,20 @@ const AutomationBuilder = () => {
     if (!error) {
        alert('Manual execution simulated successfully.');
        fetchAutomations();
+    } else {
+       alert('Manual execution failed: ' + error.message);
     }
   };
+
+  if (boardLoading || (!activeBoard && boardId)) {
+    return (
+      <AppLayout>
+        <div className="p-10 max-w-5xl mx-auto">
+          <BoardSkeleton />
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -149,7 +200,8 @@ const AutomationBuilder = () => {
           </div>
           <button 
             onClick={() => setIsCreating(true)}
-            className="h-14 px-8 bg-brand-primary text-white rounded-[20px] font-black uppercase tracking-widest text-[10px] shadow-xl shadow-brand-primary/20 hover:scale-[1.02] transition-all flex items-center gap-3"
+            disabled={!activeBoard}
+            className={`h-14 px-8 rounded-[20px] font-black uppercase tracking-widest text-[10px] shadow-xl transition-all flex items-center gap-3 ${!activeBoard ? 'bg-bg-tertiary text-text-tertiary cursor-not-allowed shadow-none' : 'bg-brand-primary text-white shadow-brand-primary/20 hover:scale-[1.02]'}`}
           >
             <Plus size={18} strokeWidth={3} />
             Initialize Protocol
@@ -313,11 +365,7 @@ const AutomationBuilder = () => {
                             <option value="CARD_ARCHIVED">Task Archived</option>
                             <option value="LABEL_ADDED">Label Applied</option>
                           </optgroup>
-                          <optgroup label="GitHub Events">
-                            <option value="GITHUB_PR_OPENED">GitHub: PR Opened</option>
-                            <option value="GITHUB_PR_MERGED">GitHub: PR Merged</option>
-                            <option value="GITHUB_ISSUE_CLOSED">GitHub: Issue Closed</option>
-                          </optgroup>
+
                           <optgroup label="Ritual Intervals">
                             <option value="SCHEDULE_DAILY">Daily Ritual (Morning)</option>
                             <option value="SCHEDULE_WEEKLY">Weekly Ritual (Monday)</option>
@@ -373,7 +421,7 @@ const AutomationBuilder = () => {
 
                   <button 
                     onClick={async () => {
-                      if (!newProtocol.name) return;
+                      if (!newProtocol.name || !activeBoard?.id || !user?.id) return;
                       
                       const actionConfig = {};
                       if (newProtocol.action === 'CREATE_CARD') {
@@ -381,7 +429,7 @@ const AutomationBuilder = () => {
                         actionConfig.title = newProtocol.name; // Use protocol name as task title by default
                       }
 
-                      const { data } = await supabase.from('automations').insert({
+                      const { data, error } = await supabase.from('automations').insert({
                         board_id: activeBoard.id,
                         created_by: user.id,
                         name: newProtocol.name,
@@ -399,6 +447,8 @@ const AutomationBuilder = () => {
                           action: 'NOTIFY_USER',
                           targetListId: lists?.[0]?.id || ''
                         });
+                      } else if (error) {
+                        alert('Failed to forge protocol: ' + error.message);
                       }
                     }}
                     className="w-full h-16 bg-brand-primary text-white rounded-[24px] font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-brand-primary/30 hover:scale-[1.02] active:scale-95 transition-all"

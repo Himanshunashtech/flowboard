@@ -28,16 +28,16 @@ const FeaturesPage = () => {
             <Sparkles size={14} className="fill-current" />
             Product Manifesto v4.0
           </div>
-          <h1 className="text-6xl md:text-[130px] font-black text-text-primary tracking-tighter leading-[0.8] mb-12">
-            Engineered for <br/> <span className="text-brand-primary">total flow.</span>
+          <h1 className="text-5xl md:text-[130px] font-black text-text-primary tracking-tighter leading-[0.8] mb-12">
+            Engineered for <br className="hidden md:block"/> <span className="text-brand-primary">total flow.</span>
           </h1>
-          <p className="max-w-3xl mx-auto text-2xl text-text-secondary font-medium leading-relaxed mb-16 px-10 italic opacity-80">
+          <p className="max-w-3xl mx-auto text-lg md:text-2xl text-text-secondary font-medium leading-relaxed mb-16 px-6 md:px-10 italic opacity-80">
              FlowBoard is not a utility. It is a high-performance engine designed to eliminate the cognitive friction of management, 
              providing a unified, zero-latency canvas for teams that build the future.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-8">
-            <Link to="/signup" className="btn bg-brand-primary text-white !px-16 !py-7 !text-xl !rounded-[32px] font-black shadow-[0_32px_64px_-16px_rgba(79,70,229,0.4)] hover:scale-105 active:scale-95 transition-all flex items-center gap-4 group">
-               Start Building the Future <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
+          <div className="flex flex-col sm:flex-row justify-center gap-6">
+            <Link to="/signup" className="h-16 md:h-20 px-8 md:px-16 flex items-center justify-center bg-brand-primary text-white text-sm md:text-xl font-black uppercase tracking-widest rounded-3xl shadow-[0_32px_64px_-16px_rgba(79,70,229,0.4)] hover:scale-105 active:scale-95 transition-all text-center">
+               Start Building
             </Link>
           </div>
         </div>
@@ -51,27 +51,27 @@ const FeaturesPage = () => {
                 <div className="inline-flex items-center gap-3 text-[10px] font-black text-indigo-500 uppercase tracking-widest px-6 py-2 bg-indigo-50 rounded-full border border-indigo-100">
                    <Activity size={12} /> Rendering Specs
                 </div>
-                <h2 className="text-6xl font-black text-text-primary tracking-tighter leading-[0.95]">Butter-smooth <br/> at any scale.</h2>
-                <div className="prose prose-lg text-text-secondary font-medium leading-[1.8] space-y-8 max-w-xl">
-                   <p>
-                      Traditional project management software struggles with "DOM-bloat," leading to jittery interactions as your board grows. Our <strong>Kinetic Canvas</strong> technology leverages hardware acceleration and virtualized list rendering to maintain a consistent 60FPS interaction rate.
-                   </p>
-                   <p>
-                      Whether you are managing a 10-card sprint or a 5,000-card global roadmap, every drag, drop, and scroll is processed with 0.02ms reactive latency. This provides the tactile feedback required for "deep state" project orchestration, where the tool disappears and only the work remains.
-                   </p>
-                </div>
+                <h2 className="text-4xl md:text-6xl font-black text-text-primary tracking-tighter leading-[0.95]">Butter-smooth <br className="hidden sm:block"/> at any scale.</h2>
+                 <div className="prose prose-lg text-text-secondary font-medium leading-[1.8] space-y-6 max-w-xl">
+                    <p className="text-base md:text-lg">
+                       Traditional project management software struggles with "DOM-bloat," leading to jittery interactions as your board grows. Our <strong>Kinetic Canvas</strong> technology leverages hardware acceleration and virtualized list rendering to maintain a consistent 60FPS interaction rate.
+                    </p>
+                    <p className="text-base md:text-lg">
+                       Whether you are managing a 10-card sprint or a 5,000-card global roadmap, every drag, drop, and scroll is processed with 0.02ms reactive latency.
+                    </p>
+                 </div>
                 <div className="p-10 bg-bg-secondary/30 rounded-[48px] border border-border-light relative group">
                    <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
                    <div className="flex items-center justify-between">
-                      <div className="space-y-2">
-                         <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Interaction Latency</p>
-                         <p className="text-4xl font-black text-success tracking-tighter">0.02ms</p>
-                      </div>
-                      <div className="h-10 w-[1px] bg-border-light" />
-                      <div className="space-y-2">
-                         <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Frame Stability</p>
-                         <p className="text-4xl font-black text-brand-primary tracking-tighter">60 FPS</p>
-                      </div>
+                       <div className="space-y-2">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Interaction</p>
+                          <p className="text-3xl md:text-4xl font-black text-success tracking-tighter">0.02ms</p>
+                       </div>
+                       <div className="h-10 w-[1px] bg-border-light" />
+                       <div className="space-y-2">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Stability</p>
+                          <p className="text-3xl md:text-4xl font-black text-brand-primary tracking-tighter">60 FPS</p>
+                       </div>
                    </div>
                 </div>
              </div>
@@ -126,7 +126,7 @@ const FeaturesPage = () => {
                <div className="inline-flex items-center gap-3 px-6 py-2 bg-brand-primary/20 text-brand-primary rounded-full text-[10px] font-black uppercase tracking-widest border border-brand-primary/20">
                   <Cpu size={14} /> Logic Engine
                </div>
-               <h2 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.85]">Stop doing <br/> busy work.</h2>
+                <h2 className="text-4xl md:text-8xl font-black tracking-tighter leading-[0.85]">Stop doing <br className="hidden sm:block"/> busy work.</h2>
                <div className="prose prose-lg text-white/50 font-medium leading-[1.8] space-y-6">
                   <p>
                      Administrative overhead is the silent killer of engineering velocity. FlowBoard's <strong>Protocol Engine</strong> allows you to automate repetitive multi-step actions using high-level conditional logic. 

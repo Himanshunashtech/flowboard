@@ -14,7 +14,7 @@ const AboutPage = () => {
                         Our Story
                     </span>
                     <h1 className="text-5xl md:text-8xl font-black text-text-primary tracking-tighter leading-[0.9] mb-12">
-                        We build tools for <br className="hidden md:block"/> the <span className="text-brand-primary italic underline decoration-dashed underline-offset-[16px]">builders.</span>
+                        We build tools for <br className="hidden md:block"/> the <span className="text-brand-primary italic underline decoration-dashed underline-offset-[8px] md:underline-offset-[16px]">builders.</span>
                     </h1>
                     <p className="text-2xl text-text-secondary max-w-4xl mx-auto mb-20 leading-relaxed font-medium">
                         FlowBoard was born from the belief that project management shouldn't feel like a chore. 
@@ -108,7 +108,7 @@ const AboutPage = () => {
                                 Our leadership team consists of former engineers, designers, and project leads 
                                 from companies like Google, Meta, and Stripe.
                             </p>
-                            <div className="grid grid-cols-2 gap-12">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-12 pt-12 md:pt-0">
                                 {[
                                     { name: 'Alex Rivera', role: 'CEO & Founder', bio: 'Former Head of Product at TechFlow.' },
                                     { name: 'Sofia Chen', role: 'CTO', bio: 'Architected real-time engines at ScaleDB.' },

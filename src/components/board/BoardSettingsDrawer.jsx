@@ -6,7 +6,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { updateBoard } from '../../store/slices/boardSlice';
 import { compressImage } from '../../lib/imageUtils';
 import BoardCustomFields from './BoardCustomFields';
-import BoardIntegrations from './BoardIntegrations';
+
 
 const GRADIENTS = [
   { name: 'Oceanic', value: 'linear-gradient(135deg, #00B4DB 0%, #0083B0 100%)' },
@@ -253,8 +253,7 @@ const BoardSettingsDrawer = ({ board, onClose }) => {
         {/* Custom Fields */}
         <BoardCustomFields boardId={board.id} />
 
-        {/* GitHub Integrations */}
-        <BoardIntegrations boardId={board.id} />
+
 
         {/* Visibility */}
         <section className="space-y-4">

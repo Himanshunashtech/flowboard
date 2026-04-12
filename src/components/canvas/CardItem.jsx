@@ -1,7 +1,7 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Draggable } from '@hello-pangea/dnd';
-import { MessageSquare, Paperclip, Clock, Check, MoreVertical, Plus, Circle } from 'lucide-react';
+import { MessageSquare, Paperclip, Clock, Check, MoreVertical, Plus, Circle, MapPin } from 'lucide-react';
 import { setActiveCardId, toggleModal } from '../../store/slices/uiSlice';
 import { isPast } from 'date-fns';
 import ReactDOM from 'react-dom';
@@ -179,6 +179,11 @@ const CardItem = ({ card, index, onClick, isSelected, stylePreset = 'modern' }) 
                     <div className="flex items-center gap-1 hover:text-brand-primary transition-colors cursor-help" title={`${card.comments.length} comment(s)`}>
                       <MessageSquare size={12} />
                       <span className="tabular-nums">{card.comments.length}</span>
+                    </div>
+                  )}
+                  {card.location && (
+                    <div className="flex items-center gap-1 hover:text-brand-primary transition-colors cursor-help" title={`Location: ${card.location.name}`}>
+                      <MapPin size={12} className="text-brand-primary" />
                     </div>
                   )}
                   {card.time_entries?.some(t => !t.ended_at) && (

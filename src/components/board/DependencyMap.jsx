@@ -18,9 +18,12 @@ import {
   Clock,
   Maximize2,
   Zap,
-  Flag
+  Flag,
+  Layout
 } from 'lucide-react';
 import { setActiveCardId } from '../../store/slices/uiSlice';
+import { addDependency } from '../../store/slices/boardSlice';
+import { supabase } from '../../lib/supabase';
 
 // --- Custom Node Component ---
 const CardNode = ({ data }) => {
@@ -72,48 +75,86 @@ const nodeTypes = {
 
 const DependencyMap = () => {
   const dispatch = useDispatch();
-  const { cards, dependencies } = useSelector((state) => state.board);
+  const { cards, dependencies, lists } = useSelector((state) => state.board);
+  const { user } = useSelector((state) => state.auth);
 
   // --- Graph Initialization ---
   const initialElements = useMemo(() => {
     const nodes = [];
     const edges = [];
-    const processedNodes = new Set();
 
-    // 1. Create Nodes from cards involved in dependencies
-    dependencies.forEach(dep => {
-      [dep.blocking_card_id, dep.blocked_card_id].forEach(cardId => {
-        if (!processedNodes.has(cardId)) {
-          const card = cards.find(c => c.id === cardId);
-          if (card) {
-            nodes.push({
-              id: card.id,
-              type: 'cardNode',
-              data: { card },
-              // Basic positions for now - would ideally use dagre for auto-layout
-              position: { x: Math.random() * 400, y: Math.random() * 400 },
-            });
-            processedNodes.add(cardId);
-          }
-        }
-      });
+    // 1. Create Nodes for ALL active board cards
+    // Sort cards to ensure consistent deterministic layout if needed
+    const listMap = {};
+    lists.forEach((l, i) => listMap[l.id] = i);
 
-      edges.push({
-        id: `e-${dep.blocking_card_id}-${dep.blocked_card_id}`,
-        source: dep.blocking_card_id,
-        target: dep.blocked_card_id,
-        animated: true,
-        style: { stroke: '#CBD5E1', strokeWidth: 2 },
+    cards.filter(c => !c.is_archived).forEach((card) => {
+      const listIdx = listMap[card.list_id] ?? 0;
+      // Get index of card within its own list for Y positioning
+      const cardsInList = cards.filter(c => !c.is_archived && c.list_id === card.list_id);
+      const cardIdx = cardsInList.findIndex(c => c.id === card.id);
+
+      nodes.push({
+        id: card.id,
+        type: 'cardNode',
+        data: { card },
+        // Simple Grid Layout: X = List Column, Y = Card Row
+        position: { 
+          x: listIdx * 350, 
+          y: cardIdx * 180 + (listIdx % 2 === 0 ? 0 : 40) // Slight stagger for better visual flow
+        },
       });
     });
 
+    // 2. Create Edges from dependencies
+    dependencies.forEach(dep => {
+      // Only show edge if both cards exist in current node set
+      if (nodes.some(n => n.id === dep.blocking_card_id) && nodes.some(n => n.id === dep.blocked_card_id)) {
+        edges.push({
+          id: `e-${dep.blocking_card_id}-${dep.blocked_card_id}`,
+          source: dep.blocking_card_id,
+          target: dep.blocked_card_id,
+          animated: true,
+          style: { stroke: '#3b82f6', strokeWidth: 3 },
+          markerEnd: { type: 'arrowclosed', color: '#3b82f6' }
+        });
+      }
+    });
+
     return { nodes, edges };
-  }, [cards, dependencies]);
+  }, [cards, dependencies, lists]);
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialElements.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialElements.edges);
 
-  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
+  const onConnect = useCallback(async (params) => {
+    const { source, target } = params;
+    if (source === target) return;
+
+    // 1. Optimistic Update
+    const newDep = {
+      blocking_card_id: source,
+      blocked_card_id: target,
+      type: 'FINISH_TO_START'
+    };
+    
+    dispatch(addDependency(newDep));
+    setEdges((eds) => addEdge({ ...params, animated: true, style: { stroke: '#3b82f6', strokeWidth: 3 }, markerEnd: { type: 'arrowclosed', color: '#3b82f6' } }, eds));
+
+    // 2. DB Persistence
+    const { error } = await supabase
+      .from('card_dependencies')
+      .insert({
+        blocking_card_id: source,
+        blocked_card_id: target,
+        created_by: user.id
+      });
+
+    if (error) {
+      console.error('Failed to save dependency:', error);
+      // Rollback would be nice but for now we rely on the next fetch
+    }
+  }, [setEdges, dispatch, user.id]);
 
   const onNodeClick = (_, node) => {
     dispatch(setActiveCardId(node.data.card.id));
@@ -132,10 +173,10 @@ const DependencyMap = () => {
             </div>
           </div>
           <div className="px-6 py-4 bg-white/80 backdrop-blur-md border border-white/40 shadow-xl rounded-3xl flex flex-col gap-1 min-w-[160px]">
-            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">Blocked Check</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">Project Scope</span>
             <div className="flex items-end gap-2">
-               <span className="text-3xl font-black text-red-500">{nodes.length}</span>
-               <AlertCircle className="text-red-500 mb-1" size={18} />
+               <span className="text-3xl font-black text-slate-800">{nodes.length}</span>
+               <Layout className="text-slate-400 mb-1" size={18} />
             </div>
           </div>
         </div>

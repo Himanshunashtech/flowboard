@@ -27,13 +27,12 @@ import {
   Zap
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { setActiveCardId, addNotification } from '../../store/slices/uiSlice';
+import { setActiveCardId, addNotification, toggleModal } from '../../store/slices/uiSlice';
 import { updateCard, addCard } from '../../store/slices/boardSlice';
 import { supabase } from '../../lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { resolvePrismStyles } from '../../lib/prismEvaluator';
 import { evaluateFormula } from '../../lib/formulaEvaluator';
-import PrismRulesDialog from '../modals/PrismRulesDialog';
 
 const columnHelper = createColumnHelper();
 
@@ -187,7 +186,6 @@ const TableView = () => {
   const [globalFilter, setGlobalFilter] = useState('');
   const [sorting, setSorting] = useState([]);
   const [quickAddTitle, setQuickAddTitle] = useState('');
-  const [isPrismOpen, setIsPrismOpen] = useState(false);
   const [customFields, setCustomFields] = useState([]);
 
   useEffect(() => {
@@ -355,7 +353,7 @@ const TableView = () => {
               Sort
             </button>
             <button
-              onClick={() => setIsPrismOpen(true)}
+              onClick={() => dispatch(toggleModal({ modalName: 'prismRules', isOpen: true }))}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-brand-primary bg-brand-primary/5 hover:bg-brand-primary/10 transition-all border border-brand-primary/10"
             >
               <Zap size={14} />
@@ -364,13 +362,7 @@ const TableView = () => {
           </div>
         </div>
 
-        {isPrismOpen && (
-          <PrismRulesDialog
-            isOpen={isPrismOpen}
-            onClose={() => setIsPrismOpen(false)}
-            board={activeBoard}
-          />
-        )}
+
 
         <div className="flex items-center gap-4">
           <div className="h-8 w-[1px] bg-border-light mx-2" />

@@ -18,24 +18,24 @@ const HelpCenterPage = () => {
                         <LifeBuoy size={14} />
                         FlowBoard Concierge
                     </div>
-                    <h1 className="text-6xl md:text-[110px] font-black text-text-primary tracking-tighter leading-[0.85] mb-12">
-                        How can we <br/> <span className="text-brand-primary">empower you?</span>
+                    <h1 className="text-4xl md:text-[110px] font-black text-text-primary tracking-tighter leading-[0.85] mb-8 md:mb-12">
+                        How can we <br className="hidden md:block"/> <span className="text-brand-primary">empower you?</span>
                     </h1>
-                    <p className="max-w-3xl mx-auto text-xl text-text-secondary font-medium leading-relaxed mb-16 px-6">
+                    <p className="max-w-3xl mx-auto text-base md:text-xl text-text-secondary font-medium leading-relaxed mb-10 md:mb-16 px-6">
                         Access our complete library of articles, video masterclasses, and technical guides designed 
                         to help you master the kinetic landscape of FlowBoard.
                     </p>
 
                     <div className="max-w-4xl mx-auto relative group">
-                        <Search className="absolute left-10 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand-primary transition-colors" size={32} />
+                        <Search className="absolute left-6 md:left-10 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand-primary transition-colors" size={24} />
                         <input 
                             type="text" 
-                            placeholder="Describe your challenge or search for guides..." 
-                            className="w-full h-28 pl-24 pr-12 bg-white border border-border-light rounded-[48px] shadow-2xl shadow-black/5 focus:outline-none focus:ring-8 focus:ring-brand-primary/5 transition-all text-2xl font-black text-text-primary placeholder:text-text-tertiary/30"
+                            placeholder="Describe your challenge..." 
+                            className="w-full h-16 md:h-28 pl-16 md:pl-24 pr-8 md:pr-12 bg-white border border-border-light rounded-[32px] md:rounded-[48px] shadow-2xl shadow-black/5 focus:outline-none focus:ring-8 focus:ring-brand-primary/5 transition-all text-lg md:text-2xl font-black text-text-primary placeholder:text-text-tertiary/30"
                         />
-                        <div className="absolute right-10 top-1/2 -translate-y-1/2 hidden md:block">
+                        <div className="absolute right-4 top-1/2 -translate-y-1/2 hidden md:block">
                            <button className="bg-brand-primary text-white text-xs font-black uppercase tracking-widest px-8 py-4 rounded-3xl hover:bg-brand-primary-hover active:scale-95 transition-all shadow-xl shadow-brand-primary/20">
-                              Search Intelligence
+                               Search Intelligence
                            </button>
                         </div>
                     </div>

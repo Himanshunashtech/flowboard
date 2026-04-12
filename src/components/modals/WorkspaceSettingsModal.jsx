@@ -262,7 +262,10 @@ const WorkspaceSettingsModal = () => {
                            <h3 className="text-5xl font-black text-text-primary tracking-tighter leading-none">Human Capital</h3>
                         </div>
                         <button 
-                          onClick={() => dispatch(toggleModal({ modalName: 'memberInvite', isOpen: true }))}
+                          onClick={() => {
+                            dispatch(toggleModal({ modalName: 'workspaceSettings', isOpen: false }));
+                            dispatch(toggleModal({ modalName: 'memberInvite', isOpen: true }));
+                          }}
                           className="flex items-center gap-3 px-8 py-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-3xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm"
                         >
                           <UserPlus size={16} />

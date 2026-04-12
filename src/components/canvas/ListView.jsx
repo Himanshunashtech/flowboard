@@ -5,9 +5,9 @@ import { MoreHorizontal, Plus, X, UserPlus, Check } from 'lucide-react';
 import CardItem from './CardItem';
 import { supabase } from '../../lib/supabase';
 import { Ordering } from '../../lib/ordering';
-import { addCard } from '../../store/slices/boardSlice';
 import { AnimatePresence, motion } from 'framer-motion';
-import { updateList } from '../../store/slices/boardSlice';
+import { addCard, updateList, deleteList } from '../../store/slices/boardSlice';
+import { addNotification } from '../../store/slices/uiSlice';
 
 const LIST_COLORS = [
   { name: 'Green',  value: '#61bd4f' },
@@ -22,7 +22,7 @@ const LIST_COLORS = [
   { name: 'Gray',   value: '#838c91' }
 ];
 
-const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', cardStyle = 'modern', isReadOnly = false }) => {
+const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', cardStyle = 'modern', isReadOnly = false, isCollapsed = false }) => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
   const { members } = useSelector((state) => state.board);
@@ -105,13 +105,15 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
   };
 
   const handleUpdateTitle = async () => {
-    if (!listTitle.trim() || listTitle === list.title) {
-      setIsEditingTitle(false);
-      setListTitle(list.title);
-      return;
-    }
-    await supabase.from('lists').update({ title: listTitle }).eq('id', list.id);
+    // Optimistic Update
+    dispatch(updateList({ id: list.id, title: listTitle }));
     setIsEditingTitle(false);
+
+    const { error } = await supabase.from('lists').update({ title: listTitle }).eq('id', list.id);
+    if (error) {
+      dispatch(addNotification({ message: 'Failed to update title', type: 'error' }));
+      dispatch(updateList({ id: list.id, title: list.title })); // Rollback
+    }
   };
 
   const archiveAllCards = async () => {
@@ -120,10 +122,18 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
     setShowMenu(false);
   };
 
-  const deleteList = async () => {
+  const deleteListHandler = async () => {
     if (!confirm('Delete this list and all its cards?')) return;
-    await supabase.from('lists').delete().eq('id', list.id);
+    
+    // Optimistic Update
+    dispatch(deleteList(list.id));
     setShowMenu(false);
+
+    const { error } = await supabase.from('lists').delete().eq('id', list.id);
+    if (error) {
+      dispatch(addNotification({ message: 'Failed to delete list', type: 'error' }));
+      // In a real app, we would re-fetch the board here to restore the list
+    }
   };
 
   const getListStyleClasses = () => {
@@ -141,233 +151,248 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
 
   return (
     <div 
-      className={`list-container w-96 shrink-0 ${getListStyleClasses()} rounded-[28px] flex flex-col h-full snap-center border relative animate-in fade-in slide-in-from-bottom-2 duration-500 overflow-hidden`}
+      className={`list-container ${isCollapsed ? 'w-16 h-[280px]' : 'w-96 h-full'} shrink-0 ${getListStyleClasses()} rounded-[28px] flex flex-col snap-center border relative transition-all duration-500 overflow-hidden`}
       style={{ 
         backgroundColor: list.color ? `${list.color}26` : undefined, // 15% opacity
         borderTop: list.color ? `4px solid ${list.color}` : '1px solid transparent',
         borderColor: list.color ? 'rgba(0,0,0,0.05)' : undefined
       }}
     >
-      {/* List Header */}
-      <div className="px-6 py-5 flex items-center justify-between">
-        <div className="flex items-center gap-3 flex-1 min-w-0 group/title">
-          {isEditingTitle ? (
-            <input
-              autoFocus
-              className="flex-1 text-[11px] font-black uppercase tracking-[0.1em] text-text-primary bg-bg-secondary px-3 py-1 rounded-xl outline-none ring-2 ring-brand-primary/20"
-              value={listTitle}
-              onChange={e => setListTitle(e.target.value)}
-              onBlur={handleUpdateTitle}
-              onKeyDown={e => e.key === 'Enter' && handleUpdateTitle()}
-            />
-          ) : (
-            <h3 
-              onClick={() => setIsEditingTitle(true)}
-              className="text-[11px] font-black uppercase tracking-[0.15em] text-text-primary px-1 truncate cursor-pointer hover:bg-bg-secondary rounded-lg transition-colors"
-            >
-              {list.title}
-            </h3>
-          )}
-          <div className="ml-auto flex items-center gap-3">
-             <span className="text-[10px] font-black text-text-tertiary opacity-40">
-               {cards.length}
-             </span>
-             {!isReadOnly && (
-               <div className="flex items-center gap-1 opacity-0 group-hover/title:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => setShowPeoplePanel(p => !p)}
-                    className={`p-1.5 rounded-lg transition-all ${showPeoplePanel ? 'bg-brand-primary/10 text-brand-primary' : 'text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary'}`}
-                  >
-                    <UserPlus size={14} />
-                  </button>
-                  <button 
-                    onClick={() => setShowMenu(p => !p)}
-                    className={`p-1.5 rounded-lg transition-all ${showMenu ? 'bg-bg-tertiary text-text-primary' : 'text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary'}`}
-                  >
-                    <MoreHorizontal size={16} />
-                  </button>
-               </div>
-             )}
-          </div>
+      {isCollapsed ? (
+        <div className="flex flex-col items-center py-10 h-full">
+           <div className="flex-1 flex items-center justify-center">
+             <h3 className="whitespace-nowrap text-[9px] font-black uppercase tracking-[0.3em] text-text-primary origin-center -rotate-90 transform-gpu py-2 hover:text-brand-primary transition-colors cursor-default">
+               {list.title}
+             </h3>
+           </div>
+           <div className="mt-auto mb-2 px-2 py-1 bg-white/50 rounded-full text-[8px] font-black text-text-tertiary">
+             {cards.length}
+           </div>
         </div>
-      </div>
-
-      {/* Interaction Panels */}
-      <AnimatePresence>
-        {showPeoplePanel && (
-          <motion.div
-            key="people-panel"
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="mx-3 mb-2 bg-white border border-border-light rounded-xl shadow-lg overflow-hidden relative z-50"
-          >
-            <div className="p-3">
-              <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary mb-2.5">
-                Assign member to list
-              </p>
-              {members?.length > 0 ? (
-                <div className="space-y-1">
-                  {members.map(m => {
-                    const name = m.profiles?.full_name || m.profiles?.email || 'User';
-                    const isLoading = assigningUser === m.user_id;
-                    return (
+      ) : (
+        <>
+          {/* List Header */}
+          <div className="px-6 py-5 flex items-center justify-between">
+            <div className="flex items-center gap-3 flex-1 min-w-0 group/title">
+              {isEditingTitle ? (
+                <input
+                  autoFocus
+                  className="flex-1 text-[11px] font-black uppercase tracking-[0.1em] text-text-primary bg-bg-secondary px-3 py-1 rounded-xl outline-none ring-2 ring-brand-primary/20"
+                  value={listTitle}
+                  onChange={e => setListTitle(e.target.value)}
+                  onBlur={handleUpdateTitle}
+                  onKeyDown={e => e.key === 'Enter' && handleUpdateTitle()}
+                />
+              ) : (
+                <h3 
+                  onClick={() => setIsEditingTitle(true)}
+                  className="text-[11px] font-black uppercase tracking-[0.15em] text-text-primary px-1 truncate cursor-pointer hover:bg-bg-secondary rounded-lg transition-colors"
+                >
+                  {list.title}
+                </h3>
+              )}
+              <div className="ml-auto flex items-center gap-3">
+                 <span className="text-[10px] font-black text-text-tertiary opacity-40">
+                   {cards.length}
+                 </span>
+                 {!isReadOnly && (
+                   <div className="flex items-center gap-1 opacity-0 group-hover/title:opacity-100 transition-opacity">
                       <button
-                        key={m.user_id}
-                        onClick={() => assignMemberToList(m)}
-                        disabled={isLoading}
-                        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-bg-secondary transition-colors text-left"
+                        onClick={() => setShowPeoplePanel(p => !p)}
+                        className={`p-1.5 rounded-lg transition-all ${showPeoplePanel ? 'bg-brand-primary/10 text-brand-primary' : 'text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary'}`}
                       >
-                        <div className="w-6 h-6 rounded-full bg-brand-primary flex items-center justify-center text-white text-[10px] font-bold shrink-0">
-                          {name[0].toUpperCase()}
-                        </div>
-                        <span className="text-xs font-semibold text-text-secondary flex-1 truncate">{name}</span>
-                        {isLoading ? (
-                          <div className="w-3 h-3 border-2 border-brand-primary border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Plus size={12} className="text-text-tertiary" />
+                        <UserPlus size={14} />
+                      </button>
+                      <button 
+                        onClick={() => setShowMenu(p => !p)}
+                        className={`p-1.5 rounded-lg transition-all ${showMenu ? 'bg-bg-tertiary text-text-primary' : 'text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary'}`}
+                      >
+                        <MoreHorizontal size={16} />
+                      </button>
+                   </div>
+                 )}
+              </div>
+            </div>
+          </div>
+
+          {/* Interaction Panels */}
+          <AnimatePresence>
+            {showPeoplePanel && (
+              <motion.div
+                key="people-panel"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="mx-3 mb-2 bg-white border border-border-light rounded-xl shadow-lg overflow-hidden relative z-50"
+              >
+                <div className="p-3">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary mb-2.5">
+                    Assign member to list
+                  </p>
+                  {members?.length > 0 ? (
+                    <div className="space-y-1">
+                      {members.map(m => {
+                        const name = m.profiles?.full_name || m.profiles?.email || 'User';
+                        const isLoading = assigningUser === m.user_id;
+                        return (
+                          <button
+                            key={m.user_id}
+                            onClick={() => assignMemberToList(m)}
+                            disabled={isLoading}
+                            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-bg-secondary transition-colors text-left"
+                          >
+                            <div className="w-6 h-6 rounded-full bg-brand-primary flex items-center justify-center text-white text-[10px] font-bold shrink-0">
+                              {name[0].toUpperCase()}
+                            </div>
+                            <span className="text-xs font-semibold text-text-secondary flex-1 truncate">{name}</span>
+                            {isLoading ? (
+                              <div className="w-3 h-3 border-2 border-brand-primary border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <Plus size={12} className="text-text-tertiary" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-text-tertiary italic text-center py-2">No board members yet</p>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
+            {showMenu && (
+              <motion.div
+                key="color-menu"
+                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                className="mx-3 mb-2 bg-white border border-border-light rounded-[24px] shadow-2xl overflow-hidden relative z-50"
+              >
+                <div className="p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">
+                      Change list color
+                    </p>
+                    <button onClick={() => setShowMenu(false)} className="text-text-tertiary hover:text-text-primary">
+                      <X size={14} />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-5 gap-2 mb-4">
+                    {LIST_COLORS.map((c) => (
+                      <button
+                        key={c.value}
+                        onClick={() => handleUpdateColor(c.value)}
+                        className="group relative w-full aspect-square rounded-lg transition-all hover:scale-110 active:scale-95 shadow-sm overflow-hidden"
+                        style={{ backgroundColor: c.value }}
+                        title={c.name}
+                      >
+                        {list.color === c.value && (
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/10 text-white">
+                            <Check size={14} strokeWidth={4} />
+                          </div>
                         )}
                       </button>
-                    );
-                  })}
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => handleUpdateColor(null)}
+                    className="w-full flex items-center justify-center gap-2 py-3 bg-bg-secondary hover:bg-bg-tertiary rounded-xl text-[10px] font-black uppercase tracking-widest text-text-secondary transition-all"
+                  >
+                    <X size={14} />
+                    Remove color
+                  </button>
                 </div>
+
+                <div className="border-t border-border-light p-3 bg-bg-secondary/30">
+                   <button 
+                    onClick={archiveAllCards}
+                    className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:text-danger hover:bg-danger/5 rounded-lg transition-all"
+                   >
+                     Archive all cards
+                   </button>
+                   <button 
+                    onClick={deleteListHandler}
+                    className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:text-danger hover:bg-danger/5 rounded-lg transition-all"
+                   >
+                     Delete list
+                   </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Cards */}
+          <Droppable droppableId={list.id} type="card">
+            {(provided, snapshot) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className={`flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-3 min-h-[50px] transition-colors ${snapshot.isDraggingOver ? 'bg-brand-primary/5 rounded-2xl' : ''}`}
+              >
+                {cards.map((card, index) => (
+                  <CardItem 
+                    key={card.id} 
+                    card={card} 
+                    index={index} 
+                    onClick={onCardClick}
+                    isSelected={selectedIds?.includes(card.id)}
+                    stylePreset={cardStyle}
+                  />
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+
+          {/* Add Card */}
+          {!isReadOnly && (
+            <div className="p-3">
+              {isAdding ? (
+                <form onSubmit={handleAddCard} className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <textarea
+                    autoFocus
+                    placeholder="What needs to be done?"
+                    className="w-full p-3 bg-white border border-border-medium rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-brand-primary/10 outline-none resize-none"
+                    rows={3}
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddCard(e); }
+                      if (e.key === 'Escape') setIsAdding(false);
+                    }}
+                  />
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="submit"
+                      disabled={!title || loading}
+                      className="btn btn-primary !h-9 !px-4 !text-xs !rounded-lg"
+                    >
+                      {loading ? 'Adding...' : 'Add Card'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsAdding(false)}
+                      className="p-2 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary rounded-lg transition-all"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                </form>
               ) : (
-                <p className="text-xs text-text-tertiary italic text-center py-2">No board members yet</p>
+                <button
+                  onClick={() => setIsAdding(true)}
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm font-bold text-text-secondary hover:bg-bg-tertiary hover:text-brand-primary rounded-xl transition-all group"
+                >
+                  <Plus size={16} className="text-text-tertiary group-hover:text-brand-primary" />
+                  <span>Add a card</span>
+                </button>
               )}
             </div>
-          </motion.div>
-        )}
-
-        {showMenu && (
-          <motion.div
-            key="color-menu"
-            initial={{ opacity: 0, scale: 0.95, y: -10 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -10 }}
-            className="mx-3 mb-2 bg-white border border-border-light rounded-[24px] shadow-2xl overflow-hidden relative z-50"
-          >
-            <div className="p-5">
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">
-                  Change list color
-                </p>
-                <button onClick={() => setShowMenu(false)} className="text-text-tertiary hover:text-text-primary">
-                  <X size={14} />
-                </button>
-              </div>
-
-              <div className="grid grid-cols-5 gap-2 mb-4">
-                {LIST_COLORS.map((c) => (
-                  <button
-                    key={c.value}
-                    onClick={() => handleUpdateColor(c.value)}
-                    className="group relative w-full aspect-square rounded-lg transition-all hover:scale-110 active:scale-95 shadow-sm overflow-hidden"
-                    style={{ backgroundColor: c.value }}
-                    title={c.name}
-                  >
-                    {list.color === c.value && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/10 text-white">
-                        <Check size={14} strokeWidth={4} />
-                      </div>
-                    )}
-                  </button>
-                ))}
-              </div>
-
-              <button
-                onClick={() => handleUpdateColor(null)}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-bg-secondary hover:bg-bg-tertiary rounded-xl text-[10px] font-black uppercase tracking-widest text-text-secondary transition-all"
-              >
-                <X size={14} />
-                Remove color
-              </button>
-            </div>
-
-            <div className="border-t border-border-light p-3 bg-bg-secondary/30">
-               <button 
-                onClick={archiveAllCards}
-                className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:text-danger hover:bg-danger/5 rounded-lg transition-all"
-               >
-                 Archive all cards
-               </button>
-               <button 
-                onClick={deleteList}
-                className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:text-danger hover:bg-danger/5 rounded-lg transition-all"
-               >
-                 Delete list
-               </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Cards */}
-      <Droppable droppableId={list.id} type="card">
-        {(provided, snapshot) => (
-          <div
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-            className={`flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-3 min-h-[50px] transition-colors ${snapshot.isDraggingOver ? 'bg-brand-primary/5 rounded-2xl' : ''}`}
-          >
-            {cards.map((card, index) => (
-              <CardItem 
-                key={card.id} 
-                card={card} 
-                index={index} 
-                onClick={onCardClick}
-                isSelected={selectedIds?.includes(card.id)}
-                stylePreset={cardStyle}
-              />
-            ))}
-            {provided.placeholder}
-          </div>
-        )}
-      </Droppable>
-
-      {/* Add Card */}
-      {!isReadOnly && (
-        <div className="p-3">
-          {isAdding ? (
-            <form onSubmit={handleAddCard} className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
-              <textarea
-                autoFocus
-                placeholder="What needs to be done?"
-                className="w-full p-3 bg-white border border-border-medium rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-brand-primary/10 outline-none resize-none"
-                rows={3}
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleAddCard(e); }
-                  if (e.key === 'Escape') setIsAdding(false);
-                }}
-              />
-              <div className="flex items-center gap-2">
-                <button
-                  type="submit"
-                  disabled={!title || loading}
-                  className="btn btn-primary !h-9 !px-4 !text-xs !rounded-lg"
-                >
-                  {loading ? 'Adding...' : 'Add Card'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsAdding(false)}
-                  className="p-2 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary rounded-lg transition-all"
-                >
-                  <X size={16} />
-                </button>
-              </div>
-            </form>
-          ) : (
-            <button
-              onClick={() => setIsAdding(true)}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm font-bold text-text-secondary hover:bg-bg-tertiary hover:text-brand-primary rounded-xl transition-all group"
-            >
-              <Plus size={16} className="text-text-tertiary group-hover:text-brand-primary" />
-              <span>Add a card</span>
-            </button>
           )}
-        </div>
+        </>
       )}
     </div>
   );

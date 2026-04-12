@@ -14,7 +14,7 @@ import {
   Zap,
   Users,
   Users2,
-  Github,
+
   ClipboardList,
   FileText,
   Sparkles
@@ -30,7 +30,7 @@ const Sidebar = () => {
   const dispatch = useDispatch();
   const { user, profile } = useSelector((state) => state.auth);
   const { workspaces } = useSelector((state) => state.workspaces);
-  const { starredBoardIds } = useSelector((state) => state.board);
+  const { starredBoardIds, activeBoard } = useSelector((state) => state.board);
   const { sidebarOpen } = useSelector((state) => state.ui);
 
   React.useEffect(() => {
@@ -58,13 +58,7 @@ const Sidebar = () => {
     <div className={`border-r border-border-light bg-white/40 backdrop-blur-xl flex flex-col h-full relative z-20 transition-all duration-300 ease-in-out
       ${sidebarOpen ? 'w-[260px]' : 'w-[72px]'}`}>
       
-      {/* Toggle Button */}
-      <button 
-        onClick={() => dispatch(toggleSidebar())}
-        className="absolute -right-3 top-20 bg-white border border-border-light rounded-full p-1 shadow-sm hover:shadow-md transition-all z-30 hover:scale-110 active:scale-95"
-      >
-        {sidebarOpen ? <ChevronLeft size={14} /> : <ChevronRight size={14} />}
-      </button>
+
 
       <div className={`p-6 border-b border-border-light shadow-sm bg-white/20 flex items-center ${sidebarOpen ? 'gap-3' : 'justify-center p-4'}`}>
         <Link to="/dashboard" className="flex items-center gap-3">
@@ -80,10 +74,24 @@ const Sidebar = () => {
             <LayoutDashboard size={18} className="shrink-0" />
             {sidebarOpen && <span>Dashboard</span>}
           </NavLink>
-          <NavLink to="/automations" className={({ isActive }) => `flex items-center gap-3 px-4 py-2 mx-3 rounded-md transition-colors text-sm font-medium ${!sidebarOpen && 'justify-center mx-1'} ${isActive ? 'bg-white text-brand-primary shadow-sm border border-border-light' : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'}`} title={!sidebarOpen ? 'Automations' : ''}>
-            <Zap size={18} className="shrink-0" />
-            {sidebarOpen && <span>Automations</span>}
-          </NavLink>
+          {activeBoard ? (
+            <NavLink 
+              to={`/w/${workspaces.find(w => w.id === activeBoard.workspace_id)?.slug || 'default'}/b/${activeBoard.id}/automations`} 
+              className={({ isActive }) => `flex items-center gap-3 px-4 py-2 mx-3 rounded-md transition-colors text-sm font-medium ${!sidebarOpen && 'justify-center mx-1'} ${isActive ? 'bg-white text-brand-primary shadow-sm border border-border-light' : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'}`} 
+              title={!sidebarOpen ? 'Automations' : ''}
+            >
+              <Zap size={18} className="shrink-0" />
+              {sidebarOpen && <span>Automations</span>}
+            </NavLink>
+          ) : (
+            <div 
+              className={`flex items-center gap-3 px-4 py-2 mx-3 rounded-md transition-colors text-sm font-medium opacity-50 cursor-not-allowed ${!sidebarOpen && 'justify-center mx-1'} text-text-secondary`}
+              title="Select a board first"
+            >
+              <Zap size={18} className="shrink-0" />
+              {sidebarOpen && <span>Automations</span>}
+            </div>
+          )}
           <button 
             onClick={() => dispatch(toggleModal({ modalName: 'workspaceSettings', isOpen: true, data: { tab: 'members' } }))}
             className={`w-[calc(100%-24px)] flex items-center gap-3 px-4 py-2 mx-3 rounded-md transition-all text-sm font-medium ${!sidebarOpen && 'justify-center mx-1'} text-text-secondary hover:bg-bg-tertiary hover:text-indigo-600 group`}

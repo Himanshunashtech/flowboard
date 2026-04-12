@@ -77,7 +77,7 @@ const boardSlice = createSlice({
       if (index !== -1) {
         state.lists[index] = { ...state.lists[index], ...action.payload };
       }
-      state.lists.sort((a, b) => a.position - b.position);
+      state.lists.sort((a, b) => String(a.position || '').localeCompare(String(b.position || '')));
     },
     deleteList: (state, action) => {
       state.lists = state.lists.filter(l => l.id !== action.payload);
@@ -138,6 +138,23 @@ const boardSlice = createSlice({
         ...data,
         lastActive: Date.now()
       };
+    },
+
+    // Dependencies
+    addDependency: (state, action) => {
+      const exists = state.dependencies.some(d => 
+        d.blocking_card_id === action.payload.blocking_card_id && 
+        d.blocked_card_id === action.payload.blocked_card_id
+      );
+      if (!exists) {
+        state.dependencies.push(action.payload);
+      }
+    },
+    removeDependency: (state, action) => {
+      state.dependencies = state.dependencies.filter(d => 
+        !(d.blocking_card_id === action.payload.blocking_card_id && 
+          d.blocked_card_id === action.payload.blocked_card_id)
+      );
     }
   },
 });
@@ -166,7 +183,9 @@ export const {
   updateSprint,
   deleteSprint,
   setPresence,
-  updateUserPresence
+  updateUserPresence,
+  addDependency,
+  removeDependency
 } = boardSlice.actions;
 
 export default boardSlice.reducer;

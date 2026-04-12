@@ -6,19 +6,23 @@ import {
   UserPlus, Tag, Flag, Trash2, Share2, Plus, Timer, Play, Pause, 
   Square, Calendar, MoreHorizontal, Check, ChevronDown, Copy,
   ArrowRight, Star, Eye, Zap, Archive, Edit3, Network, Settings2,
-  Sparkles, AlertCircle, CheckCircle2, Palette, Loader2, ExternalLink
+  Sparkles, AlertCircle, CheckCircle2, Palette, Loader2, ExternalLink, Globe,
+  MapPin
 } from 'lucide-react';
-import { toggleModal, setActiveCardId } from '../../store/slices/uiSlice';
-import { updateCard, setLabels } from '../../store/slices/boardSlice';
+import { updateCard, setLabels, moveCard, addCard, deleteCard, addDependency, removeDependency } from '../../store/slices/boardSlice';
+import { addNotification, toggleModal, setActiveCardId } from '../../store/slices/uiSlice';
 import { supabase, getBoardChannel } from '../../lib/supabase';
 import { throttle } from '../../lib/utils';
 import { compressImage } from '../../lib/imageUtils';
 import RichTextEditor from '../ui/RichTextEditor';
 import { format, isPast, formatDistanceToNow } from 'date-fns';
 import CardActivityList from './CardActivityList';
-import CardGithubModule from '../board/CardGithubModule';
+
 import LabelsPopover from './LabelsPopover';
 import EditLabelPopover from './EditLabelPopover';
+import MoveCardPopover from './MoveCardPopover';
+import DependencySelector from './DependencySelector';
+import LocationSelector from './LocationSelector';
 
 // ─── Priority Config ──────────────────────────────────────────────────────────
 const PRIORITY_CONFIG = {
@@ -137,7 +141,7 @@ const NavBtn = ({ icon: Icon, label, onClick, danger, active }) => (
 // ─── Main Modal ───────────────────────────────────────────────────────────────
 const CardDetailsModal = () => {
   const dispatch = useDispatch();
-  const { activeBoard, lists, cards, members, labels, presence } = useSelector(s => s.board);
+  const { activeBoard, lists, cards, members, labels, presence, dependencies: allBoardDependencies } = useSelector(s => s.board);
   const { activeCardId } = useSelector(s => s.ui);
   const { user, profile } = useSelector(s => s.auth);
 
@@ -170,8 +174,12 @@ const CardDetailsModal = () => {
   const [timeEntries, setTimeEntries] = useState([]);
   
   // Label management state
-  const [labelSubView, setLabelSubView] = useState('list'); // 'list', 'create', 'edit'
   const [editingLabel, setEditingLabel] = useState(null);
+  const [showMovePopover, setShowMovePopover] = useState(false);
+  const [movePopoverMode, setMovePopoverMode] = useState('move');
+  const [showDependencyPanel, setShowDependencyPanel] = useState(false);
+  const [depPanelType, setDepPanelType] = useState('blocker'); // 'blocker' or 'blocked'
+  const [showLocationPanel, setShowLocationPanel] = useState(false);
 
   const timer = useTimer(card?.id, user?.id, 
     (newEntry) => {
@@ -277,6 +285,11 @@ const CardDetailsModal = () => {
     throttle((data) => {
       if (!card) return;
       const channel = getBoardChannel(card.board_id);
+      
+      // Safety check: Don't track if the channel isn't fully joined yet
+      // This prevents the "tried to push presence before joining" error
+      if (channel.state !== 'joined') return;
+
       channel.track({
         user: {
           id: user?.id,
@@ -318,8 +331,22 @@ const CardDetailsModal = () => {
     }
   }, [activeCardId, cards, lists]);
 
+  useEffect(() => {
+    if (card) {
+      setAttachments(card.attachments || []);
+      setCardLabels((card.card_labels || []).map(cl => cl.label_id));
+      setCardAssignees(card.card_assignments || []);
+      
+      // Calculate local dependencies from board state
+      if (allBoardDependencies) {
+        setBlockers(allBoardDependencies.filter(d => d.blocked_card_id === card.id));
+        setCardsBlockingOthers(allBoardDependencies.filter(d => d.blocking_card_id === card.id));
+      }
+    }
+  }, [card?.id, allBoardDependencies]);
+
   const fetchAll = async (cardId) => {
-    const [cls, lbls, assigns, cmts, atts, entries, fields, subs, blocks, blks] = await Promise.all([
+    const [cls, lbls, assigns, cmts, atts, entries, fields, subs] = await Promise.all([
       supabase.from('checklists').select('*, checklist_items(*)').eq('card_id', cardId).order('position'),
       supabase.from('card_labels').select('label_id').eq('card_id', cardId),
       supabase.from('card_assignments').select('user_id, profiles(full_name, avatar_url, email)').eq('card_id', cardId),
@@ -327,9 +354,7 @@ const CardDetailsModal = () => {
       supabase.from('attachments').select('*').eq('card_id', cardId).order('created_at', { ascending: false }),
       supabase.from('time_entries').select('*').eq('card_id', cardId).not('ended_at', 'is', null).order('started_at', { ascending: false }),
       supabase.from('custom_field_values').select('*').eq('card_id', cardId),
-      supabase.from('cards').select('id, title, is_completed').eq('parent_card_id', cardId),
-      supabase.from('card_dependencies').select('*, cards:blocking_card_id(title)').eq('blocked_card_id', cardId),
-      supabase.from('card_dependencies').select('*, cards:blocked_card_id(title)').eq('blocking_card_id', cardId)
+      supabase.from('cards').select('id, title, is_completed').eq('parent_card_id', cardId)
     ]);
     if (cls.data) setChecklists(cls.data);
     if (lbls.data) setCardLabels(lbls.data.map(l => l.label_id));
@@ -345,8 +370,6 @@ const CardDetailsModal = () => {
       setCustomFieldValues(vals);
     }
     if (subs.data) setSubtasks(subs.data);
-    if (blocks.data) setBlockers(blocks.data);
-    if (blks.data) setCardsBlockingOthers(blks.data);
 
     // Fetch Similar Cards
     const { data: similar } = await supabase.rpc('get_similar_cards', { 
@@ -423,6 +446,61 @@ const CardDetailsModal = () => {
       setCardLabels(prev => prev.filter(id => id !== labelId));
       setLabelSubView('list');
     }
+  };
+
+  // ── Dependencies ─────────────────────────────────────────────────────────────
+  const addDependencyAction = async (targetCard, type = 'blocker') => {
+    const blockingId = type === 'blocker' ? targetCard.id : card.id;
+    const blockedId = type === 'blocker' ? card.id : targetCard.id;
+
+    if (blockingId === blockedId) return;
+
+    // 1. Optimistic UI
+    const newDep = { blocking_card_id: blockingId, blocked_card_id: blockedId, cards: targetCard };
+    dispatch(addDependency(newDep));
+    setShowDependencyPanel(false);
+
+    // 2. DB Update
+    const { error } = await supabase.from('card_dependencies').insert({
+      blocking_card_id: blockingId,
+      blocked_card_id: blockedId,
+      created_by: user.id
+    });
+
+    if (error) {
+      dispatch(addNotification({ message: 'Dependency already exists or failed', type: 'error' }));
+    }
+  };
+
+  const removeDependencyAction = async (blockingId, blockedId) => {
+    // 1. Optimistic
+    dispatch(removeDependency({ blocking_card_id: blockingId, blocked_card_id: blockedId }));
+
+    // 2. DB
+    await supabase.from('card_dependencies').delete()
+      .eq('blocking_card_id', blockingId)
+      .eq('blocked_card_id', blockedId);
+  };
+
+  // ── Location ───────────────────────────────────────────────────────────────
+  const handleSaveLocation = async (locationData) => {
+    // 1. Optimistic
+    dispatch(updateCard({ id: card.id, location: locationData }));
+    setShowLocationPanel(false);
+
+    // 2. DB
+    const { error } = await supabase.from('cards').update({ location: locationData }).eq('id', card.id);
+    if (error) {
+       dispatch(addNotification({ message: 'Failed to save location', type: 'error' }));
+    }
+  };
+
+  const handleRemoveLocation = async () => {
+    // 1. Optimistic
+    dispatch(updateCard({ id: card.id, location: null }));
+
+    // 2. DB
+    await supabase.from('cards').update({ location: null }).eq('id', card.id);
   };
 
   // ── Assignments ───────────────────────────────────────────────────────────────
@@ -532,6 +610,113 @@ const CardDetailsModal = () => {
   };
 
   const totalTracked = timeEntries.reduce((acc, t) => acc + (t.duration_seconds || 0), 0);
+  const handleMoveCopyAction = async ({ type, boardId, listId, position, numericIndex }) => {
+    if (type === 'move') {
+      const isCrossBoard = boardId !== activeBoard.id;
+      
+      // 1. Optimistic Update
+      if (!isCrossBoard) {
+        dispatch(moveCard({ cardId: card.id, newListId: listId, newPosition: position }));
+      } else {
+        // Moving to another board: delete from current board state
+        dispatch(toggleModal({ modalName: 'cardDetails', isOpen: false }));
+        dispatch(setActiveCardId(null));
+        dispatch(deleteCard(card.id));
+      }
+
+      // 2. DB Update
+      const { error } = await supabase
+        .from('cards')
+        .update({ board_id: boardId, list_id: listId, position })
+        .eq('id', card.id);
+
+      if (error) {
+        dispatch(addNotification({ message: 'Failed to move card', type: 'error' }));
+        // Rollback or re-fetch would be complex here, usually simple update is reliable
+      } else if (isCrossBoard) {
+        dispatch(addNotification({ message: `Card moved to another board`, type: 'success' }));
+      }
+    } else {
+      // ── COPY LOGIC ──
+      try {
+        // 1. Create New Card
+        const { data: newCard, error: cardError } = await supabase
+          .from('cards')
+          .insert({
+            board_id: boardId,
+            list_id: listId,
+            position,
+            title: card.title,
+            description: card.description,
+            description_text: card.description_text,
+            priority: card.priority,
+            cover_type: card.cover_type,
+            cover_value: card.cover_value,
+            due_date: card.due_date,
+            created_by: user.id
+          })
+          .select()
+          .single();
+
+        if (cardError) throw cardError;
+
+        // 2. Clone Labels
+        if (cardLabels.length > 0) {
+          await supabase.from('card_labels').insert(
+            cardLabels.map(lid => ({ card_id: newCard.id, label_id: lid }))
+          );
+        }
+
+        // 3. Clone Checklists
+        if (checklists.length > 0) {
+          for (const cl of checklists) {
+            const { data: newCl } = await supabase
+              .from('checklists')
+              .insert({ card_id: newCard.id, title: cl.title, position: cl.position })
+              .select().single();
+            
+            if (newCl && cl.checklist_items?.length > 0) {
+              await supabase.from('checklist_items').insert(
+                cl.checklist_items.map(item => ({
+                  checklist_id: newCl.id,
+                  title: item.title,
+                  is_completed: item.is_completed,
+                  position: item.position
+                }))
+              );
+            }
+          }
+        }
+
+        // 4. Clone Attachments (Link existing ones)
+        if (attachments.length > 0) {
+          await supabase.from('attachments').insert(
+            attachments.map(a => ({
+              card_id: newCard.id,
+              name: a.name,
+              url: a.url,
+              storage_path: a.storage_path,
+              mime_type: a.mime_type,
+              size_bytes: a.size_bytes,
+              uploaded_by: user.id
+            }))
+          );
+        }
+
+        // 5. Update UI if on same board
+        if (boardId === activeBoard.id) {
+          dispatch(addCard(newCard));
+          dispatch(addNotification({ message: 'Card copied successfully', type: 'success' }));
+        } else {
+          dispatch(addNotification({ message: 'Card copied to another board', type: 'success' }));
+        }
+      } catch (err) {
+        console.error('Copy failed:', err);
+        dispatch(addNotification({ message: 'Failed to copy card', type: 'error' }));
+      }
+    }
+  };
+
   const fmtSecs = (s) => {
     const h = Math.floor(s / 3600);
     const m = Math.floor((s % 3600) / 60);
@@ -558,7 +743,7 @@ const CardDetailsModal = () => {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 20 }}
           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-          className="w-full max-w-7xl bg-white rounded-[40px] shadow-2xl overflow-hidden mb-12 border border-white/20 backdrop-blur-xl"
+          className="w-full max-w-[98vw] bg-white rounded-[24px] shadow-2xl overflow-hidden mb-6 border border-white/20 backdrop-blur-xl"
           onClick={e => e.stopPropagation()}
         >
           {/* Cover Strip */}
@@ -672,8 +857,48 @@ const CardDetailsModal = () => {
             <div className="h-6 w-px bg-gray-200 mx-2" />
             
             <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary mr-2">Card</p>
-            <NavBtn icon={ArrowRight} label="Move" onClick={() => {}} />
-            <NavBtn icon={Copy} label="Copy" onClick={() => {}} />
+            <div className="relative">
+              <NavBtn icon={ArrowRight} label="Move" onClick={() => { setMovePopoverMode('move'); setShowMovePopover(p => !p); }} active={showMovePopover && movePopoverMode === 'move'} />
+              {showMovePopover && movePopoverMode === 'move' && (
+                <div className="absolute top-full left-0 mt-2 z-[250]">
+                  <MoveCardPopover 
+                    card={card} 
+                    initialBoard={activeBoard} 
+                    initialList={list} 
+                    mode="move"
+                    onAction={handleMoveCopyAction}
+                    onClose={() => setShowMovePopover(false)}
+                  />
+                </div>
+              )}
+            </div>
+            <div className="relative">
+              <NavBtn icon={Copy} label="Copy" onClick={() => { setMovePopoverMode('copy'); setShowMovePopover(p => !p); }} active={showMovePopover && movePopoverMode === 'copy'} />
+              {showMovePopover && movePopoverMode === 'copy' && (
+                <div className="absolute top-full left-0 mt-2 z-[250]">
+                  <MoveCardPopover 
+                    card={card} 
+                    initialBoard={activeBoard} 
+                    initialList={list} 
+                    mode="copy"
+                    onAction={handleMoveCopyAction}
+                    onClose={() => setShowMovePopover(false)}
+                  />
+                </div>
+              )}
+            </div>
+            
+            <div className="relative">
+              <NavBtn icon={MapPin} label="Location" onClick={() => setShowLocationPanel(p => !p)} active={showLocationPanel} />
+              {showLocationPanel && (
+                <div className="absolute top-full left-0 mt-2 z-[250]">
+                  <LocationSelector 
+                    onSelect={handleSaveLocation}
+                    onClose={() => setShowLocationPanel(false)}
+                  />
+                </div>
+              )}
+            </div>
             <NavBtn icon={Archive} label="Archive" onClick={() => updateField({ is_archived: true }).then(handleClose)} danger />
           </div>
 
@@ -869,6 +1094,82 @@ const CardDetailsModal = () => {
                 </div>
               </section>
 
+              {/* ── Location ── */}
+              {card.location && (
+                <section>
+                   <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <MapPin size={16} className="text-gray-500" />
+                        <h3 className="text-sm font-bold text-gray-700">Location</h3>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <a 
+                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.location.address)}`}
+                           target="_blank" 
+                           rel="noopener noreferrer"
+                           className="text-[10px] font-black uppercase tracking-widest text-brand-primary hover:underline flex items-center gap-1"
+                        >
+                           Open in Maps <ExternalLink size={10} />
+                        </a>
+                        <button 
+                           onClick={handleRemoveLocation}
+                           className="text-[10px] font-black uppercase tracking-widest text-danger hover:underline"
+                        >
+                           Remove
+                        </button>
+                      </div>
+                   </div>
+                   <div className="pl-6">
+                      <div className="group relative bg-bg-secondary/40 rounded-3xl border border-border-light overflow-hidden hover:shadow-2xl transition-all duration-500 min-h-[300px] flex flex-col">
+                         {/* Interactive Map Embed */}
+                         <div className="flex-1 w-full relative">
+                            {card.location.google_place_id && import.meta.env.VITE_GOOGLE_MAPS_API_KEY ? (
+                              <iframe
+                                width="100%"
+                                height="300"
+                                style={{ border: 0 }}
+                                loading="lazy"
+                                allowFullScreen
+                                referrerPolicy="no-referrer-when-downgrade"
+                                className="opacity-90 group-hover:opacity-100 transition-opacity"
+                                src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=place_id:${card.location.google_place_id}`}
+                              />
+                            ) : (
+                              <iframe
+                                width="100%"
+                                height="300"
+                                style={{ border: 0 }}
+                                loading="lazy"
+                                className="opacity-90 group-hover:opacity-100 transition-opacity"
+                                src={card.location.lat && card.location.lng 
+                                  ? `https://www.openstreetmap.org/export/embed.html?bbox=${card.location.lng-0.01},${card.location.lat-0.01},${card.location.lng+0.01},${card.location.lat+0.01}&layer=mapnik&marker=${card.location.lat},${card.location.lng}`
+                                  : `https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(card.location.address)}`
+                                }
+                              />
+                            )}
+                         </div>
+                         
+                         <div className="relative z-10 flex flex-col gap-4">
+                            <div>
+                               <p className="text-xs font-black text-text-primary mb-1 uppercase tracking-wider">{card.location.name}</p>
+                               <p className="text-[11px] font-medium text-text-tertiary leading-relaxed max-w-[80%]">{card.location.address}</p>
+                            </div>
+                            
+                            <a 
+                               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.location.address)}`}
+                               target="_blank" 
+                               rel="noopener noreferrer"
+                               className="inline-flex items-center gap-2 px-4 py-2 bg-brand-primary text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-brand-primary/90 transition-all w-fit shadow-lg shadow-brand-primary/20"
+                            >
+                               <ExternalLink size={12} />
+                               View on Google Maps
+                            </a>
+                         </div>
+                      </div>
+                   </div>
+                </section>
+              )}
+
               {/* ── Custom Fields ── */}
               <section>
                 <div className="flex items-center gap-2 mb-4">
@@ -912,7 +1213,12 @@ const CardDetailsModal = () => {
                   {(!activeBoard.custom_fields || activeBoard.custom_fields.length === 0) && (
                     <div className="col-span-2 py-4 px-6 bg-bg-secondary/30 rounded-2xl border-2 border-dashed border-border-light text-center">
                       <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">No custom fields defined for this board.</p>
-                      <button onClick={() => {}} className="text-[10px] text-brand-primary font-bold hover:underline mt-1">Configure Fields</button>
+                      <button 
+                        onClick={() => dispatch(toggleModal({ modalName: 'boardSettings', isOpen: true }))} 
+                        className="text-[10px] text-brand-primary font-bold hover:underline mt-1"
+                      >
+                        Configure Fields
+                      </button>
                     </div>
                   )}
                 </div>
@@ -950,20 +1256,47 @@ const CardDetailsModal = () => {
                 </div>
               </section>
 
-              {/* ── Dependencies ── */}
               <section>
-                <div className="flex items-center gap-2 mb-4">
-                  <Network size={16} className="text-gray-500" />
-                  <h3 className="text-sm font-bold text-gray-700">Dependencies</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Network size={16} className="text-gray-500" />
+                    <h3 className="text-sm font-bold text-gray-700">Dependencies</h3>
+                  </div>
+                  <div className="relative">
+                    <button 
+                      onClick={() => { setDepPanelType('blocker'); setShowDependencyPanel(p => !p); }} 
+                      className="text-xs font-bold text-brand-primary flex items-center gap-1 hover:underline"
+                    >
+                      <Plus size={14} />
+                      Add Blocker
+                    </button>
+                    {showDependencyPanel && (
+                      <div className="absolute right-0 top-full mt-2 z-[250]">
+                        <DependencySelector 
+                          currentCardId={card.id} 
+                          onSelect={(c) => addDependencyAction(c, depPanelType)}
+                          onClose={() => setShowDependencyPanel(false)}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="pl-6 space-y-4">
                   {blockers.length > 0 && (
                   <div className="space-y-2">
                       <p className="text-[10px] font-black uppercase tracking-widest text-danger">Blocking this card</p>
                       {blockers.map(dep => (
-                        <div key={dep.id} className="flex items-center gap-2 p-2 bg-danger/5 rounded-lg border border-danger/10">
-                          <AlertCircle size={12} className="text-danger" />
-                          <span className="text-xs font-medium text-text-primary">{dep.cards?.title}</span>
+                        <div key={dep.blocking_card_id} className="group flex items-center justify-between p-3 bg-danger/5 rounded-2xl border border-danger/10 hover:bg-danger/10 transition-all">
+                          <div className="flex items-center gap-3">
+                            <AlertCircle size={14} className="text-danger" />
+                            <span className="text-[13px] font-bold text-text-primary">{dep.cards?.title || 'Unknown Card'}</span>
+                          </div>
+                          <button 
+                            onClick={() => removeDependencyAction(dep.blocking_card_id, dep.blocked_card_id)}
+                            className="opacity-0 group-hover:opacity-100 p-1 text-danger hover:bg-danger/10 rounded-lg transition-all"
+                          >
+                            <X size={14} />
+                          </button>
                         </div>
                       ))}
                     </div>
@@ -972,23 +1305,30 @@ const CardDetailsModal = () => {
                     <div className="space-y-2">
                       <p className="text-[10px] font-black uppercase tracking-widest text-success">Blocked by this card</p>
                       {cardsBlockingOthers.map(dep => (
-                        <div key={dep.id} className="flex items-center gap-2 p-2 bg-success/5 rounded-lg border border-success/10">
-                          <CheckCircle2 size={12} className="text-success" />
-                          <span className="text-xs font-medium text-text-primary">{dep.cards?.title}</span>
+                        <div key={dep.blocked_card_id} className="group flex items-center justify-between p-3 bg-success/5 rounded-2xl border border-success/10 hover:bg-success/10 transition-all">
+                           <div className="flex items-center gap-3">
+                            <CheckCircle2 size={14} className="text-success" />
+                            <span className="text-[13px] font-bold text-text-primary">{dep.cards_blocked?.title || 'Another Card'}</span>
+                          </div>
+                          <button 
+                            onClick={() => removeDependencyAction(dep.blocking_card_id, dep.blocked_card_id)}
+                            className="opacity-0 group-hover:opacity-100 p-1 text-danger hover:bg-danger/10 rounded-lg transition-all"
+                          >
+                            <X size={14} />
+                          </button>
                         </div>
                       ))}
                     </div>
                   )}
                   {blockers.length === 0 && cardsBlockingOthers.length === 0 && (
-                    <p className="text-[10px] text-text-tertiary font-medium">No active dependencies. Add relations in the Dependency Map.</p>
+                    <div className="py-4 border-2 border-dashed border-border-light rounded-2xl text-center">
+                      <p className="text-[10px] text-text-tertiary font-black uppercase tracking-widest">Connect dependencies to visualize flow</p>
+                    </div>
                   )}
                 </div>
               </section>
 
-              {/* ── GitHub Development ── */}
-              <section className="pl-6">
-                <CardGithubModule cardId={card.id} boardId={card.board_id} />
-              </section>
+
 
               {/* ── Attachments ── */}
               <section>
@@ -1042,7 +1382,7 @@ const CardDetailsModal = () => {
                        <div className="flex-1 min-w-0 py-1">
                           <p className="font-bold text-sm text-text-primary truncate">{att.name}</p>
                           <div className="flex items-center gap-3 mt-1 text-[10px] font-bold text-text-tertiary uppercase tracking-widest">
-                             <span>Added {formatDistanceToNow(new Date(att.created_at), { addSuffix: true })}</span>
+                             <span>Added {att.created_at && !isNaN(new Date(att.created_at).getTime()) ? formatDistanceToNow(new Date(att.created_at), { addSuffix: true }) : 'recently'}</span>
                              <span>•</span>
                              <span>{(att.size_bytes / 1024).toFixed(1)} KB</span>
                           </div>

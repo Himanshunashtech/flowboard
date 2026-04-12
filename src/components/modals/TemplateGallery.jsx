@@ -10,7 +10,6 @@ import {
   Sparkles,
   Zap,
   ShieldCheck,
-  Github,
   ClipboardList,
   FileText
 } from 'lucide-react';
@@ -60,17 +59,7 @@ export const TEMPLATES = [
     cardStyle: 'modern',
     lists: ['Today', 'Upcoming', 'Waiting on', 'Completed']
   },
-  {
-    id: 'github-workflow',
-    name: 'GitHub Workflow',
-    description: 'Sync your issues and PRs into a unified kanban flow.',
-    icon: Github,
-    color: 'bg-slate-900',
-    background: '#1A1A1B',
-    listStyle: 'solid',
-    cardStyle: 'modern',
-    lists: ['Incoming Issues', 'Active Pull Requests', 'In Review', 'Ready to Merge', 'Closed']
-  },
+
   {
     id: 'agile-scrub',
     name: 'Agile Scrub',

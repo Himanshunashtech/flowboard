@@ -1,33 +1,28 @@
-import { Resend } from 'resend';
+import { supabase } from './supabase';
 
-// NOTE: This usually runs on a server/edge function.
-// For client-side demo purposes, we provide the structure.
-// Users should set VITE_RESEND_API_KEY in their environment.
-const RESEND_API_KEY = import.meta.env.VITE_RESEND_API_KEY;
-const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
-
-const DEFAULT_FROM = 'FlowBoard <notifications@flowboard.app>';
-
+/**
+ * Sends an email via the Supabase send-email Edge Function.
+ * This bypasses CORS issues and secures the Resend API key on the server.
+ */
 export const sendEmail = async ({ to, subject, html, text }) => {
-  if (!resend) {
-    console.warn('Resend API Key missing. Skipping email:', { to, subject });
-    return { success: false, error: 'API_KEY_MISSING' };
-  }
-
   try {
-    const { data, error } = await resend.emails.send({
-      from: DEFAULT_FROM,
-      to,
-      subject,
-      html,
-      text
+    const { data, error } = await supabase.functions.invoke('send-email', {
+      body: {
+        to,
+        subject,
+        html,
+        text,
+        from: 'FlowBoard <onboarding@resend.dev>' // Default for free/testing tier
+      }
     });
 
     if (error) throw error;
+    
+    // The resend API returns { id: "..." } on success
     return { success: true, data };
   } catch (error) {
-    console.error('Email failed:', error);
-    return { success: false, error };
+    console.error('Email service failure:', error);
+    return { success: false, error: error.message || error };
   }
 };
 
@@ -35,6 +30,19 @@ export const sendEmail = async ({ to, subject, html, text }) => {
  * High-level notification helpers
  */
 export const EmailTemplates = {
+  workspaceInvitation: (inviter, workspaceName, inviteLink) => ({
+    subject: `Join ${workspaceName} on FlowBoard`,
+    html: `
+      <div style="font-family: sans-serif; padding: 20px; border: 1px solid #efefff; border-radius: 16px; max-width: 500px; margin: 0 auto; background: #ffffff;">
+        <h2 style="color: #6366f1; margin-top: 0;">FlowBoard Team Invite</h2>
+        <p style="color: #4b5563; line-height: 1.6;"><strong>${inviter}</strong> has invited you to join their workspace <strong>${workspaceName}</strong>.</p>
+        <div style="margin: 30px 0;">
+          <a href="${inviteLink}" style="display: inline-block; padding: 14px 28px; background: #6366f1; color: white; border-radius: 12px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);">Join Workspace</a>
+        </div>
+        <p style="color: #9ca3af; font-size: 12px;">This invitation link will expire in 7 days.</p>
+      </div>
+    `
+  }),
   boardInvitation: (inviter, boardName, inviteLink) => ({
     subject: `You've been invited to ${boardName}`,
     html: `

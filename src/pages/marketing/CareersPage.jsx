@@ -1,6 +1,6 @@
 import React from 'react';
 import MarketingLayout from '../../components/layout/MarketingLayout';
-import { Sparkles, MapPin, Clock, Heart, Zap, Shield, Sun, Coffee, Rocket, ArrowRight, UserCheck, CheckCircle } from 'lucide-react';
+import { Sparkles, MapPin, Clock, Heart, Zap, Shield, Sun, Coffee, Rocket, ArrowRight, UserCheck, CheckCircle, Globe } from 'lucide-react';
 
 const CareersPage = () => {
     const jobs = [

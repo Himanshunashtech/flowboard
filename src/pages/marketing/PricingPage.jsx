@@ -2,7 +2,7 @@ import React from 'react';
 import MarketingLayout from '../../components/layout/MarketingLayout';
 import { 
   Check, Plus, HelpCircle, Shield, Zap, Users, Globe, BarChart, 
-  ArrowRight, Target, Activity, Lock, Share2, MessageSquare, Box
+  ArrowRight, Target, Activity, Lock, Share2, MessageSquare, Box, Sparkles
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -17,12 +17,11 @@ const PricingPage = () => {
             <Activity size={12} />
             Resource Allocation v4.0
           </div>
-          <h1 className="text-6xl md:text-[120px] font-black text-text-primary tracking-tighter leading-[0.85] mb-12 italic">
-            Flow for <br/> <span className="text-brand-primary">every unit.</span>
+          <h1 className="text-5xl md:text-[120px] font-black text-text-primary tracking-tighter leading-[0.85] mb-12 italic">
+            Flow for <br className="hidden md:block"/> <span className="text-brand-primary">every unit.</span>
           </h1>
-          <p className="max-w-3xl mx-auto text-2xl text-text-secondary font-medium leading-relaxed mb-16 px-10">
+          <p className="max-w-3xl mx-auto text-lg md:text-2xl text-text-secondary font-medium leading-relaxed mb-16 px-6 md:px-10">
              Start for free to explore the kinetic landscape, then scale your throughput with our high-fidelity pro and enterprise tiers. 
-             Value-based pricing without the technical overhead.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-8 items-center mb-24">
              <span className="text-xs font-black uppercase tracking-widest text-text-tertiary">Standard Billing</span>
@@ -59,7 +58,7 @@ const PricingPage = () => {
             </div>
 
             {/* The Nexus Tier */}
-            <div className="p-1 px-[2px] bg-gradient-to-tr from-brand-primary via-indigo-600 to-brand-primary rounded-[68px] relative scale-110 z-10 shadow-[0_80px_160px_-40px_rgba(79,70,229,0.3)]">
+            <div className="p-1 px-[2px] bg-gradient-to-tr from-brand-primary via-indigo-600 to-brand-primary rounded-[68px] relative lg:scale-110 z-10 shadow-[0_80px_160px_-40px_rgba(79,70,229,0.3)] my-12 lg:my-0">
                <div className="p-12 bg-white rounded-[66px] flex flex-col h-full relative overflow-hidden">
                   <div className="absolute top-0 left-0 w-full h-2 bg-brand-primary"></div>
                   <div className="absolute -top-6 -right-6 p-12 opacity-[0.03] text-brand-primary"><Zap size={200} /></div>
@@ -109,12 +108,12 @@ const PricingPage = () => {
       {/* 3. Comparison Matrix: Deep Feature Breakdown (~200 words) */}
       <section className="py-40 px-6 bg-bg-secondary/20 border-y border-border-light overflow-hidden">
         <div className="max-w-7xl mx-auto">
-           <div className="text-center max-w-3xl mx-auto mb-32 space-y-8">
-              <h2 className="text-5xl font-black text-text-primary tracking-tighter italic lg:text-7xl">The Feature Matrix.</h2>
-              <p className="text-xl text-text-secondary font-medium leading-relaxed italic opacity-70">
-                 Absolute transparency is a core FlowBoard principle. Every tool, logic engine, and security layer mapped to your chosen tier.
-              </p>
-           </div>
+            <div className="text-center max-w-3xl mx-auto mb-20 md:mb-32 space-y-6 md:space-y-8 px-4 md:px-0">
+               <h2 className="text-4xl md:text-7xl font-black text-text-primary tracking-tighter italic">The Feature Matrix.</h2>
+               <p className="text-base md:text-xl text-text-secondary font-medium leading-relaxed italic opacity-70">
+                  Absolute transparency is a core FlowBoard principle. Every tool, logic engine, and security layer mapped to your chosen tier.
+               </p>
+            </div>
            
            <div className="bg-white rounded-[64px] border border-border-light shadow-2xl overflow-hidden p-1 p-[2px]">
               <div className="overflow-x-auto rounded-[62px]">
@@ -179,10 +178,10 @@ const PricingPage = () => {
                  <div className="inline-flex items-center gap-3 text-indigo-600 font-black tracking-[0.3em] uppercase text-[10px] px-6 py-2.5 bg-indigo-50 rounded-full border border-indigo-100">
                     <Shield size={14} /> The Protocol Lock
                  </div>
-                 <h2 className="text-6xl md:text-8xl font-black text-text-primary tracking-tighter leading-[0.85]">
-                    Engineered for <br/> <span className="text-indigo-600 italic">Global Ops.</span>
+                 <h2 className="text-4xl md:text-8xl font-black text-text-primary tracking-tighter leading-[0.85]">
+                    Engineered for <br className="hidden md:block"/> <span className="text-indigo-600 italic">Global Ops.</span>
                  </h2>
-                 <p className="text-xl text-text-secondary leading-relaxed font-medium italic">
+                 <p className="text-lg md:text-xl text-text-secondary leading-relaxed font-medium italic">
                     The Protocol Tier isn't just a plan; it's a dedicated environment built for organizations where security is a legal requirement, not a feature.
                  </p>
                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-10">

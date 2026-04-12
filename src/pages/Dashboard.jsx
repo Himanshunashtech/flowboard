@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { Plus, Bell, Layout, Settings, Calendar, Users, UserPlus, PlusCircle, History, MessageSquare, ArrowRight, Target, CheckCircle2 } from 'lucide-react';
+import { Plus, Bell, Layout, Settings, Calendar, Users, UserPlus, PlusCircle, History, MessageSquare, ArrowRight, Target, CheckCircle2, Github } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { setWorkspaces, setLoading, setActiveWorkspace } from '../store/slices/workspaceSlice';
 import { toggleModal } from '../store/slices/uiSlice';
@@ -376,6 +376,7 @@ const Dashboard = () => {
                     </div>
                   </Link>
                 ))}
+
 
                 {/* New Blue Create Board Action */}
                 <button

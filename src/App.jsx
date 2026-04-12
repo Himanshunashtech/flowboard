@@ -5,6 +5,7 @@ import { supabase } from './lib/supabase';
 import { setSession, setLoading as setAuthLoading, setProfile } from './store/slices/authSlice';
 import { setWorkspaces, setLoading as setWorkspaceLoading } from './store/slices/workspaceSlice';
 
+
 import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
 import BoardPage from './pages/BoardPage';
@@ -38,6 +39,7 @@ import CreateWorkspaceModal from './components/modals/CreateWorkspaceModal';
 import CreateBoardModal from './components/modals/CreateBoardModal';
 import InviteWorkspaceMemberModal from './components/modals/InviteWorkspaceMemberModal';
 import WorkspaceSettingsModal from './components/modals/WorkspaceSettingsModal';
+
 
 function App() {
   const dispatch = useDispatch();
@@ -80,22 +82,24 @@ function App() {
       dispatch(setWorkspaceLoading(false));
     };
 
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const handleSession = async (session) => {
       dispatch(setSession(session));
       if (session?.user) {
         fetchProfile(session.user.id);
         fetchWorkspaces();
+
+
       }
+    };
+
+    // Check initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      handleSession(session);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      dispatch(setSession(session));
-      if (session?.user) {
-        fetchProfile(session.user.id);
-        fetchWorkspaces();
-      }
+      handleSession(session);
     });
 
     return () => subscription.unsubscribe();
@@ -129,7 +133,8 @@ function App() {
         <Route path="/w/:workspaceSlug" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
         <Route path="/w/:workspaceSlug/team" element={<ProtectedRoute><TeamPage /></ProtectedRoute>} />
         <Route path="/w/:workspaceSlug/b/:boardId" element={<BoardPage />} />
-        <Route path="/automations" element={<ProtectedRoute><AutomationBuilder /></ProtectedRoute>} />
+        <Route path="/w/:workspaceSlug/b/:boardId/automations" element={<ProtectedRoute><AutomationBuilder /></ProtectedRoute>} />
+        <Route path="/automations" element={<Navigate to="/dashboard" />} />
         <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 
         {/* Onboarding (Doesn't require onboarding_completed) */}
@@ -163,6 +168,7 @@ function App() {
       {modals.createBoard && <CreateBoardModal />}
       {modals.memberInvite && <InviteWorkspaceMemberModal />}
       {modals.workspaceSettings && <WorkspaceSettingsModal />}
+
     </Router>
   );
 }
