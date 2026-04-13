@@ -16,6 +16,61 @@ import {
 
 export const TEMPLATES = [
   {
+    id: 'task-template',
+    name: 'Task Template',
+    description: 'A clean, high-performance workflow for daily task execution.',
+    icon: ClipboardList,
+    color: 'bg-indigo-500',
+    background: 'linear-gradient(135deg, #E0C3FC 0%, #8EC5FC 100%)',
+    listStyle: 'solid',
+    cardStyle: 'modern',
+    lists: [
+      { title: 'Getting Started', color: '#E0F7FA' },
+      { title: 'To Do', color: '#F3E5F5' },
+      { title: 'Doing', color: '#FFF3E0' },
+      { title: 'Done', color: '#E8F5E9' }
+    ],
+    initialCards: [
+      { 
+        listTitle: 'Getting Started', 
+        title: '👋 Welcome to your Task Board!', 
+        description: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'This board is optimized for execution. Move tasks from To Do to Doing when you start working on them.' }] }] } 
+      },
+      { 
+        listTitle: 'To Do', 
+        title: 'Define your first mission', 
+        description: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Click on this card to add details, labels, or a location.' }] }] } 
+      }
+    ]
+  },
+  {
+    id: 'getting-started',
+    name: 'Getting Started',
+    description: 'Learn the core features of FlowBoard with this interactive guide.',
+    icon: Sparkles,
+    color: 'bg-brand-primary',
+    background: 'linear-gradient(135deg, #667EEA 0%, #764BA2 100%)',
+    listStyle: 'glass',
+    cardStyle: 'modern',
+    lists: [
+      { title: 'Getting Started', color: '#F8FAFC' },
+      { title: 'Features Tour', color: '#F1F5F9' },
+      { title: 'Next Steps', color: '#F8FAFC' }
+    ],
+    initialCards: [
+      { 
+        listTitle: 'Getting Started', 
+        title: '📍 Using Locations', 
+        description: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'You can now add real-world locations to any card using the Location Selector.' }] }] } 
+      },
+      { 
+        listTitle: 'Features Tour', 
+        title: '⚙️ Power-up with Automations', 
+        description: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Open the "Automations" tab to create rules that automate your workflow.' }] }] } 
+      }
+    ]
+  },
+  {
     id: 'product-roadmap',
     name: 'Product Roadmap',
     description: 'Perfect for agile teams tracking features and releases.',
@@ -24,7 +79,17 @@ export const TEMPLATES = [
     background: '#0052CC',
     listStyle: 'solid',
     cardStyle: 'modern',
-    lists: ['Backlog', 'In Discovery', 'Ready for Dev', 'In Progress', 'Done']
+    lists: [
+      { title: 'Getting Started', color: '#F8FAFC' },
+      { title: 'Product Backlog' }, 
+      { title: 'In Discovery' }, 
+      { title: 'Ready for Dev' }, 
+      { title: 'In Progress' }, 
+      { title: 'Done' }
+    ],
+    initialCards: [
+      { listTitle: 'Getting Started', title: 'Roadmap Guide', description: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Use this board to visualize your product strategy. Move items from Backlog to Discovery as they are defined.' }] }] } }
+    ]
   },
   {
     id: 'marketing-campaign',
@@ -35,7 +100,17 @@ export const TEMPLATES = [
     background: 'linear-gradient(135deg, #F093FB 0%, #F5576C 100%)',
     listStyle: 'solid',
     cardStyle: 'shadowed',
-    lists: ['Strategy', 'Creative Assets', 'Ad Ops', 'Published', 'Reporting']
+    lists: [
+      { title: 'Getting Started', color: '#FFF7ED' },
+      { title: 'Channel Strategy' }, 
+      { title: 'Creative Assets' }, 
+      { title: 'Ad Operations' }, 
+      { title: 'Live / Published' }, 
+      { title: 'Performance Tracking' }
+    ],
+    initialCards: [
+      { listTitle: 'Getting Started', title: 'Campaign Blueprint', description: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Track all your creative assets and ad operations. Ensure the Channel Strategy is finalized before moving to Creative.' }] }] } }
+    ]
   },
   {
     id: 'sales-pipeline',
@@ -46,7 +121,17 @@ export const TEMPLATES = [
     background: '#36B37E',
     listStyle: 'solid',
     cardStyle: 'compact',
-    lists: ['Incoming Leads', 'Qualified', 'Negotiation', 'Won', 'Lost']
+    lists: [
+      { title: 'Getting Started', color: '#F0FDF4' },
+      { title: 'Incoming Leads' }, 
+      { title: 'Qualification' }, 
+      { title: 'Proposal Sent' }, 
+      { title: 'Negotiation' }, 
+      { title: 'Won / Closed' }
+    ],
+    initialCards: [
+      { listTitle: 'Getting Started', title: 'Pipeline Best Practices', description: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Move leads through the funnel as conversations progress. Use labels to indicate lead priority or deal size.' }] }] } }
+    ]
   },
   {
     id: 'personal-tasks',
@@ -57,9 +142,17 @@ export const TEMPLATES = [
     background: 'linear-gradient(135deg, #667EEA 0%, #764BA2 100%)',
     listStyle: 'solid',
     cardStyle: 'modern',
-    lists: ['Today', 'Upcoming', 'Waiting on', 'Completed']
+    lists: [
+      { title: 'Getting Started', color: '#F5F3FF' },
+      { title: 'Today’s Focus' }, 
+      { title: 'Upcoming' }, 
+      { title: 'Someday / Maybe' }, 
+      { title: 'Archive / Done' }
+    ],
+    initialCards: [
+      { listTitle: 'Getting Started', title: 'Plan Your Day', description: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Start every morning by moving tasks from "Upcoming" to "Today’s Focus". Focus on one thing at a time.' }] }] } }
+    ]
   },
-
   {
     id: 'agile-scrub',
     name: 'Agile Scrub',
@@ -69,18 +162,38 @@ export const TEMPLATES = [
     background: 'linear-gradient(135deg, #2AF598 0%, #009EFD 100%)',
     listStyle: 'solid',
     cardStyle: 'compact',
-    lists: ['Product Backlog', 'Sprint Planning', 'In Progress', 'QA / UAT', 'Done']
+    lists: [
+      { title: 'Getting Started', color: '#F0FDF9' },
+      { title: 'Sprint Backlog' }, 
+      { title: 'Development' }, 
+      { title: 'Code Review' }, 
+      { title: 'QA Testing' }, 
+      { title: 'Deployed' }
+    ],
+    initialCards: [
+      { listTitle: 'Getting Started', title: 'Sprint Protocol', description: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Only move cards into "Development" that have a clear definition of done.' }] }] } }
+    ]
   },
   {
     id: 'content-pipeline',
-    name: 'File & Content Pipeline',
+    name: 'Content Production',
     description: 'Track assets from drafting to final publication.',
     icon: FileText,
     color: 'bg-emerald-600',
     background: '#00875A',
     listStyle: 'solid',
     cardStyle: 'shadowed',
-    lists: ['Resources / Assets', 'Drafting', 'Internal Review', 'Final Polish', 'Published']
+    lists: [
+      { title: 'Getting Started', color: '#ECFDF5' },
+      { title: 'Idea Bank' }, 
+      { title: 'In Drafting' }, 
+      { title: 'Editorial Review' }, 
+      { title: 'Final Polish' }, 
+      { title: 'Published' }
+    ],
+    initialCards: [
+      { listTitle: 'Getting Started', title: 'Content Guide', description: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Use the Idea Bank to store future topics. Move to Drafting once research is complete.' }] }] } }
+    ]
   }
 ];
 
@@ -134,11 +247,14 @@ const TemplateGallery = ({ isOpen, onClose, onSelect }) => {
                    </div>
 
                    <div className="flex flex-wrap gap-2 relative z-10">
-                      {template.lists.slice(0, 3).map(list => (
-                        <span key={list} className="px-3 py-1 bg-bg-secondary/80 rounded-full text-[9px] font-bold text-text-secondary uppercase tracking-tight">
-                           {list}
-                        </span>
-                      ))}
+                      {template.lists.slice(0, 3).map(list => {
+                        const title = typeof list === 'string' ? list : list.title;
+                        return (
+                          <span key={title} className="px-3 py-1 bg-bg-secondary/80 rounded-full text-[9px] font-bold text-text-secondary uppercase tracking-tight">
+                             {title}
+                          </span>
+                        );
+                      })}
                       {template.lists.length > 3 && (
                         <span className="px-3 py-1 bg-bg-secondary/80 rounded-full text-[9px] font-bold text-text-tertiary uppercase tracking-tight">
                            +{template.lists.length - 3}

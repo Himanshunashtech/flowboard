@@ -151,11 +151,11 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
 
   return (
     <div 
-      className={`list-container ${isCollapsed ? 'w-16 h-[280px]' : 'w-96 h-full'} shrink-0 ${getListStyleClasses()} rounded-[28px] flex flex-col snap-center border relative transition-all duration-500 overflow-hidden`}
+      className={`list-container ${isCollapsed ? 'w-16 h-[280px]' : 'w-[380px] max-h-full h-fit'} shrink-0 ${getListStyleClasses()} rounded-[32px] flex flex-col snap-center border relative transition-all duration-500 overflow-hidden shadow-2xl shadow-black/5`}
       style={{ 
-        backgroundColor: list.color ? `${list.color}26` : undefined, // 15% opacity
-        borderTop: list.color ? `4px solid ${list.color}` : '1px solid transparent',
-        borderColor: list.color ? 'rgba(0,0,0,0.05)' : undefined
+        backgroundColor: '#ffffff',
+        borderTop: list.color ? `6px solid ${list.color}` : '1px solid transparent',
+        borderColor: 'rgba(0,0,0,0.08)'
       }}
     >
       {isCollapsed ? (
@@ -172,7 +172,7 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
       ) : (
         <>
           {/* List Header */}
-          <div className="px-6 py-5 flex items-center justify-between">
+          <div className="px-6 py-5 flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3 flex-1 min-w-0 group/title">
               {isEditingTitle ? (
                 <input
@@ -330,7 +330,7 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
               <div
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className={`flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-3 min-h-[50px] transition-colors ${snapshot.isDraggingOver ? 'bg-brand-primary/5 rounded-2xl' : ''}`}
+                className={`flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-3 min-h-0 transition-colors ${snapshot.isDraggingOver ? 'bg-brand-primary/5 rounded-2xl' : ''}`}
               >
                 {cards.map((card, index) => (
                   <CardItem 
@@ -349,7 +349,7 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
 
           {/* Add Card */}
           {!isReadOnly && (
-            <div className="p-3">
+            <div className="p-3 shrink-0">
               {isAdding ? (
                 <form onSubmit={handleAddCard} className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
                   <textarea

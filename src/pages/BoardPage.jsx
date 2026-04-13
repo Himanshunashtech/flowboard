@@ -67,6 +67,8 @@ import { BoardSkeleton } from '../components/ui/Skeleton';
 import { useUndoRedo } from '../hooks/useUndoRedo';
 import ActivitySidePanel from '../components/board/ActivitySidePanel';
 
+import ErrorBoundary from '../components/ui/ErrorBoundary';
+
 const BoardPage = () => {
   const { boardId } = useParams();
   const dispatch = useDispatch();
@@ -367,7 +369,7 @@ const BoardPage = () => {
     }
   };
 
-  if (loading && !activeBoard) return <AppLayout><BoardSkeleton /></AppLayout>;
+  if (loading && !activeBoard) return <AppLayout scrollable={false}><BoardSkeleton /></AppLayout>;
 
 
   const getBackgroundStyle = () => {
@@ -382,13 +384,13 @@ const BoardPage = () => {
   };
 
   return (
-    <AppLayout>
+    <AppLayout scrollable={false}>
       <div className="flex flex-col h-full overflow-hidden transition-all duration-700" style={getBackgroundStyle()} onMouseMove={handleBoardMouseMove}>
         <LiveCursors />
-        <header className="h-14 border-b border-border-light flex items-center justify-between px-6 bg-white/80 backdrop-blur-md shrink-0 z-[50] relative">
+        <header className="h-14 border-b border-white/10 flex items-center justify-between px-6 bg-black/10 backdrop-blur-md shrink-0 z-[50] relative">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-3 group/star">
-              <h2 className="text-2xl font-black text-text-primary tracking-tighter">{activeBoard?.title}</h2>
+              <h2 className="text-2xl font-black text-white tracking-tighter">{activeBoard?.title}</h2>
               <button 
                 onClick={async () => {
                   const isStarred = starredBoardIds.includes(activeBoard.id);
@@ -399,22 +401,22 @@ const BoardPage = () => {
                     await supabase.from('board_stars').insert({ board_id: activeBoard.id, user_id: user.id });
                   }
                 }}
-                className={`p-2 rounded-xl transition-all ${starredBoardIds.includes(activeBoard?.id) ? 'text-yellow-500 bg-yellow-500/10' : 'text-text-tertiary hover:bg-bg-secondary opacity-0 group-hover/star:opacity-100'}`}
+                className={`p-2 rounded-xl transition-all ${starredBoardIds.includes(activeBoard?.id) ? 'text-yellow-400 bg-yellow-400/10' : 'text-white/60 hover:bg-white/10 opacity-0 group-hover/star:opacity-100'}`}
               >
                 <Star size={20} fill={starredBoardIds.includes(activeBoard?.id) ? 'currentColor' : 'none'} />
               </button>
             </div>
             <div className="flex -space-x-2">
               {members?.slice(0, 4).map(m => (
-                <div key={m.user_id} className="w-7 h-7 rounded-full border-2 border-white bg-brand-primary flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
+                <div key={m.user_id} className="w-7 h-7 rounded-full border-2 border-white/20 bg-brand-primary flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
                   {(m.profiles?.full_name || m.profiles?.email || '?')[0].toUpperCase()}
                 </div>
               ))}
             </div>
             {isReadOnly && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <Shield size={12} className="text-yellow-600" />
-                <span className="text-[9px] font-black uppercase text-yellow-700 tracking-widest">Read Only Mode</span>
+              <div className="flex items-center gap-2 px-3 py-1 bg-yellow-400/20 border border-yellow-400/30 rounded-lg">
+                <Shield size={12} className="text-yellow-400" />
+                <span className="text-[9px] font-black uppercase text-yellow-100 tracking-widest">Read Only Mode</span>
               </div>
             )}
 
@@ -424,7 +426,7 @@ const BoardPage = () => {
              <div className="relative">
                 <button 
                   ref={shareBtnRef}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${showSharePopover ? 'bg-brand-primary text-white shadow-lg' : 'bg-bg-secondary text-text-tertiary hover:bg-white hover:text-brand-primary border border-border-light'}`}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${showSharePopover ? 'bg-brand-primary text-white shadow-lg' : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'}`}
                   onClick={() => setShowSharePopover(!showSharePopover)}
                 >
                   <Share2 size={14} />
@@ -445,7 +447,7 @@ const BoardPage = () => {
                   )}
                 </AnimatePresence>
              </div>
-            <div className="flex items-center bg-bg-secondary rounded-xl p-1 shadow-sm border border-border-light/50 font-medium overflow-x-auto max-w-[500px] no-scrollbar">
+            <div className="flex items-center bg-black/20 rounded-xl p-1 shadow-sm border border-white/10 font-medium overflow-x-auto max-w-[500px] no-scrollbar">
               {[
                 { id: 'kanban', icon: Kanban, label: 'Board' },
                 { id: 'table', icon: Table2, label: 'Table' },
@@ -457,7 +459,7 @@ const BoardPage = () => {
                 <button 
                   key={view.id} 
                   onClick={() => setCurrentView(view.id)} 
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-all whitespace-nowrap ${currentView === view.id ? 'bg-white text-brand-primary shadow-sm' : 'text-text-tertiary hover:bg-white/50'}`}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-all whitespace-nowrap ${currentView === view.id ? 'bg-white/20 text-white shadow-sm' : 'text-white/60 hover:bg-white/10'}`}
                 >
                   <view.icon size={13} />
                   <span className="uppercase">{view.label}</span>
@@ -467,20 +469,20 @@ const BoardPage = () => {
 
             <button 
               onClick={() => setIsBoardCollapsed(!isBoardCollapsed)}
-              className={`p-2 rounded-xl transition-all shadow-sm border ${isBoardCollapsed ? 'bg-brand-primary text-white border-brand-primary' : 'bg-white text-text-tertiary hover:text-brand-primary border-border-light'}`}
+              className={`p-2 rounded-xl transition-all shadow-sm border ${isBoardCollapsed ? 'bg-brand-primary text-white border-brand-primary' : 'bg-white/10 text-white/70 hover:text-white border-white/10'}`}
               title={isBoardCollapsed ? "Expand All Lists" : "Collapse All Lists"}
             >
               {isBoardCollapsed ? <Maximize2 size={18} /> : <Minimize2 size={18} />}
             </button>
 
             <button 
-              className={`p-2 rounded-xl transition-all ${modals.activityDrawer ? 'bg-brand-primary text-white' : 'text-text-tertiary hover:bg-bg-secondary'}`} 
+              className={`p-2 rounded-xl transition-all ${modals.activityDrawer ? 'bg-brand-primary text-white' : 'text-white/70 hover:text-white hover:bg-white/10'}`} 
               onClick={() => dispatch(toggleModal({ modalName: 'activityDrawer', isOpen: !modals.activityDrawer }))}
             >
               <HistoryIcon size={18} />
             </button>
             <button 
-              className={`p-2 rounded-xl transition-all ${modals.boardSettings ? 'bg-brand-primary text-white' : 'text-text-tertiary hover:bg-bg-secondary'}`} 
+              className={`p-2 rounded-xl transition-all ${modals.boardSettings ? 'bg-brand-primary text-white' : 'text-white/70 hover:text-white hover:bg-white/10'}`} 
               onClick={() => dispatch(toggleModal({ modalName: 'boardSettings', isOpen: !modals.boardSettings }))}
             >
               <Settings size={18} />
@@ -491,9 +493,9 @@ const BoardPage = () => {
         <div className="flex-1 overflow-hidden relative">
           <AnimatePresence mode="wait">
             {currentView === 'kanban' && (
-              <motion.div key="kanban" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0">
+              <motion.div key="kanban" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 flex flex-col">
                 <DragDropContext onDragEnd={onDragEnd}>
-                  <div ref={canvasRef} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onMouseMove={handleMouseMove} className="canvas items-start bg-transparent p-6">
+                  <div ref={canvasRef} onMouseDown={handleMouseDown} onMouseUp={handleMouseUp} onMouseLeave={handleMouseUp} onMouseMove={handleMouseMove} className="canvas bg-transparent p-6">
                     {lists.map(list => (
                       <ListView 
                         key={list.id} 
@@ -510,7 +512,7 @@ const BoardPage = () => {
 
                     {/* Add List Button */}
                     {!isReadOnly && (
-                      <div className={`${isBoardCollapsed ? 'w-16 h-[280px]' : 'w-80 h-fit'} shrink-0 transition-all duration-500`}>
+                      <div className={`${isBoardCollapsed ? 'w-16 h-[280px]' : 'w-[380px] h-fit'} shrink-0 transition-all duration-500`}>
                         {isAddingList ? (
                           <div className={`bg-white/80 backdrop-blur-md rounded-2xl p-4 border border-border-light shadow-2xl ${isBoardCollapsed ? 'w-80 absolute z-[60]' : 'w-full'}`}>
                             <input
@@ -619,7 +621,9 @@ const BoardPage = () => {
           )}
         </AnimatePresence>
 
-        {modals.cardDetails && <CardDetailsModal />}
+        <ErrorBoundary>
+          {modals.cardDetails && <CardDetailsModal />}
+        </ErrorBoundary>
         {modals.prismRules && (
           <PrismRulesDialog 
             isOpen={modals.prismRules} 

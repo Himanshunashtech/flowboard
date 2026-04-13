@@ -47,6 +47,18 @@ const workspaceSlice = createSlice({
         state.activeWorkspace = null;
       }
     },
+    addBoardToWorkspace: (state, action) => {
+      const { workspaceId, board } = action.payload;
+      const workspace = state.workspaces.find(w => w.id === workspaceId);
+      if (workspace) {
+        if (!workspace.boards) workspace.boards = [];
+        workspace.boards.push(board);
+      }
+      if (state.activeWorkspace?.id === workspaceId) {
+        if (!state.activeWorkspace.boards) state.activeWorkspace.boards = [];
+        state.activeWorkspace.boards.push(board);
+      }
+    },
   },
 });
 
@@ -58,7 +70,8 @@ export const {
   setError,
   addWorkspace,
   updateWorkspace,
-  deleteWorkspace
+  deleteWorkspace,
+  addBoardToWorkspace
 } = workspaceSlice.actions;
 
 export default workspaceSlice.reducer;

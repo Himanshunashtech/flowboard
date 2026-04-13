@@ -5,6 +5,7 @@ import { toggleModal } from '../../store/slices/uiSlice';
 import { setActiveBoard } from '../../store/slices/boardSlice';
 import { supabase } from '../../lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import { addBoardToWorkspace } from '../../store/slices/workspaceSlice';
 import TemplateGallery, { TEMPLATES } from './TemplateGallery';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -78,16 +79,51 @@ const CreateBoardModal = () => {
       if (error) throw error;
 
       // 2. Provision Lists
-      const listBlueprint = selectedTemplate ? selectedTemplate.lists : ['Backlog', 'In Progress', 'Done'];
+      const listBlueprint = selectedTemplate ? selectedTemplate.lists : [
+        { title: 'Getting Started', color: '#F8FAFC' },
+        { title: 'Backlog', color: '#F1F5F9' },
+        { title: 'In Progress', color: '#EFF6FF' },
+        { title: 'Done', color: '#F0FDF4' }
+      ];
       
-      await Promise.all(listBlueprint.map((ltitle, index) => 
-        supabase.from('lists').insert({
+      const { data: createdLists, error: listError } = await supabase.from('lists').insert(
+        listBlueprint.map((list, index) => ({
           board_id: board.id,
-          title: ltitle,
+          title: typeof list === 'string' ? list : list.title,
+          color: typeof list === 'string' ? null : list.color,
           position: `a${index}`
-        })
-      ));
+        }))
+      ).select();
 
+      if (listError) throw listError;
+
+      // 3. Provision Initial Cards from Blueprint
+      if (selectedTemplate?.initialCards && createdLists) {
+        const cardBlueprints = selectedTemplate.initialCards.map((card, index) => {
+          const targetList = createdLists.find(l => l.title === card.listTitle);
+          if (!targetList) return null;
+          
+          return {
+            board_id: board.id,
+            list_id: targetList.id,
+            created_by: user.id,
+            title: card.title,
+            description: card.description || { type: 'doc', content: [] },
+            position: `a${index}`,
+            priority: 'NONE'
+          };
+        }).filter(Boolean);
+
+        if (cardBlueprints.length > 0) {
+          const { error: cardError } = await supabase.from('cards').insert(cardBlueprints);
+          if (cardError) console.error('Error provisioning initial cards:', cardError);
+        }
+      }
+
+      dispatch(addBoardToWorkspace({ 
+        workspaceId: effectiveWorkspace.id, 
+        board: board 
+      }));
       dispatch(setActiveBoard(board));
       handleClose();
       if (effectiveWorkspace?.slug) {
@@ -220,7 +256,6 @@ const CreateBoardModal = () => {
                         type="button"
                         onClick={() => {
                           setBackground(c);
-                          setSelectedTemplate(null);
                         }}
                         className={`w-12 h-12 rounded-[18px] transition-all border-4 ${background === c && !selectedTemplate ? 'border-brand-primary scale-110 shadow-lg' : 'border-bg-secondary hover:scale-105'}`}
                         style={{ backgroundColor: c }}
@@ -240,7 +275,7 @@ const CreateBoardModal = () => {
                  </div>
 
                  <div className="grid grid-cols-2 gap-4">
-                    {TEMPLATES.slice(0, 4).map(template => (
+                    {TEMPLATES.slice(0, 6).map(template => (
                       <button
                         key={template.id}
                         type="button"

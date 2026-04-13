@@ -7,7 +7,7 @@ import {
   Square, Calendar, MoreHorizontal, Check, ChevronDown, Copy,
   ArrowRight, Star, Eye, Zap, Archive, Edit3, Network, Settings2,
   Sparkles, AlertCircle, CheckCircle2, Palette, Loader2, ExternalLink, Globe,
-  MapPin
+  MapPin, CloudUpload
 } from 'lucide-react';
 import { updateCard, setLabels, moveCard, addCard, deleteCard, addDependency, removeDependency } from '../../store/slices/boardSlice';
 import { addNotification, toggleModal, setActiveCardId } from '../../store/slices/uiSlice';
@@ -175,6 +175,7 @@ const CardDetailsModal = () => {
   
   // Label management state
   const [editingLabel, setEditingLabel] = useState(null);
+  const [labelSubView, setLabelSubView] = useState('list'); // 'list', 'edit', 'create'
   const [showMovePopover, setShowMovePopover] = useState(false);
   const [movePopoverMode, setMovePopoverMode] = useState('move');
   const [showDependencyPanel, setShowDependencyPanel] = useState(false);
@@ -198,6 +199,7 @@ const CardDetailsModal = () => {
   );
 
   const fileInputRef = useRef(null);
+  const coverImageUploadRef = useRef(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
 
@@ -594,6 +596,53 @@ const CardDetailsModal = () => {
     
     if (data) setSubtasks([...subtasks, data]);
   };
+  const handleCoverUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      
+      // Enforce 100kb limit as requested
+      const compressedFile = await compressImage(file, 100);
+      
+      const fileExt = compressedFile.name.split('.').pop() || 'jpg';
+      const fileName = `${card.id}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { data, error: uploadError } = await supabase.storage
+        .from('card-covers')
+        .upload(filePath, compressedFile);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('card-covers')
+        .getPublicUrl(filePath);
+
+      await updateField({ 
+        cover_type: 'IMAGE', 
+        cover_value: publicUrl 
+      });
+
+      dispatch(addNotification({ message: 'Cover updated!', type: 'success' }));
+    } catch (err) {
+      console.error('Cover upload failed:', err);
+      dispatch(addNotification({ message: 'Failed to upload cover', type: 'error' }));
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const PREDEFINED_COVERS = [
+    '/assets/covers/cover_1.png',
+    '/assets/covers/cover_2.png',
+    '/assets/covers/cover_3.png',
+    '/assets/covers/cover_4.png',
+    '/assets/covers/cover_5.png',
+    '/assets/covers/cover_6.png',
+  ];
+
   const postComment = async () => {
     if (!commentText.trim()) return;
     const { data } = await supabase.from('comments')
@@ -747,8 +796,19 @@ const CardDetailsModal = () => {
           onClick={e => e.stopPropagation()}
         >
           {/* Cover Strip */}
-          {card.cover_type !== 'NONE' && card.cover_value && (
-            <div className="h-32 w-full" style={{ backgroundColor: card.cover_value }} />
+          {card.cover_type !== 'NONE' && (card.cover_value || card.cover_image_url) && (
+            <div className="h-48 w-full relative overflow-hidden">
+               {card.cover_type === 'IMAGE' ? (
+                 <img 
+                   src={card.cover_value || card.cover_image_url} 
+                   className="w-full h-full object-cover"
+                   alt="Card Cover"
+                 />
+               ) : (
+                 <div className="w-full h-full" style={{ backgroundColor: card.cover_value }} />
+               )}
+               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+            </div>
           )}
 
           {/* Header */}
@@ -834,6 +894,18 @@ const CardDetailsModal = () => {
                     {PRIORITY_CONFIG[card.priority]?.label}
                   </div>
                 )}
+                {card.location && (
+                  <div 
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-primary/10 text-brand-primary rounded-lg text-xs font-bold cursor-pointer hover:bg-brand-primary/20 transition-all"
+                    onClick={() => {
+                       const section = document.getElementById('location-section');
+                       section?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }}
+                  >
+                    <MapPin size={11} />
+                    {card.location.name}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -912,21 +984,55 @@ const CardDetailsModal = () => {
                     <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Select Card Cover Color</p>
                     <button onClick={() => setShowCoverPanel(false)} className="text-text-tertiary hover:text-text-primary"><X size={14}/></button>
                   </div>
-                  <div className="flex flex-wrap gap-3 px-1">
-                    {['#F4F5F7', '#0052CC', '#36B37E', '#FFab00', '#FF5630', '#00B8D9', '#6554C0', '#FF8B00'].map(c => (
-                      <button 
-                        key={c}
-                        onClick={() => updateField({ cover_type: 'COLOR', cover_value: c })}
-                        className={`w-10 h-10 rounded-xl border-2 transition-all ${card.cover_value === c ? 'border-brand-primary ring-4 ring-brand-primary/10 scale-110' : 'border-transparent hover:scale-110 shadow-sm'}`}
-                        style={{ backgroundColor: c }}
-                      />
-                    ))}
-                    <button 
-                      onClick={() => updateField({ cover_type: 'NONE', cover_value: null })}
-                      className="w-10 h-10 rounded-xl bg-white border-2 border-dashed border-border-light flex items-center justify-center text-text-tertiary hover:text-text-primary hover:border-brand-primary transition-all"
-                    >
-                      <X size={16} />
-                    </button>
+                  <div className="space-y-6">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary mb-3 px-1">Select Cover Color</p>
+                      <div className="flex flex-wrap gap-3 px-1">
+                        {['#F4F5F7', '#0052CC', '#36B37E', '#FFab00', '#FF5630', '#00B8D9', '#6554C0', '#FF8B00'].map(c => (
+                          <button 
+                            key={c}
+                            onClick={() => updateField({ cover_type: 'COLOR', cover_value: c })}
+                            className={`w-10 h-10 rounded-xl border-2 transition-all ${card.cover_type === 'COLOR' && card.cover_value === c ? 'border-brand-primary ring-4 ring-brand-primary/10 scale-110' : 'border-transparent hover:scale-110 shadow-sm'}`}
+                            style={{ backgroundColor: c }}
+                          />
+                        ))}
+                        <button 
+                          onClick={() => updateField({ cover_type: 'NONE', cover_value: null })}
+                          className="w-10 h-10 rounded-xl bg-white border-2 border-dashed border-border-light flex items-center justify-center text-text-tertiary hover:text-text-primary hover:border-brand-primary transition-all"
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary mb-3 px-1">Predefined Blueprints</p>
+                      <div className="grid grid-cols-3 md:grid-cols-6 gap-3 px-1">
+                        {PREDEFINED_COVERS.map((url, idx) => (
+                          <button 
+                            key={url}
+                            onClick={() => updateField({ cover_type: 'IMAGE', cover_value: url })}
+                            className={`aspect-video rounded-xl bg-bg-secondary overflow-hidden border-2 transition-all ${card.cover_type === 'IMAGE' && card.cover_value === url ? 'border-brand-primary ring-4 ring-brand-primary/10 scale-105' : 'border-transparent hover:scale-105 shadow-sm'}`}
+                          >
+                             <img src={url} alt={`Material Cover ${idx + 1}`} className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                        <button 
+                          onClick={() => coverImageUploadRef.current?.click()}
+                          className="aspect-video rounded-xl bg-bg-secondary border-2 border-dashed border-border-light flex flex-col items-center justify-center gap-1 text-text-tertiary hover:text-brand-primary hover:border-brand-primary transition-all group"
+                        >
+                           <CloudUpload size={18} className="group-hover:scale-110 transition-transform" />
+                           <span className="text-[8px] font-black uppercase tracking-tighter">Upload</span>
+                        </button>
+                        <input 
+                          type="file" 
+                          ref={coverImageUploadRef} 
+                          className="hidden" 
+                          accept="image/*"
+                          onChange={handleCoverUpload} 
+                        />
+                      </div>
+                    </div>
                   </div>
                 </motion.div>
               )}
@@ -1329,6 +1435,53 @@ const CardDetailsModal = () => {
               </section>
 
 
+
+              {/* ── Location & Maps ── */}
+              {card.location && (
+                <section id="location-section" className="scroll-mt-6 mb-8">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                       <MapPin size={16} className="text-gray-500" />
+                       <h3 className="text-sm font-bold text-gray-700">Location</h3>
+                    </div>
+                    <button 
+                      onClick={handleRemoveLocation}
+                      className="text-[10px] font-black uppercase tracking-widest text-danger hover:underline"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <div className="pl-6">
+                    <div className="bg-white rounded-3xl border border-border-light shadow-xl overflow-hidden group">
+                       <div className="h-[220px] w-full bg-bg-secondary relative">
+                          <iframe
+                            width="100%"
+                            height="100%"
+                            style={{ border: 0 }}
+                            loading="lazy"
+                            allowFullScreen
+                            referrerPolicy="no-referrer-when-downgrade"
+                            src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyD7_ibpCTgMRShrNQJbnZyY1KaWhrRrT4g&q=${encodeURIComponent(card.location.address || card.location.name)}`}
+                          ></iframe>
+                          <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/60 to-transparent flex items-end justify-between">
+                             <div className="min-w-0">
+                                <p className="text-white text-sm font-black truncate">{card.location.name}</p>
+                                <p className="text-white/70 text-[10px] font-medium truncate">{card.location.address}</p>
+                             </div>
+                             <a 
+                               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.location.address || card.location.name)}`}
+                               target="_blank"
+                               rel="noopener noreferrer"
+                               className="p-2 bg-white/20 backdrop-blur-md rounded-xl text-white hover:bg-white/40 transition-all"
+                             >
+                                <Globe size={16} />
+                             </a>
+                          </div>
+                       </div>
+                    </div>
+                  </div>
+                </section>
+              )}
 
               {/* ── Attachments ── */}
               <section>

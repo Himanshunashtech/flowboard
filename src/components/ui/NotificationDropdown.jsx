@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Bell, 
-  Check, 
-  Trash2, 
+import {
+  Bell,
+  Check,
+  Trash2,
   ExternalLink,
   MessageSquare,
   UserPlus,
@@ -33,7 +33,7 @@ const NotificationDropdown = ({ user }) => {
   useEffect(() => {
     if (user) {
       fetchNotifications();
-      
+
       // Real-time subscription
       const channel = supabase
         .channel(`user-notifications:${user.id}`)
@@ -70,7 +70,7 @@ const NotificationDropdown = ({ user }) => {
       .from('notifications')
       .update({ is_read: true })
       .eq('id', id);
-    
+
     if (!error) {
       setNotifications(notifications.map(n => n.id === id ? { ...n, is_read: true } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
@@ -82,7 +82,7 @@ const NotificationDropdown = ({ user }) => {
       .from('notifications')
       .update({ is_read: true })
       .eq('user_id', user.id);
-    
+
     if (!error) {
       setNotifications(notifications.map(n => ({ ...n, is_read: true })));
       setUnreadCount(0);
@@ -90,8 +90,8 @@ const NotificationDropdown = ({ user }) => {
   };
 
   return (
-    <div className="relative">
-      <button 
+    <div className="relative z-50">
+      <button
         onClick={() => setIsOpen(!isOpen)}
         className={`p-2 rounded-xl transition-all relative ${isOpen ? 'bg-brand-primary text-white' : 'hover:bg-bg-secondary text-text-tertiary hover:text-text-primary'}`}
       >
@@ -107,7 +107,7 @@ const NotificationDropdown = ({ user }) => {
         {isOpen && (
           <>
             <div className="fixed inset-0 z-[100]" onClick={() => setIsOpen(false)} />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 10, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -116,7 +116,7 @@ const NotificationDropdown = ({ user }) => {
               <div className="p-5 border-b border-border-light flex items-center justify-between bg-bg-secondary/30">
                 <h3 className="text-sm font-black uppercase tracking-widest text-text-primary">Notifications</h3>
                 {unreadCount > 0 && (
-                  <button 
+                  <button
                     onClick={markAllRead}
                     className="text-[10px] font-bold text-brand-primary hover:underline"
                   >
@@ -131,8 +131,8 @@ const NotificationDropdown = ({ user }) => {
                     const style = NOTIFICATION_ICONS[n.type] || { icon: Bell, color: 'text-text-tertiary', bg: 'bg-bg-secondary' };
                     const Icon = style.icon;
                     return (
-                      <div 
-                        key={n.id} 
+                      <div
+                        key={n.id}
                         className={`p-4 border-b border-border-light flex gap-4 transition-colors relative group ${!n.is_read ? 'bg-brand-primary/5' : 'hover:bg-bg-secondary/50'}`}
                       >
                         <div className={`w-10 h-10 shrink-0 rounded-2xl flex items-center justify-center ${style.bg} ${style.color}`}>
@@ -148,7 +148,7 @@ const NotificationDropdown = ({ user }) => {
                           </p>
                         </div>
                         {!n.is_read && (
-                          <button 
+                          <button
                             onClick={() => markAsRead(n.id)}
                             className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-2 bg-white rounded-lg shadow-sm text-brand-primary hover:scale-110 transition-all border border-border-light"
                           >

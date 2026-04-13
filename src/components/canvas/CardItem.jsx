@@ -1,9 +1,11 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Draggable } from '@hello-pangea/dnd';
-import { MessageSquare, Paperclip, Clock, Check, MoreVertical, Plus, Circle, MapPin } from 'lucide-react';
+import { MessageSquare, Paperclip, Clock, Check, MoreVertical, Plus, Circle, MapPin, Trash2, CheckCircle2 } from 'lucide-react';
 import { setActiveCardId, toggleModal } from '../../store/slices/uiSlice';
+import { updateCard, deleteCard } from '../../store/slices/boardSlice';
 import { isPast } from 'date-fns';
+import { supabase } from '../../lib/supabase';
 import ReactDOM from 'react-dom';
 
 const PRIORITY_STYLES = {
@@ -26,6 +28,28 @@ const CardItem = ({ card, index, onClick, isSelected, stylePreset = 'modern' }) 
     }
     dispatch(setActiveCardId(card.id));
     dispatch(toggleModal({ modalName: 'cardDetails', isOpen: true }));
+  };
+
+  const toggleComplete = async (e) => {
+    e.stopPropagation();
+    const newState = !card.is_completed;
+    dispatch(updateCard({ id: card.id, is_completed: newState }));
+    const { error } = await supabase.from('cards').update({ is_completed: newState }).eq('id', card.id);
+    if (error) {
+      console.error('Error toggling completion:', error);
+      dispatch(updateCard({ id: card.id, is_completed: !newState }));
+    }
+  };
+
+  const handleDelete = async (e) => {
+    e.stopPropagation();
+    if (!confirm('Permanently delete this card?')) return;
+    dispatch(deleteCard(card.id));
+    const { error } = await supabase.from('cards').delete().eq('id', card.id);
+    if (error) {
+       console.error('Error deleting card:', error);
+       // In a real app we would re-fetch to restore
+    }
   };
 
   const dueDateObj = card.due_date ? new Date(card.due_date) : null;
@@ -65,7 +89,7 @@ const CardItem = ({ card, index, onClick, isSelected, stylePreset = 'modern' }) 
             {...provided.draggableProps}
             {...provided.dragHandleProps}
             onClick={handleClick}
-            className={`relative bg-white border cursor-pointer select-none group overflow-hidden transition-all duration-300
+            className={`relative bg-white border cursor-pointer select-none group overflow-hidden transition-all duration-300 flex-shrink-0
               ${getCardStyleClasses()}
               ${isSelected ? 'ring-4 ring-brand-primary border-transparent' : ''}
               group-hover:border-black
@@ -76,10 +100,13 @@ const CardItem = ({ card, index, onClick, isSelected, stylePreset = 'modern' }) 
           >
             {/* Card Cover */}
             {card.cover_type !== 'NONE' && (
-              <div className="absolute top-0 left-0 right-0 h-8 overflow-hidden z-0">
-                {card.cover_type === 'IMAGE' && card.cover_image_url ? (
+              <div 
+                className={`absolute top-0 left-0 right-0 overflow-hidden z-0 transition-all duration-500
+                  ${card.cover_type === 'IMAGE' ? 'h-40' : 'h-8'}`}
+              >
+                {card.cover_type === 'IMAGE' && (card.cover_value || card.cover_image_url) ? (
                   <img 
-                    src={card.cover_image_url} 
+                    src={card.cover_value || card.cover_image_url} 
                     alt="" 
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
@@ -94,23 +121,36 @@ const CardItem = ({ card, index, onClick, isSelected, stylePreset = 'modern' }) 
             )}
 
             {/* Content wrapper with internal padding */}
-            <div className={`relative z-10 flex flex-col p-5 ${card.cover_type !== 'NONE' ? 'pt-10' : ''}`}>
-              {/* Header: Title + More */}
+            <div className={`relative z-10 flex flex-col p-5 
+              ${card.cover_type === 'IMAGE' ? 'pt-[174px]' : card.cover_type === 'COLOR' ? 'pt-10' : ''}`}
+            >
+              {/* Header: Title + Actions */}
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div className="flex items-start gap-2.5 flex-1 min-w-0">
-                  {card.is_completed && (
-                    <div className="mt-0.5 shrink-0 w-5 h-5 rounded-full bg-success text-white flex items-center justify-center animate-in zoom-in duration-500 shadow-sm">
-                      <Check size={12} strokeWidth={4} />
-                    </div>
-                  )}
+                  <button 
+                    onClick={toggleComplete}
+                    className={`mt-0.5 shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-all shadow-sm
+                      ${card.is_completed ? 'bg-success text-white' : 'bg-bg-secondary text-text-tertiary hover:bg-brand-primary/10 hover:text-brand-primary'}`}
+                  >
+                    {card.is_completed ? <CheckCircle2 size={12} strokeWidth={4} /> : <Circle size={12} strokeWidth={3} />}
+                  </button>
                   <h4 className={`text-[15px] font-black tracking-tight leading-tight transition-colors break-words
                     ${card.is_completed ? 'text-text-tertiary line-through decoration-text-tertiary/40' : 'text-text-primary group-hover:text-brand-primary'}`}>
                     {card.title}
                   </h4>
                 </div>
-                <button className="p-1 -mr-1 text-text-tertiary opacity-0 group-hover:opacity-100 transition-all hover:bg-bg-secondary rounded-lg">
-                  <MoreVertical size={16} />
-                </button>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                  <button 
+                    onClick={handleDelete}
+                    className="p-1.5 text-text-tertiary hover:bg-danger/10 hover:text-danger rounded-lg transition-colors"
+                    title="Delete card"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                  <button className="p-1.5 text-text-tertiary hover:bg-bg-secondary rounded-lg">
+                    <MoreVertical size={16} />
+                  </button>
+                </div>
               </div>
 
               {/* Labels Area (Small color bars at top) */}
@@ -208,11 +248,6 @@ const CardItem = ({ card, index, onClick, isSelected, stylePreset = 'modern' }) 
                       )}
                     </div>
                   ))}
-                  {assignees.length === 0 && (
-                    <div className="w-7 h-7 rounded-full border-2 border-white bg-bg-secondary flex items-center justify-center text-text-tertiary opacity-0 group-hover:opacity-100 transition-all shadow-sm">
-                      <Plus size={12} strokeWidth={3} />
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

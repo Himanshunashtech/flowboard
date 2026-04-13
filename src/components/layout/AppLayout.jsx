@@ -5,7 +5,7 @@ import UniversalSearch from '../ui/UniversalSearch';
 import ToastContainer from '../ui/ToastContainer';
 import '../../styles/index.css';
 
-const AppLayout = ({ children }) => {
+const AppLayout = ({ children, scrollable = true }) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   useEffect(() => {
@@ -24,7 +24,7 @@ const AppLayout = ({ children }) => {
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header onOpenSearch={() => setIsSearchOpen(true)} />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden relative scroll-smooth">
+        <main className={`flex-1 relative ${scrollable ? 'overflow-y-auto overflow-x-hidden scroll-smooth' : 'overflow-hidden'}`}>
           {children}
         </main>
       </div>

@@ -133,7 +133,7 @@ const InviteBoardMemberModal = ({ boardId, onClose }) => {
            <div className="relative z-10">
               <button 
                 onClick={onClose}
-                className="flex items-center gap-4 px-8 py-4 bg-white border border-border-light text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:text-red-500 hover:border-red-100 transition-all rounded-[20px] shadow-sm"
+                className="flex items-center gap-5 px-10 py-5 bg-white border border-border-light text-xs font-black uppercase tracking-widest text-text-tertiary hover:text-red-500 hover:border-red-100 transition-all rounded-[24px] shadow-sm"
               >
                  <X size={14} />
                  <span>Terminate Link</span>
@@ -146,13 +146,13 @@ const InviteBoardMemberModal = ({ boardId, onClose }) => {
            <div className="p-14 h-full flex flex-col space-y-10">
               {/* Search Control Bar */}
               <div className="relative group">
-                 <Search size={20} className="absolute left-6 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand-primary transition-colors" />
+                 <Search size={24} className="absolute left-7 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand-primary transition-colors" />
                  <input
                     autoFocus
                     placeholder="Search personnel by name or email hash..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    className="w-full h-16 pl-16 pr-8 bg-bg-secondary border-none rounded-[28px] text-base font-black text-text-primary focus:bg-white focus:ring-8 focus:ring-brand-primary/5 transition-all outline-none shadow-inner placeholder:text-text-tertiary/40"
+                    className="w-full h-20 pl-20 pr-8 bg-bg-secondary border-none rounded-[32px] text-lg font-black text-text-primary focus:bg-white focus:ring-8 focus:ring-brand-primary/5 transition-all outline-none shadow-inner placeholder:text-text-tertiary/40"
                  />
               </div>
 
@@ -229,9 +229,9 @@ const InviteBoardMemberModal = ({ boardId, onClose }) => {
                                       <button
                                          onClick={() => addMember(wm)}
                                          disabled={adding === wm.user_id}
-                                         className="flex items-center gap-3 px-6 py-2.5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-black hover:shadow-xl transition-all active:scale-95 disabled:opacity-50"
+                                         className="flex items-center gap-3 px-8 py-3.5 bg-indigo-600 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-black hover:shadow-2xl transition-all active:scale-95 disabled:opacity-50"
                                       >
-                                         <UserPlus size={14} />
+                                         <UserPlus size={16} />
                                          <span>{adding === wm.user_id ? 'Adding...' : 'Add'}</span>
                                       </button>
                                    )}
