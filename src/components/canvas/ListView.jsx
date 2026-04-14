@@ -8,6 +8,7 @@ import { Ordering } from '../../lib/ordering';
 import { AnimatePresence, motion } from 'framer-motion';
 import { addCard, updateList, deleteList } from '../../store/slices/boardSlice';
 import { addNotification } from '../../store/slices/uiSlice';
+import { hexToRgba, isLightColor } from '../../lib/utils';
 
 const LIST_COLORS = [
   { name: 'Green',  value: '#61bd4f' },
@@ -149,13 +150,18 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
     }
   };
 
+  const isLight = list.color ? isLightColor(list.color) : true;
+  const listContrastText = isLight ? 'text-text-primary' : 'text-white';
+  const listContrastSecondary = isLight ? 'text-text-secondary' : 'text-white/80';
+  const listContrastIcon = isLight ? 'text-text-primary' : 'text-white';
+
   return (
     <div 
       className={`list-container ${isCollapsed ? 'w-16 h-[280px]' : 'w-[380px] max-h-full h-fit'} shrink-0 ${getListStyleClasses()} rounded-[32px] flex flex-col snap-center border relative transition-all duration-500 overflow-hidden shadow-2xl shadow-black/5`}
       style={{ 
-        backgroundColor: '#ffffff',
-        borderTop: list.color ? `6px solid ${list.color}` : '1px solid transparent',
-        borderColor: 'rgba(0,0,0,0.08)'
+        backgroundColor: list.color || '#ffffff',
+        borderTop: list.color ? `10px solid ${hexToRgba(list.color, 0.2)}` : '1px solid transparent',
+        borderColor: list.color ? hexToRgba(list.color, 0.3) : 'rgba(0,0,0,0.08)'
       }}
     >
       {isCollapsed ? (
@@ -177,7 +183,7 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
               {isEditingTitle ? (
                 <input
                   autoFocus
-                  className="flex-1 text-[11px] font-black uppercase tracking-[0.1em] text-text-primary bg-bg-secondary px-3 py-1 rounded-xl outline-none ring-2 ring-brand-primary/20"
+                  className={`flex-1 text-[11px] font-black uppercase tracking-[0.1em] ${listContrastText} bg-black/10 px-3 py-1 rounded-xl outline-none ring-2 ring-brand-primary/20`}
                   value={listTitle}
                   onChange={e => setListTitle(e.target.value)}
                   onBlur={handleUpdateTitle}
@@ -186,26 +192,26 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
               ) : (
                 <h3 
                   onClick={() => setIsEditingTitle(true)}
-                  className="text-[11px] font-black uppercase tracking-[0.15em] text-text-primary px-1 truncate cursor-pointer hover:bg-bg-secondary rounded-lg transition-colors"
+                  className={`text-[11px] font-black uppercase tracking-[0.15em] ${listContrastText} px-1 truncate cursor-pointer hover:bg-black/5 rounded-lg transition-colors`}
                 >
                   {list.title}
                 </h3>
               )}
               <div className="ml-auto flex items-center gap-3">
-                 <span className="text-[10px] font-black text-text-tertiary opacity-40">
+                 <span className={`text-[10px] font-black ${listContrastSecondary} opacity-80`}>
                    {cards.length}
                  </span>
                  {!isReadOnly && (
-                   <div className="flex items-center gap-1 opacity-0 group-hover/title:opacity-100 transition-opacity">
+                   <div className="flex items-center gap-1 transition-opacity">
                       <button
                         onClick={() => setShowPeoplePanel(p => !p)}
-                        className={`p-1.5 rounded-lg transition-all ${showPeoplePanel ? 'bg-brand-primary/10 text-brand-primary' : 'text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary'}`}
+                        className={`p-1.5 rounded-lg transition-all ${showPeoplePanel ? 'bg-brand-primary/10 text-brand-primary' : `${listContrastIcon} hover:bg-black/5`}`}
                       >
                         <UserPlus size={14} />
                       </button>
                       <button 
                         onClick={() => setShowMenu(p => !p)}
-                        className={`p-1.5 rounded-lg transition-all ${showMenu ? 'bg-bg-tertiary text-text-primary' : 'text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary'}`}
+                        className={`p-1.5 rounded-lg transition-all ${showMenu ? 'bg-black/10 text-brand-primary' : `${listContrastIcon} hover:bg-black/5`}`}
                       >
                         <MoreHorizontal size={16} />
                       </button>
@@ -355,7 +361,7 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
                   <textarea
                     autoFocus
                     placeholder="What needs to be done?"
-                    className="w-full p-3 bg-white border border-border-medium rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-brand-primary/10 outline-none resize-none"
+                    className="w-full p-3 bg-white/90 backdrop-blur-sm border border-border-medium rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-brand-primary/10 outline-none resize-none"
                     rows={3}
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
@@ -375,7 +381,7 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
                     <button
                       type="button"
                       onClick={() => setIsAdding(false)}
-                      className="p-2 text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary rounded-lg transition-all"
+                      className={`p-2 ${listContrastSecondary} hover:bg-black/5 hover:${listContrastText} rounded-lg transition-all`}
                     >
                       <X size={16} />
                     </button>
@@ -384,9 +390,9 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
               ) : (
                 <button
                   onClick={() => setIsAdding(true)}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm font-bold text-text-secondary hover:bg-bg-tertiary hover:text-brand-primary rounded-xl transition-all group"
+                  className={`w-full flex items-center gap-2 px-3 py-2 text-sm font-bold ${listContrastSecondary} hover:bg-black/10 hover:${listContrastText} rounded-xl transition-all group`}
                 >
-                  <Plus size={16} className="text-text-tertiary group-hover:text-brand-primary" />
+                  <Plus size={16} className={`${listContrastIcon} group-hover:scale-110 transition-transform`} />
                   <span>Add a card</span>
                 </button>
               )}

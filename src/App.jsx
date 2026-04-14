@@ -15,6 +15,8 @@ import ClientPortal from './pages/ClientPortal';
 import OnboardingPage from './pages/OnboardingPage';
 import SettingsPage from './pages/SettingsPage';
 import TeamPage from './pages/TeamPage';
+import InboxPage from './pages/InboxPage';
+import PlannerPage from './pages/PlannerPage';
 import ScrollToTop from './components/utils/ScrollToTop';
 
 // Marketing Pages
@@ -134,6 +136,8 @@ function App() {
         <Route path="/w/:workspaceSlug/team" element={<ProtectedRoute><TeamPage /></ProtectedRoute>} />
         <Route path="/w/:workspaceSlug/b/:boardId" element={<BoardPage />} />
         <Route path="/w/:workspaceSlug/b/:boardId/automations" element={<ProtectedRoute><AutomationBuilder /></ProtectedRoute>} />
+        <Route path="/inbox" element={<ProtectedRoute><InboxPage /></ProtectedRoute>} />
+        <Route path="/planner" element={<ProtectedRoute><PlannerPage /></ProtectedRoute>} />
         <Route path="/automations" element={<Navigate to="/dashboard" />} />
         <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 

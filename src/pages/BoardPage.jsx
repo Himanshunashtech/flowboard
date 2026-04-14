@@ -50,7 +50,7 @@ import {
   setPresence
 } from '../store/slices/boardSlice';
 import { addNotification, toggleModal } from '../store/slices/uiSlice';
-import { throttle } from '../lib/utils';
+import { throttle, isLightColor } from '../lib/utils';
 import { Ordering } from '../lib/ordering';
 import LiveCursors from '../components/board/LiveCursors';
 import AppLayout from '../components/layout/AppLayout';
@@ -66,6 +66,8 @@ import BoardSettingsDrawer from '../components/board/BoardSettingsDrawer';
 import { BoardSkeleton } from '../components/ui/Skeleton';
 import { useUndoRedo } from '../hooks/useUndoRedo';
 import ActivitySidePanel from '../components/board/ActivitySidePanel';
+import TemplateGuideModal from '../components/modals/TemplateGuideModal';
+import { TEMPLATES } from '../components/modals/TemplateGallery';
 
 import ErrorBoundary from '../components/ui/ErrorBoundary';
 
@@ -93,6 +95,8 @@ const BoardPage = () => {
   const [isAddingList, setIsAddingList] = useState(false);
   const [newListTitle, setNewListTitle] = useState('');
   const [isBoardCollapsed, setIsBoardCollapsed] = useState(false);
+  const [showGuideModal, setShowGuideModal] = useState(false);
+  const [activeTemplate, setActiveTemplate] = useState(null);
 
   const handleCreateList = async () => {
     if (!newListTitle.trim()) {
@@ -231,6 +235,19 @@ const BoardPage = () => {
 
     if (boardId) {
       fetchBoardData();
+
+      // Check for pending template guide
+      const pendingTemplateId = localStorage.getItem(`flowboard_guide_pending_${boardId}`);
+      if (pendingTemplateId) {
+        const template = TEMPLATES.find(t => t.id === pendingTemplateId);
+        if (template) {
+          setActiveTemplate(template);
+          setShowGuideModal(true);
+          // Clear flag so it only shows once
+          localStorage.removeItem(`flowboard_guide_pending_${boardId}`);
+        }
+      }
+
       const channel = getBoardChannel(boardId);
       channelRef.current = channel;
 
@@ -382,15 +399,22 @@ const BoardPage = () => {
       default: return {};
     }
   };
+  
+  const isLight = activeBoard ? isLightColor(activeBoard.background_value) : false;
+  const navTextColor = isLight ? 'text-text-primary' : 'text-white';
+  const navSecondaryColor = isLight ? 'text-text-tertiary' : 'text-white/60';
+  const navBgColor = isLight ? 'bg-black/5' : 'bg-white/10';
+  const headerBg = isLight ? 'bg-white/80' : 'bg-black/10';
+  const borderColor = isLight ? 'border-black/5' : 'border-white/10';
 
   return (
     <AppLayout scrollable={false}>
       <div className="flex flex-col h-full overflow-hidden transition-all duration-700" style={getBackgroundStyle()} onMouseMove={handleBoardMouseMove}>
         <LiveCursors />
-        <header className="h-14 border-b border-white/10 flex items-center justify-between px-6 bg-black/10 backdrop-blur-md shrink-0 z-[50] relative">
+        <header className={`h-14 border-b ${borderColor} flex items-center justify-between px-6 ${headerBg} backdrop-blur-md shrink-0 z-[50] relative transition-colors duration-500`}>
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-3 group/star">
-              <h2 className="text-2xl font-black text-white tracking-tighter">{activeBoard?.title}</h2>
+              <h2 className={`text-2xl font-black ${navTextColor} tracking-tighter`}>{activeBoard?.title}</h2>
               <button 
                 onClick={async () => {
                   const isStarred = starredBoardIds.includes(activeBoard.id);
@@ -401,22 +425,22 @@ const BoardPage = () => {
                     await supabase.from('board_stars').insert({ board_id: activeBoard.id, user_id: user.id });
                   }
                 }}
-                className={`p-2 rounded-xl transition-all ${starredBoardIds.includes(activeBoard?.id) ? 'text-yellow-400 bg-yellow-400/10' : 'text-white/60 hover:bg-white/10 opacity-0 group-hover/star:opacity-100'}`}
+                className={`p-2 rounded-xl transition-all ${starredBoardIds.includes(activeBoard?.id) ? 'text-yellow-400 bg-yellow-400/10' : `${navTextColor} opacity-40 hover:bg-black/5 opacity-0 group-hover/star:opacity-100`}`}
               >
                 <Star size={20} fill={starredBoardIds.includes(activeBoard?.id) ? 'currentColor' : 'none'} />
               </button>
             </div>
             <div className="flex -space-x-2">
               {members?.slice(0, 4).map(m => (
-                <div key={m.user_id} className="w-7 h-7 rounded-full border-2 border-white/20 bg-brand-primary flex items-center justify-center text-[10px] font-bold text-white shadow-sm">
+                <div key={m.user_id} className={`w-7 h-7 rounded-full border-2 ${isLight ? 'border-brand-primary/20' : 'border-white/20'} bg-brand-primary flex items-center justify-center text-[10px] font-bold text-white shadow-sm`}>
                   {(m.profiles?.full_name || m.profiles?.email || '?')[0].toUpperCase()}
                 </div>
               ))}
             </div>
             {isReadOnly && (
-              <div className="flex items-center gap-2 px-3 py-1 bg-yellow-400/20 border border-yellow-400/30 rounded-lg">
-                <Shield size={12} className="text-yellow-400" />
-                <span className="text-[9px] font-black uppercase text-yellow-100 tracking-widest">Read Only Mode</span>
+              <div className={`flex items-center gap-2 px-3 py-1 ${isLight ? 'bg-brand-primary/10 border-brand-primary/20' : 'bg-yellow-400/20 border-yellow-400/30'} rounded-lg`}>
+                <Shield size={12} className={isLight ? 'text-brand-primary' : 'text-yellow-400'} />
+                <span className={`text-[9px] font-black uppercase ${isLight ? 'text-brand-primary' : 'text-yellow-100'} tracking-widest`}>Read Only Mode</span>
               </div>
             )}
 
@@ -426,7 +450,7 @@ const BoardPage = () => {
              <div className="relative">
                 <button 
                   ref={shareBtnRef}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${showSharePopover ? 'bg-brand-primary text-white shadow-lg' : 'bg-white/10 text-white hover:bg-white/20 border border-white/10'}`}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${showSharePopover ? 'bg-brand-primary text-white shadow-lg' : `${navBgColor} ${navTextColor} hover:${isLight ? 'bg-black/10' : 'bg-white/20'} border ${borderColor}`}`}
                   onClick={() => setShowSharePopover(!showSharePopover)}
                 >
                   <Share2 size={14} />
@@ -447,7 +471,7 @@ const BoardPage = () => {
                   )}
                 </AnimatePresence>
              </div>
-            <div className="flex items-center bg-black/20 rounded-xl p-1 shadow-sm border border-white/10 font-medium overflow-x-auto max-w-[500px] no-scrollbar">
+            <div className={`flex items-center ${isLight ? 'bg-black/5' : 'bg-black/20'} rounded-xl p-1 shadow-sm border ${borderColor} font-medium overflow-x-auto max-w-[500px] no-scrollbar`}>
               {[
                 { id: 'kanban', icon: Kanban, label: 'Board' },
                 { id: 'table', icon: Table2, label: 'Table' },
@@ -459,7 +483,7 @@ const BoardPage = () => {
                 <button 
                   key={view.id} 
                   onClick={() => setCurrentView(view.id)} 
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-all whitespace-nowrap ${currentView === view.id ? 'bg-white/20 text-white shadow-sm' : 'text-white/60 hover:bg-white/10'}`}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-all whitespace-nowrap ${currentView === view.id ? (isLight ? 'bg-brand-primary text-white shadow-sm' : 'bg-white/20 text-white shadow-sm') : `${navSecondaryColor} hover:${isLight ? 'bg-black/5' : 'bg-white/10'}`}`}
                 >
                   <view.icon size={13} />
                   <span className="uppercase">{view.label}</span>
@@ -469,20 +493,20 @@ const BoardPage = () => {
 
             <button 
               onClick={() => setIsBoardCollapsed(!isBoardCollapsed)}
-              className={`p-2 rounded-xl transition-all shadow-sm border ${isBoardCollapsed ? 'bg-brand-primary text-white border-brand-primary' : 'bg-white/10 text-white/70 hover:text-white border-white/10'}`}
+              className={`p-2 rounded-xl transition-all shadow-sm border ${isBoardCollapsed ? 'bg-brand-primary text-white border-brand-primary' : `${navBgColor} ${navSecondaryColor} hover:${navTextColor} ${borderColor}`}`}
               title={isBoardCollapsed ? "Expand All Lists" : "Collapse All Lists"}
             >
               {isBoardCollapsed ? <Maximize2 size={18} /> : <Minimize2 size={18} />}
             </button>
 
             <button 
-              className={`p-2 rounded-xl transition-all ${modals.activityDrawer ? 'bg-brand-primary text-white' : 'text-white/70 hover:text-white hover:bg-white/10'}`} 
+              className={`p-2 rounded-xl transition-all ${modals.activityDrawer ? 'bg-brand-primary text-white' : `${navSecondaryColor} hover:${navTextColor} hover:${navBgColor}`}`} 
               onClick={() => dispatch(toggleModal({ modalName: 'activityDrawer', isOpen: !modals.activityDrawer }))}
             >
               <HistoryIcon size={18} />
             </button>
             <button 
-              className={`p-2 rounded-xl transition-all ${modals.boardSettings ? 'bg-brand-primary text-white' : 'text-white/70 hover:text-white hover:bg-white/10'}`} 
+              className={`p-2 rounded-xl transition-all ${modals.boardSettings ? 'bg-brand-primary text-white' : `${navSecondaryColor} hover:${navTextColor} hover:${navBgColor}`}`} 
               onClick={() => dispatch(toggleModal({ modalName: 'boardSettings', isOpen: !modals.boardSettings }))}
             >
               <Settings size={18} />
@@ -639,6 +663,11 @@ const BoardPage = () => {
             loading={joining}
           />
         )}
+        <TemplateGuideModal 
+          isOpen={showGuideModal} 
+          onClose={() => setShowGuideModal(false)} 
+          template={activeTemplate} 
+        />
       </div>
     </AppLayout>
   );

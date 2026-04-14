@@ -3,6 +3,8 @@ import authReducer from './slices/authSlice';
 import workspaceReducer from './slices/workspaceSlice';
 import boardReducer from './slices/boardSlice';
 import uiReducer from './slices/uiSlice';
+import inboxReducer from './slices/inboxSlice';
+import plannerReducer from './slices/plannerSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +12,8 @@ export const store = configureStore({
     workspaces: workspaceReducer,
     board: boardReducer,
     ui: uiReducer,
+    inbox: inboxReducer,
+    planner: plannerReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

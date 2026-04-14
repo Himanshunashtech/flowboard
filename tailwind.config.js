@@ -45,7 +45,9 @@ export default {
         lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
       },
       fontFamily: {
-        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        sans: ['var(--font-sans)', 'Inter', 'sans-serif'],
+        serif: ['var(--font-serif)', 'Merriweather', 'serif'],
+        mono: ['var(--font-mono)', 'JetBrains Mono', 'monospace'],
       },
       spacing: {
         sidebar: '260px',

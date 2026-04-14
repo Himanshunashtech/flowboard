@@ -1,12 +1,12 @@
 import React from 'react';
 import { NavLink, Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { 
-  LayoutDashboard, 
-  Settings, 
-  Plus, 
-  LogOut, 
-  Box, 
+import {
+  LayoutDashboard,
+  Settings,
+  Plus,
+  LogOut,
+  Box,
   ChevronRight,
   ChevronLeft,
   Hash,
@@ -17,7 +17,9 @@ import {
 
   ClipboardList,
   FileText,
-  Sparkles
+  Sparkles,
+  Inbox,
+  CalendarDays
 } from 'lucide-react';
 import { TEMPLATES } from './modals/TemplateGallery';
 import { supabase } from '../lib/supabase';
@@ -55,9 +57,9 @@ const Sidebar = () => {
   };
 
   return (
-    <div className={`border-r border-border-light bg-white/40 backdrop-blur-xl flex flex-col h-full relative z-20 transition-all duration-300 ease-in-out
-      ${sidebarOpen ? 'w-[260px]' : 'w-[72px]'}`}>
-      
+    <div className={`border-r border-border-light bg-white backdrop-blur-xl flex flex-col h-full relative z-20 transition-all duration-300 ease-in-out
+      ${sidebarOpen ? 'w-[280px]' : 'w-[72px]'}`}>
+
 
 
       <div className={`p-6 border-b border-border-light shadow-sm bg-white/20 flex items-center ${sidebarOpen ? 'gap-3' : 'justify-center p-4'}`}>
@@ -74,17 +76,25 @@ const Sidebar = () => {
             <LayoutDashboard size={18} className="shrink-0" />
             {sidebarOpen && <span>Dashboard</span>}
           </NavLink>
+          <NavLink to="/inbox" className={({ isActive }) => `flex items-center gap-3 px-4 py-2 mx-3 rounded-md transition-colors text-sm font-medium ${!sidebarOpen && 'justify-center mx-1'} ${isActive ? 'bg-white text-brand-primary shadow-sm border border-border-light' : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'}`} title={!sidebarOpen ? 'Inbox' : ''}>
+            <Inbox size={18} className="shrink-0" />
+            {sidebarOpen && <span>Inbox</span>}
+          </NavLink>
+          <NavLink to="/planner" className={({ isActive }) => `flex items-center gap-3 px-4 py-2 mx-3 rounded-md transition-colors text-sm font-medium ${!sidebarOpen && 'justify-center mx-1'} ${isActive ? 'bg-white text-brand-primary shadow-sm border border-border-light' : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'}`} title={!sidebarOpen ? 'Planner' : ''}>
+            <CalendarDays size={18} className="shrink-0" />
+            {sidebarOpen && <span>Planner</span>}
+          </NavLink>
           {activeBoard ? (
-            <NavLink 
-              to={`/w/${workspaces.find(w => w.id === activeBoard.workspace_id)?.slug || 'default'}/b/${activeBoard.id}/automations`} 
-              className={({ isActive }) => `flex items-center gap-3 px-4 py-2 mx-3 rounded-md transition-colors text-sm font-medium ${!sidebarOpen && 'justify-center mx-1'} ${isActive ? 'bg-white text-brand-primary shadow-sm border border-border-light' : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'}`} 
+            <NavLink
+              to={`/w/${workspaces.find(w => w.id === activeBoard.workspace_id)?.slug || 'default'}/b/${activeBoard.id}/automations`}
+              className={({ isActive }) => `flex items-center gap-3 px-4 py-2 mx-3 rounded-md transition-colors text-sm font-medium ${!sidebarOpen && 'justify-center mx-1'} ${isActive ? 'bg-white text-brand-primary shadow-sm border border-border-light' : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'}`}
               title={!sidebarOpen ? 'Automations' : ''}
             >
               <Zap size={18} className="shrink-0" />
               {sidebarOpen && <span>Automations</span>}
             </NavLink>
           ) : (
-            <div 
+            <div
               className={`flex items-center gap-3 px-4 py-2 mx-3 rounded-md transition-colors text-sm font-medium opacity-50 cursor-not-allowed ${!sidebarOpen && 'justify-center mx-1'} text-text-secondary`}
               title="Select a board first"
             >
@@ -92,7 +102,7 @@ const Sidebar = () => {
               {sidebarOpen && <span>Automations</span>}
             </div>
           )}
-          <button 
+          <button
             onClick={() => dispatch(toggleModal({ modalName: 'workspaceSettings', isOpen: true, data: { tab: 'members' } }))}
             className={`w-[calc(100%-24px)] flex items-center gap-3 px-4 py-2 mx-3 rounded-md transition-all text-sm font-medium ${!sidebarOpen && 'justify-center mx-1'} text-text-secondary hover:bg-bg-tertiary hover:text-indigo-600 group`}
             title={!sidebarOpen ? 'Team Hub' : ''}
@@ -110,14 +120,14 @@ const Sidebar = () => {
         <div className="mt-8">
           <div className={`px-4 py-2 text-[10px] font-bold text-text-tertiary uppercase flex items-center justify-between tracking-widest ${!sidebarOpen && 'hidden'}`}>
             <span>Teams</span>
-            <button 
+            <button
               className="p-1 hover:bg-bg-tertiary rounded transition-colors"
               onClick={() => dispatch(toggleModal({ modalName: 'createWorkspace', isOpen: true }))}
             >
               <Plus size={14} />
             </button>
           </div>
-          
+
           <div className="space-y-1 px-3 mt-1">
             {workspaces.length === 0 ? (
               <div className="px-4 py-2 text-xs text-text-tertiary italic">No teams yet</div>
@@ -125,8 +135,8 @@ const Sidebar = () => {
               workspaces.map((ws) => (
                 <div key={ws.id} className="group px-3">
                   <div className="relative flex items-center">
-                    <NavLink 
-                      to={`/w/${ws.slug}`} 
+                    <NavLink
+                      to={`/w/${ws.slug}`}
                       className={({ isActive }) => `flex-1 flex items-center gap-3 px-4 py-2 rounded-md transition-colors text-sm font-medium ${!sidebarOpen && 'justify-center mx-0'} ${isActive ? 'bg-white text-brand-primary shadow-sm border border-border-light' : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'}`}
                       title={!sidebarOpen ? ws.name : ''}
                     >
@@ -143,8 +153,8 @@ const Sidebar = () => {
                           to={`/w/${ws.slug}/b/${board.id}`}
                           className={({ isActive }) => `flex items-center gap-2.5 px-3 py-1.5 rounded-lg transition-all text-xs font-medium ${isActive ? 'bg-brand-primary/5 text-brand-primary shadow-sm' : 'text-text-tertiary hover:bg-bg-tertiary hover:text-text-primary'}`}
                         >
-                           <Hash size={12} className="opacity-40" />
-                           <span className="truncate">{board.title}</span>
+                          <Hash size={12} className="opacity-40" />
+                          <span className="truncate">{board.title}</span>
                         </NavLink>
                       ))}
                     </div>
@@ -192,13 +202,13 @@ const Sidebar = () => {
             </div>
             <div className="space-y-0.5 px-3 mt-1">
               {TEMPLATES.slice(0, 3).map(template => (
-                 <button
+                <button
                   key={template.id}
                   type="button"
-                  onClick={() => dispatch(toggleModal({ 
-                    modalName: 'createBoard', 
-                    isOpen: true, 
-                    data: { templateId: template.id } 
+                  onClick={() => dispatch(toggleModal({
+                    modalName: 'createBoard',
+                    isOpen: true,
+                    data: { templateId: template.id }
                   }))}
                   className="w-full flex items-center gap-3 px-4 py-2 rounded-md transition-all text-xs font-bold text-text-secondary hover:bg-bg-tertiary hover:text-brand-primary group text-left"
                 >
@@ -208,7 +218,7 @@ const Sidebar = () => {
                   <span className="truncate">{template.name}</span>
                 </button>
               ))}
-              <button 
+              <button
                 onClick={() => dispatch(toggleModal({ modalName: 'createBoard', isOpen: true }))}
                 className="w-full px-4 py-2 text-[10px] font-black uppercase tracking-tight text-brand-primary hover:underline text-left mt-1"
               >
