@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, Sparkles, Zap, Fingerprint, Target, Users, Shield, ArrowRight, Github } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const AuthPage = ({ type }) => {
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get('inviteToken');
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -19,7 +22,9 @@ const AuthPage = ({ type }) => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'github',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`
+          redirectTo: inviteToken 
+            ? `${window.location.origin}/invite/${inviteToken}`
+            : `${window.location.origin}/dashboard`
         }
       });
       if (error) throw error;
@@ -41,14 +46,20 @@ const AuthPage = ({ type }) => {
             email, 
             password,
             options: {
-              emailRedirectTo: `${window.location.origin}/dashboard`
+              emailRedirectTo: inviteToken 
+                ? `${window.location.origin}/invite/${inviteToken}`
+                : `${window.location.origin}/dashboard`
             }
           });
 
       if (error) throw error;
       
       if (type === 'login' && data?.user) {
-        navigate('/dashboard');
+        if (inviteToken) {
+          navigate(`/invite/${inviteToken}`);
+        } else {
+          navigate('/dashboard');
+        }
       } else if (type === 'signup') {
         alert('Check your email for the confirmation link!');
       }

@@ -40,12 +40,7 @@ const AcceptInvitationPage = () => {
     }
 
     setAccepting(true);
-    const result = await acceptWorkspaceInvitation(
-      token, 
-      user.id, 
-      invitation.workspace_id, 
-      invitation.role
-    );
+    const result = await acceptWorkspaceInvitation(token);
 
     if (result.success) {
       setStatus('SUCCESS');
@@ -113,6 +108,13 @@ const AcceptInvitationPage = () => {
                       <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                     </>
                   )}
+                </button>
+                <button 
+                  onClick={() => navigate('/')}
+                  disabled={accepting}
+                  className="w-full h-14 bg-transparent border-2 border-border-light text-text-tertiary rounded-[24px] text-[10px] font-black uppercase tracking-[0.2em] hover:bg-bg-secondary transition-all disabled:opacity-50"
+                >
+                  Decline Invitation
                 </button>
                 <p className="text-[9px] font-black uppercase tracking-widest text-text-tertiary">
                   {user ? `Accepting as ${user.email}` : 'Sign up required to join workspace'}

@@ -13,6 +13,7 @@ import LandingPage from './pages/LandingPage';
 import AutomationBuilder from './pages/AutomationBuilder';
 import ClientPortal from './pages/ClientPortal';
 import OnboardingPage from './pages/OnboardingPage';
+import AcceptInvitationPage from './pages/AcceptInvitationPage';
 import SettingsPage from './pages/SettingsPage';
 import TeamPage from './pages/TeamPage';
 import InboxPage from './pages/InboxPage';
@@ -143,6 +144,9 @@ function App() {
 
         {/* Onboarding (Doesn't require onboarding_completed) */}
         <Route path="/onboarding" element={user ? (profile?.onboarding_completed ? <Navigate to="/dashboard" /> : <OnboardingPage />) : <Navigate to="/login" />} />
+        
+        {/* Invitations */}
+        <Route path="/invite/:token" element={<AcceptInvitationPage />} />
 
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />

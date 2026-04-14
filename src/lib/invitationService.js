@@ -91,33 +91,20 @@ export const getInvitationData = async (token) => {
 };
 
 /**
- * Finalizes the invitation by adding the user to the workspace
+ * Finalizes the invitation by adding the user to the workspace via Secure RPC
  */
-export const acceptWorkspaceInvitation = async (token, userId, workspaceId, role) => {
+export const acceptWorkspaceInvitation = async (token) => {
   try {
-    // 1. Add to workspace_members
-    const { error: memberError } = await supabase
-      .from('workspace_members')
-      .insert({
-        workspace_id: workspaceId,
-        user_id: userId,
-        role: role || 'MEMBER'
-      });
+    const { data, error } = await supabase.rpc('join_workspace_via_invitation', { 
+      invite_token: token 
+    });
 
-    // Handle unique constraint if user is already a member
-    if (memberError && memberError.code !== '23505') throw memberError;
+    if (error) throw error;
+    if (data && !data.success) throw new Error(data.error);
 
-    // 2. Mark invitation as accepted
-    const { error: inviteError } = await supabase
-      .from('workspace_invitations')
-      .update({ accepted_at: new Date().toISOString() })
-      .eq('token', token);
-
-    if (inviteError) throw inviteError;
-
-    return { success: true };
+    return { success: true, workspaceId: data.workspace_id };
   } catch (error) {
     console.error('Acceptance failed:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error.message || error };
   }
 };

@@ -29,7 +29,7 @@ serve(async (req) => {
       .single()
 
     const workspaceName = workspace?.name || 'a FlowBoard Workspace'
-    const joinUrl = `${req.headers.get('origin') || 'https://flowboard.app'}/join?token=${payload.token}`
+    const joinUrl = `${req.headers.get('origin') || 'https://unitsconverter.in'}/invite/${payload.token}`
 
     // 2. Draft the Premium HTML Email
     const html = `
@@ -71,7 +71,7 @@ serve(async (req) => {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'FlowBoard <invites@resend.dev>',
+        from: 'FlowBoard <invites@unitsconverter.in>',
         to: [recipient],
         subject: `Join ${workspaceName} on FlowBoard`,
         html: html,

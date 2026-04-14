@@ -18,7 +18,9 @@ import {
   ChevronRight,
   Target,
   Zap,
-  Fingerprint
+  Fingerprint,
+  Plus,
+  Hash
 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { toggleModal } from '../../store/slices/uiSlice';
@@ -51,13 +53,40 @@ const WorkspaceSettingsModal = () => {
   const [invites, setInvites] = useState([]);
   const [fetchingMembers, setFetchingMembers] = useState(false);
 
+  // Board Assignment State
+  const [selectedMember, setSelectedMember] = useState(null);
+  const [allBoards, setAllBoards] = useState([]);
+  const [memberBoardIds, setMemberBoardIds] = useState([]);
+  const [savingAssignments, setSavingAssignments] = useState(false);
+
+  // Permission Logic
+  const currentUserMember = members.find(m => m.user_id === user?.id);
+  const isAdmin = currentUserMember?.role === 'ADMIN' || currentUserMember?.role === 'OWNER';
+  const isOwner = currentUserMember?.role === 'OWNER';
+
   useEffect(() => {
     if (activeWorkspace) {
       setName(activeWorkspace.name);
       setSlug(activeWorkspace.slug);
       fetchMembersAndInvites();
+      fetchAllWorkspaceBoards();
     }
   }, [activeWorkspace]);
+
+  useEffect(() => {
+    // If not admin, force to members tab
+    if (currentUserMember && !isAdmin) {
+      setActiveTab('members');
+    }
+  }, [currentUserMember, isAdmin]);
+
+  const fetchAllWorkspaceBoards = async () => {
+    const { data } = await supabase
+      .from('boards')
+      .select('id, title, visibility')
+      .eq('workspace_id', activeWorkspace.id);
+    if (data) setAllBoards(data);
+  };
 
   const fetchMembersAndInvites = async () => {
     if (!activeWorkspace) return;
@@ -95,6 +124,94 @@ const WorkspaceSettingsModal = () => {
       setTimeout(() => setSuccess(false), 2000);
     }
     setLoading(false);
+  };
+
+  const removeMember = async (memberUserId) => {
+    if (!isAdmin) return;
+    if (memberUserId === user?.id) return; // Cannot remove self here
+
+    if (!window.confirm('Are you sure you want to remove this member? They will lose all access immediately.')) return;
+
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('workspace_members')
+        .delete()
+        .eq('workspace_id', activeWorkspace.id)
+        .eq('user_id', memberUserId);
+
+      if (error) throw error;
+
+      // Update local state
+      setMembers(members.filter(m => m.user_id !== memberUserId));
+    } catch (err) {
+      console.error('Removal Error:', err);
+      alert('Failed to remove member.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateMemberRole = async (memberId, newRole) => {
+    try {
+      const { error } = await supabase
+        .from('workspace_members')
+        .update({ role: newRole })
+        .eq('user_id', memberId)
+        .eq('workspace_id', activeWorkspace.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setMembers(members.map(m => 
+        m.user_id === memberId ? { ...m, role: newRole } : m
+      ));
+    } catch (err) {
+      console.error('Update Role Error:', err);
+      alert('Failed to update member role.');
+    }
+  };
+
+  const toggleBoardAssignment = async (boardId) => {
+    if (!selectedMember) return;
+    
+    const isAssigned = memberBoardIds.includes(boardId);
+    
+    try {
+      if (isAssigned) {
+        await supabase
+          .from('board_members')
+          .delete()
+          .eq('board_id', boardId)
+          .eq('user_id', selectedMember.user_id);
+        
+        setMemberBoardIds(prev => prev.filter(id => id !== boardId));
+      } else {
+        await supabase
+          .from('board_members')
+          .insert({
+            board_id: boardId,
+            user_id: selectedMember.user_id,
+            role: 'MEMBER'
+          });
+        
+        setMemberBoardIds(prev => [...prev, boardId]);
+      }
+    } catch (err) {
+      console.error('Assignment Error:', err);
+    }
+  };
+
+  const handleOpenAssignments = async (member) => {
+    setSelectedMember(member);
+    const { data } = await supabase
+      .from('board_members')
+      .select('board_id')
+      .eq('user_id', member.user_id);
+    
+    if (data) {
+      setMemberBoardIds(data.map(d => d.board_id));
+    }
   };
 
   const handleDeleteWorkspace = async () => {
@@ -154,10 +271,10 @@ const WorkspaceSettingsModal = () => {
 
               <nav className="space-y-3 flex-1">
                 {[
-                  { id: 'general', label: 'Identity', icon: Globe, color: 'text-brand-primary' },
-                  { id: 'members', label: 'Directory', icon: Users, color: 'text-indigo-500' },
-                  { id: 'danger', label: 'Danger Zone', icon: AlertTriangle, color: 'text-red-500' },
-                ].map(item => (
+                  { id: 'general', label: 'Identity', icon: Globe, color: 'text-brand-primary', adminOnly: true },
+                  { id: 'members', label: 'Directory', icon: Users, color: 'text-indigo-500', adminOnly: false },
+                  { id: 'danger', label: 'Danger Zone', icon: AlertTriangle, color: 'text-red-500', adminOnly: true },
+                ].filter(item => !item.adminOnly || isAdmin).map(item => (
                   <button
                     key={item.id}
                     onClick={() => setActiveTab(item.id)}
@@ -188,7 +305,7 @@ const WorkspaceSettingsModal = () => {
         <div className="flex-1 flex flex-col min-w-0 bg-white relative">
            <div className="p-16 h-full overflow-y-auto scrollbar-hide">
               <AnimatePresence mode="wait">
-                {activeTab === 'general' && (
+                {activeTab === 'general' && isAdmin && (
                   <motion.div 
                     key="general"
                     initial={{ opacity: 0, x: 20 }}
@@ -261,16 +378,18 @@ const WorkspaceSettingsModal = () => {
                            </div>
                            <h3 className="text-5xl font-black text-text-primary tracking-tighter leading-none">Human Capital</h3>
                         </div>
-                        <button 
-                          onClick={() => {
-                            dispatch(toggleModal({ modalName: 'workspaceSettings', isOpen: false }));
-                            dispatch(toggleModal({ modalName: 'memberInvite', isOpen: true }));
-                          }}
-                          className="flex items-center gap-3 px-8 py-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-3xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm"
-                        >
-                          <UserPlus size={16} />
-                          Enlist Member
-                        </button>
+                        {isAdmin && (
+                          <button 
+                            onClick={() => {
+                              dispatch(toggleModal({ modalName: 'workspaceSettings', isOpen: false }));
+                              dispatch(toggleModal({ modalName: 'memberInvite', isOpen: true }));
+                            }}
+                            className="flex items-center gap-3 px-8 py-4 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 rounded-3xl text-[10px] font-black uppercase tracking-widest transition-all shadow-sm"
+                          >
+                            <UserPlus size={16} />
+                            Enlist Member
+                          </button>
+                        )}
                      </header>
 
                      <div className="grid grid-cols-1 gap-4">
@@ -279,8 +398,10 @@ const WorkspaceSettingsModal = () => {
                              <Loader2 size={32} className="animate-spin mb-4 text-brand-primary" />
                              <span className="text-[10px] font-black uppercase tracking-[0.2em]">Decrypting Roster...</span>
                           </div>
-                        ) : (
-                          members.map(member => (
+                         ) : (
+                          members
+                            .filter(m => isAdmin || (m.role !== 'OWNER' && m.role !== 'ADMIN'))
+                            .map(member => (
                             <div key={member.user_id} className="flex items-center gap-6 p-6 bg-bg-secondary/20 border-2 border-transparent hover:border-border-light hover:bg-white rounded-[40px] transition-all group relative overflow-hidden">
                                <div className="w-16 h-16 rounded-[24px] bg-gradient-to-br from-brand-primary to-indigo-600 flex items-center justify-center text-white font-black text-2xl shadow-xl">
                                   {(member.profiles?.full_name || member.profiles?.email || 'U')[0].toUpperCase()}
@@ -296,8 +417,8 @@ const WorkspaceSettingsModal = () => {
                                      <select 
                                        value={member.role}
                                        onChange={(e) => updateMemberRole(member.user_id, e.target.value)}
-                                       disabled={member.user_id === user?.id}
-                                       className="bg-white border-2 border-border-light rounded-[20px] px-6 py-3 text-[10px] font-black uppercase tracking-widest text-text-secondary outline-none focus:border-brand-primary/40 transition-all appearance-none cursor-pointer pr-10"
+                                       disabled={!isAdmin || member.user_id === user?.id || member.role === 'OWNER'}
+                                       className="bg-white border-2 border-border-light rounded-[20px] px-6 py-3 text-[10px] font-black uppercase tracking-widest text-text-secondary outline-none focus:border-brand-primary/40 transition-all appearance-none cursor-pointer pr-10 disabled:opacity-50 disabled:cursor-not-allowed"
                                      >
                                         <option value="OWNER">Headquarters</option>
                                         <option value="ADMIN">Command</option>
@@ -307,15 +428,88 @@ const WorkspaceSettingsModal = () => {
                                         <MoreVertical size={14} />
                                      </div>
                                   </div>
+                                  {isAdmin && (
+                                    <button 
+                                      onClick={() => handleOpenAssignments(member)}
+                                      className="flex items-center gap-2 px-6 py-3 bg-bg-secondary hover:bg-white border-2 border-transparent hover:border-border-light rounded-[20px] text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:text-brand-primary transition-all"
+                                    >
+                                       <Target size={14} />
+                                       Assignments
+                                    </button>
+                                  )}
+                                  {isAdmin && member.user_id !== user?.id && member.role !== 'OWNER' && (
+                                    <button 
+                                      onClick={() => removeMember(member.user_id)}
+                                      className="w-12 h-12 bg-bg-secondary hover:bg-red-50 text-text-tertiary hover:text-red-500 rounded-[20px] flex items-center justify-center transition-all group/trash"
+                                      title="Remove Member"
+                                    >
+                                       <Trash2 size={16} className="group-hover/trash:scale-110 transition-transform" />
+                                    </button>
+                                  )}
                                </div>
                             </div>
                           ))
                         )}
+
+                        {/* Assignment Sub-View */}
+                        <AnimatePresence>
+                          {selectedMember && (
+                            <motion.div 
+                              initial={{ opacity: 0, scale: 0.95 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.95 }}
+                              className="absolute inset-0 z-50 bg-white p-16 overflow-y-auto"
+                            >
+                              <div className="flex items-center justify-between mb-12">
+                                <div className="space-y-4">
+                                  <div className="flex items-center gap-3 text-brand-primary">
+                                    <Target size={24} />
+                                    <span className="text-[10px] font-black uppercase tracking-[0.4em]">Protocol Authorization</span>
+                                  </div>
+                                  <h3 className="text-4xl font-black text-text-primary tracking-tighter">Assigning: {selectedMember.profiles?.full_name}</h3>
+                                </div>
+                                <button 
+                                  onClick={() => setSelectedMember(null)}
+                                  className="w-12 h-12 bg-bg-secondary rounded-2xl flex items-center justify-center text-text-tertiary hover:bg-black hover:text-white transition-all shadow-sm"
+                                >
+                                  <X size={20} />
+                                </button>
+                              </div>
+
+                              <div className="space-y-4">
+                                {allBoards.length === 0 ? (
+                                  <div className="py-20 text-center text-text-tertiary font-bold italic opacity-40">No workspace boards detected.</div>
+                                ) : (
+                                  allBoards.map(board => (
+                                    <div key={board.id} className="flex items-center justify-between p-6 bg-bg-secondary/40 rounded-[32px] border border-transparent hover:border-border-light transition-all">
+                                      <div className="flex items-center gap-6">
+                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${memberBoardIds.includes(board.id) ? 'bg-brand-primary text-white shadow-xl shadow-brand-primary/20' : 'bg-white border border-border-light text-text-tertiary'}`}>
+                                           <Hash size={20} />
+                                        </div>
+                                        <div>
+                                          <p className="text-lg font-black text-text-primary tracking-tight">{board.title}</p>
+                                          <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">{board.visibility} ACCESS</p>
+                                        </div>
+                                      </div>
+                                      <button 
+                                        onClick={() => toggleBoardAssignment(board.id)}
+                                        className={`flex items-center gap-3 px-8 py-4 rounded-[24px] text-[10px] font-black uppercase tracking-widest transition-all ${memberBoardIds.includes(board.id) ? 'bg-red-50 text-red-500 hover:bg-red-500 hover:text-white' : 'bg-brand-primary text-white shadow-xl shadow-brand-primary/20 hover:scale-105'}`}
+                                      >
+                                        {memberBoardIds.includes(board.id) ? <Trash2 size={14} /> : <Plus size={14} />}
+                                        <span>{memberBoardIds.includes(board.id) ? 'Revoke Access' : 'Authorize Deployment'}</span>
+                                      </button>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                      </div>
                   </motion.div>
                 )}
 
-                {activeTab === 'danger' && (
+                {activeTab === 'danger' && isAdmin && (
                   <motion.div 
                     key="danger"
                     initial={{ opacity: 0, x: 20 }}

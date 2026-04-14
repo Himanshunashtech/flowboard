@@ -33,7 +33,7 @@ serve(async (req) => {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: from || 'FlowBoard <onboarding@resend.dev>',
+        from: from || 'FlowBoard <hello@unitsconverter.in>',
         to: Array.isArray(to) ? to : [to],
         subject,
         html,

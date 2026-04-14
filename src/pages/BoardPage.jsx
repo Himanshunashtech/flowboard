@@ -97,6 +97,8 @@ const BoardPage = () => {
   const [isBoardCollapsed, setIsBoardCollapsed] = useState(false);
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [activeTemplate, setActiveTemplate] = useState(null);
+  const [isWsMember, setIsWsMember] = useState(false);
+  const [isWsAdmin, setIsWsAdmin] = useState(false);
 
   const handleCreateList = async () => {
     if (!newListTitle.trim()) {
@@ -209,7 +211,20 @@ const BoardPage = () => {
       const { data: memberData } = await supabase.from('board_members').select('*, profiles(*)').eq('board_id', boardId);
       const isMem = memberData?.some(m => m.user_id === user?.id);
 
-      if (board.visibility === 'PRIVATE' && !isMem && user) {
+      // Check workspace membership for role-based access
+      const { data: wsMem } = await supabase
+        .from('workspace_members')
+        .select('role')
+        .eq('workspace_id', board.workspace_id)
+        .eq('user_id', user?.id)
+        .maybeSingle();
+
+      const isWsMember = !!wsMem;
+      const isWsAdmin = wsMem?.role === 'ADMIN' || wsMem?.role === 'OWNER';
+      setIsWsMember(isWsMember);
+      setIsWsAdmin(isWsAdmin);
+
+      if (board.visibility === 'PRIVATE' && !isMem && !isWsAdmin && user) {
         setTargetWorkspace({ id: board.workspace_id, name: board.workspace?.name });
         setShowJoinModal(true);
         dispatch(setLoading(false));
@@ -375,7 +390,7 @@ const BoardPage = () => {
   };
 
   const isMember = members.some(m => m.user_id === user?.id);
-  const isReadOnly = (activeBoard?.visibility === 'PUBLIC' && !isMember) || (!user);
+  const isReadOnly = (activeBoard?.visibility === 'PUBLIC' && !isMember && !isWsMember) || (!user);
 
 
   const updateVisibility = async (newVisibility) => {

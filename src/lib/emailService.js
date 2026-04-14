@@ -12,7 +12,7 @@ export const sendEmail = async ({ to, subject, html, text }) => {
         subject,
         html,
         text,
-        from: 'FlowBoard <onboarding@resend.dev>' // Default for free/testing tier
+        from: 'FlowBoard <hello@unitsconverter.in>' // Default for free/testing tier
       }
     });
 
