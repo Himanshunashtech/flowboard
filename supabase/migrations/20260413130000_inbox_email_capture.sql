@@ -1,11 +1,10 @@
--- ============================================================
--- FLOWBOARD — MIGRATION: INBOX EMAIL CAPTURE
--- ============================================================
+-- 1. ENSURE pgcrypto IS ENABLED
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
--- 1. ADD CAPTURE EMAIL TO PROFILES
+-- 2. ADD CAPTURE EMAIL TO PROFILES
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS inbound_capture_email TEXT UNIQUE;
 
--- 2. FUNCTION TO GENERATE UNIQUE CAPTURE EMAIL
+-- 3. FUNCTION TO GENERATE UNIQUE CAPTURE EMAIL
 CREATE OR REPLACE FUNCTION generate_unique_capture_email()
 RETURNS TEXT
 LANGUAGE plpgsql
@@ -17,7 +16,13 @@ DECLARE
 BEGIN
     LOOP
         -- Generate a short random ID (e.g., 6 chars)
-        v_random_id := lower(substring(encode(gen_random_bytes(6), 'hex') from 1 for 8));
+        BEGIN
+            v_random_id := lower(substring(encode(gen_random_bytes(6), 'hex') from 1 for 8));
+        EXCEPTION WHEN undefined_function THEN
+            -- Fallback if pgcrypto is installed but not in search path or missing
+            v_random_id := lower(substring(md5(random()::text), 1, 8));
+        END;
+        
         v_email := v_random_id || '@capture.flowboard.io';
         
         -- Check if it exists

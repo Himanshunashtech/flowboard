@@ -66,21 +66,22 @@ export const createWorkspaceInvitations = async ({ emailList, workspaceId, role,
  */
 export const getInvitationData = async (token) => {
   try {
-    const { data, error } = await supabase
-      .from('workspace_invitations')
-      .select('*, workspaces(name, logo_url), profiles:invited_by(full_name, avatar_url)')
-      .eq('token', token)
-      .single();
+    const { data, error } = await supabase.rpc('get_invitation_details', { 
+      invite_token: token 
+    });
 
     if (error) throw error;
+    if (!data.success) throw new Error(data.error);
+    
+    const invite = data.invitation;
     
     // Check expiration (7 days)
-    const isExpired = new Date(data.expires_at) < new Date();
-    const isAccepted = !!data.accepted_at;
+    const isExpired = new Date(invite.expires_at) < new Date();
+    const isAccepted = !!invite.accepted_at;
 
     return { 
       success: true, 
-      invitation: data, 
+      invitation: invite, 
       isExpired, 
       isAccepted 
     };
