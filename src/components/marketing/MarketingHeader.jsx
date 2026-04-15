@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Zap, Menu, X, ChevronRight, Twitter } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSelector } from 'react-redux';
 
 const NAV_LINKS = {
   product: [
@@ -32,6 +33,7 @@ const NAV_LINKS = {
 const MarketingHeader = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const { user } = useSelector(state => state.auth);
 
   // Close menu on navigation
   useEffect(() => {
@@ -69,12 +71,18 @@ const MarketingHeader = () => {
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-2">
-            <Link to="/login" className="text-[11px] font-black uppercase tracking-widest text-text-primary px-4 hover:text-brand-primary transition-colors">Log in</Link>
-            <Link to="/signup" className="h-11 px-6 flex items-center bg-brand-primary text-white text-[11px] font-black uppercase tracking-widest rounded-xl shadow-xl shadow-brand-primary/20 hover:scale-105 active:scale-95 transition-all">
-              Get Started
+          {user ? (
+            <Link to="/dashboard" className="h-11 px-6 flex items-center bg-bg-secondary text-text-primary text-[11px] font-black uppercase tracking-widest rounded-xl hover:bg-bg-tertiary transition-all">
+              Dashboard
             </Link>
-          </div>
+          ) : (
+            <div className="hidden sm:flex items-center gap-2">
+              <Link to="/login" className="text-[11px] font-black uppercase tracking-widest text-text-primary px-4 hover:text-brand-primary transition-colors">Log in</Link>
+              <Link to="/signup" className="h-11 px-6 flex items-center bg-brand-primary text-white text-[11px] font-black uppercase tracking-widest rounded-xl shadow-xl shadow-brand-primary/20 hover:scale-105 active:scale-95 transition-all">
+                Get Started
+              </Link>
+            </div>
+          )}
           
           {/* Mobile Toggle */}
           <button 
@@ -116,18 +124,29 @@ const MarketingHeader = () => {
                 <div className="space-y-4">
                   <h4 className="text-[10px] font-black text-text-tertiary uppercase tracking-[0.3em] text-center mb-8">Access FlowBoard Console</h4>
                   <div className="grid grid-cols-1 gap-4">
-                    <Link 
-                      to="/login" 
-                      className="h-20 flex items-center justify-center rounded-[32px] bg-bg-secondary font-black text-sm uppercase tracking-widest text-text-primary border border-border-light hover:bg-white transition-all shadow-inner"
-                    >
-                      Log In
-                    </Link>
-                    <Link 
-                      to="/signup" 
-                      className="h-20 flex items-center justify-center rounded-[32px] bg-brand-primary font-black text-sm uppercase tracking-widest text-white shadow-2xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-                    >
-                      Get Started
-                    </Link>
+                    {user ? (
+                      <Link 
+                        to="/dashboard" 
+                        className="h-20 flex items-center justify-center rounded-[32px] bg-brand-primary font-black text-sm uppercase tracking-widest text-white shadow-2xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                      >
+                        Go to Dashboard
+                      </Link>
+                    ) : (
+                      <>
+                        <Link 
+                          to="/login" 
+                          className="h-20 flex items-center justify-center rounded-[32px] bg-bg-secondary font-black text-sm uppercase tracking-widest text-text-primary border border-border-light hover:bg-white transition-all shadow-inner"
+                        >
+                          Log In
+                        </Link>
+                        <Link 
+                          to="/signup" 
+                          className="h-20 flex items-center justify-center rounded-[32px] bg-brand-primary font-black text-sm uppercase tracking-widest text-white shadow-2xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
+                        >
+                          Get Started
+                        </Link>
+                      </>
+                    )}
                   </div>
                 </div>
 

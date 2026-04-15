@@ -9,7 +9,7 @@ export const fetchInbox = createAsyncThunk(
         .from('inbox_items')
         .select('*')
         .order('created_at', { ascending: false });
-      
+
       if (error) throw error;
       return data;
     } catch (error) {
@@ -27,7 +27,7 @@ export const addInboxItem = createAsyncThunk(
         .insert(item)
         .select()
         .single();
-      
+
       if (error) throw error;
       return data;
     } catch (error) {
@@ -38,14 +38,15 @@ export const addInboxItem = createAsyncThunk(
 
 export const convertToCard = createAsyncThunk(
   'inbox/convertToCard',
-  async ({ inboxId, boardId, listId, position }, { rejectWithValue }) => {
+  async ({ inboxId, boardId, listId, position, assigneeId }, { rejectWithValue }) => {
     try {
       const { data, error } = await supabase
         .rpc('convert_inbox_to_card', {
           p_inbox_id: inboxId,
           p_board_id: boardId,
           p_list_id: listId,
-          p_position: position
+          p_position: position,
+          p_assignee_id: assigneeId
         });
       
       if (error) throw error;
@@ -64,7 +65,7 @@ export const deleteInboxItem = createAsyncThunk(
         .from('inbox_items')
         .delete()
         .eq('id', itemId);
-      
+
       if (error) throw error;
       return itemId;
     } catch (error) {

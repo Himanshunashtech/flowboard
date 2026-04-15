@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import {
   Check,
   Layout,
@@ -18,12 +19,14 @@ import MarketingHeader from '../components/marketing/MarketingHeader';
 import MarketingFooter from '../components/marketing/MarketingFooter';
 
 // Importing real dashboard screenshots
-import dashboardScreen1 from '../assets/Screenshot 2026-04-12 134609.png';
-import dashboardScreen2 from '../assets/Screenshot 2026-04-12 134713.png';
-import dashboardScreen3 from '../assets/Screenshot 2026-04-12 134739.png';
+// Dashboard screenshots (Moved to public/assets)
+const dashboardScreen1 = '/assets/Screenshot 2026-04-12 134609.png';
+const dashboardScreen2 = '/assets/Screenshot 2026-04-12 134713.png';
+const dashboardScreen3 = '/assets/Screenshot 2026-04-12 134739.png';
 
 const LandingPage = () => {
   const [activeScreenIndex, setActiveScreenIndex] = useState(0);
+  const { user } = useSelector(state => state.auth);
 
   const screens = [
     {
@@ -66,12 +69,20 @@ const LandingPage = () => {
               Visualize work, automate boring tasks, and scale without limits.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4 mb-16 md:mb-24">
-              <Link to="/signup" className="h-16 px-10 flex items-center justify-center bg-brand-primary text-white text-base font-black uppercase tracking-widest rounded-3xl shadow-[0_20px_40px_-10px_rgba(0,82,204,0.3)] hover:scale-105 active:scale-95 transition-all">
-                Start free trial
-              </Link>
-              <button className="h-16 px-10 flex items-center justify-center bg-bg-secondary text-text-primary text-base font-black uppercase tracking-widest rounded-3xl hover:bg-bg-tertiary transition-all">
-                Book a demo
-              </button>
+              {user ? (
+                <Link to="/dashboard" className="h-16 px-12 flex items-center justify-center bg-brand-primary text-white text-base font-black uppercase tracking-widest rounded-3xl shadow-[0_20px_40px_-10px_rgba(0,82,204,0.3)] hover:scale-105 active:scale-95 transition-all">
+                  Go to Dashboard
+                </Link>
+              ) : (
+                <>
+                  <Link to="/signup" className="h-16 px-10 flex items-center justify-center bg-brand-primary text-white text-base font-black uppercase tracking-widest rounded-3xl shadow-[0_20px_40px_-10px_rgba(0,82,204,0.3)] hover:scale-105 active:scale-95 transition-all">
+                    Start free trial
+                  </Link>
+                  <button className="h-16 px-10 flex items-center justify-center bg-bg-secondary text-text-primary text-base font-black uppercase tracking-widest rounded-3xl hover:bg-bg-tertiary transition-all">
+                    Book a demo
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -316,9 +327,15 @@ const LandingPage = () => {
               Join thousands of teams and start managing your projects with FlowBoard today. Experience the future of team coordination.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-6">
-              <Link to="/signup" className="h-16 md:h-20 px-12 md:px-16 flex items-center justify-center bg-white text-brand-primary text-base md:text-xl font-black uppercase tracking-widest rounded-3xl shadow-2xl hover:scale-105 active:scale-95 transition-all">
-                Get Started Now
-              </Link>
+              {user ? (
+                <Link to="/dashboard" className="h-16 md:h-20 px-12 md:px-16 flex items-center justify-center bg-white text-brand-primary text-base md:text-xl font-black uppercase tracking-widest rounded-3xl shadow-2xl hover:scale-105 active:scale-95 transition-all">
+                  Go to Dashboard
+                </Link>
+              ) : (
+                <Link to="/signup" className="h-16 md:h-20 px-12 md:px-16 flex items-center justify-center bg-white text-brand-primary text-base md:text-xl font-black uppercase tracking-widest rounded-3xl shadow-2xl hover:scale-105 active:scale-95 transition-all">
+                  Get Started Now
+                </Link>
+              )}
             </div>
           </div>
         </div>

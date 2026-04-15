@@ -17,6 +17,7 @@ import { compressImage } from '../../lib/imageUtils';
 import RichTextEditor from '../ui/RichTextEditor';
 import { format, isPast, formatDistanceToNow } from 'date-fns';
 import CardActivityList from './CardActivityList';
+import { aiService } from '../../services/aiService';
 
 import LabelsPopover from './LabelsPopover';
 import EditLabelPopover from './EditLabelPopover';
@@ -181,6 +182,7 @@ const CardDetailsModal = () => {
   const [showDependencyPanel, setShowDependencyPanel] = useState(false);
   const [depPanelType, setDepPanelType] = useState('blocker'); // 'blocker' or 'blocked'
   const [showLocationPanel, setShowLocationPanel] = useState(false);
+  const [isGeneratingSubtasks, setIsGeneratingSubtasks] = useState(false);
 
   const timer = useTimer(card?.id, user?.id, 
     (newEntry) => {
@@ -574,6 +576,72 @@ const CardDetailsModal = () => {
 
     if (!error) {
       setCustomFieldValues(prev => ({ ...prev, [fieldId]: value }));
+    }
+  };
+
+  // ── AI Subtasks ────────────────────────────────────────────────────────────
+  const handleGenerateSubtasks = async () => {
+    if (!card.description_text) {
+      dispatch(addNotification({ message: 'Add a description first to generate subtasks', type: 'error' }));
+      return;
+    }
+    
+    setIsGeneratingSubtasks(true);
+    try {
+      const subtaskTitles = await aiService.generateSubtasks(card.title, card.description_text);
+      
+      const { data: newChecklist } = await supabase
+        .from('checklists')
+        .insert({ card_id: card.id, title: 'AI Generated Subtasks' })
+        .select()
+        .single();
+        
+      if (newChecklist) {
+        const items = subtaskTitles.map((title, idx) => ({
+          checklist_id: newChecklist.id,
+          title,
+          position: idx
+        }));
+        
+        const { data: newItems } = await supabase
+          .from('checklist_items')
+          .insert(items)
+          .select();
+          
+        setChecklists(prev => [...prev, { ...newChecklist, checklist_items: newItems || [] }]);
+        dispatch(addNotification({ message: 'Subtasks generated successfully!', type: 'success' }));
+      }
+    } catch (err) {
+      console.error('AI Subtask Generation Failed:', err);
+      dispatch(addNotification({ message: 'Failed to generate subtasks', type: 'error' }));
+    } finally {
+      setIsGeneratingSubtasks(false);
+    }
+  };
+
+  const draftWithAI = async () => {
+    if (!card.title) {
+      dispatch(addNotification({ message: 'Add a title first', type: 'error' }));
+      return;
+    }
+    
+    setIsGeneratingSubtasks(true); // Re-using state for loading
+    try {
+      const completion = await aiService.getCompletion({ 
+        action: 'LENGTHEN', 
+        text: card.title,
+        context: { title: card.title }
+      });
+      if (completion) {
+        updateField({ 
+          description: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: completion }] }] },
+          description_text: completion 
+        });
+      }
+    } catch (err) {
+      console.error('Draft with AI failed:', err);
+    } finally {
+      setIsGeneratingSubtasks(false);
     }
   };
 
@@ -1194,6 +1262,16 @@ const CardDetailsModal = () => {
                 <div className="flex items-center gap-2 mb-4">
                   <AlignLeft size={16} className="text-gray-500" />
                   <h3 className="text-sm font-bold text-gray-700">Description</h3>
+                  {!card.description_text && (
+                    <button 
+                      onClick={draftWithAI}
+                      disabled={isGeneratingSubtasks}
+                      className="ml-auto flex items-center gap-1.5 px-3 py-1 bg-brand-primary/10 text-brand-primary rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-brand-primary/20 transition-all group disabled:opacity-50"
+                    >
+                      {isGeneratingSubtasks ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} className="group-hover:rotate-12 transition-transform" />}
+                      Draft with AI
+                    </button>
+                  )}
                 </div>
                 <div className="pl-6">
                   <RichTextEditor content={card.description} onChange={(json, text) => updateField({ description: json, description_text: text })} />
@@ -1579,9 +1657,19 @@ const CardDetailsModal = () => {
                     <CheckSquare size={16} className="text-gray-500" />
                     <h3 className="text-sm font-bold text-gray-700">Checklist</h3>
                   </div>
-                  <button onClick={() => setAddingChecklist(true)} className="text-xs font-semibold text-brand-primary hover:underline">
-                    + Add
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      disabled={isGeneratingSubtasks}
+                      onClick={handleGenerateSubtasks}
+                      className="flex items-center gap-1.5 px-2.5 py-1 bg-brand-primary/10 text-brand-primary rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-brand-primary/20 transition-all disabled:opacity-50"
+                    >
+                      {isGeneratingSubtasks ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
+                      AI Suggest
+                    </button>
+                    <button onClick={() => setAddingChecklist(true)} className="text-xs font-semibold text-brand-primary hover:underline">
+                      + Add
+                    </button>
+                  </div>
                 </div>
                 <div className="pl-6 space-y-6">
                   {checklists.map(cl => (

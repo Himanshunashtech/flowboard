@@ -23,7 +23,8 @@ import {
   Shield,
   X,
   Maximize2,
-  Minimize2
+  Minimize2,
+  GitGraph
 } from 'lucide-react';
 import BoardSharePopover from '../components/board/BoardSharePopover';
 import JoinWorkspaceModal from '../components/modals/JoinWorkspaceModal';
@@ -61,6 +62,7 @@ import TableView from '../components/board/TableView';
 import CalendarView from '../components/board/CalendarView';
 import TimelineView from '../components/board/TimelineView';
 import DependencyMap from '../components/board/DependencyMap';
+import MindmapView from '../components/board/MindmapView';
 import AnalyticsDashboard from '../components/board/AnalyticsDashboard';
 import BoardSettingsDrawer from '../components/board/BoardSettingsDrawer';
 import { BoardSkeleton } from '../components/ui/Skeleton';
@@ -493,6 +495,7 @@ const BoardPage = () => {
                 { id: 'calendar', icon: Calendar, label: 'Calendar' },
                 { id: 'timeline', icon: Clock, label: 'Timeline' },
                 { id: 'map', icon: Network, label: 'Map' },
+                { id: 'mindmap', icon: GitGraph, label: 'Mindmap' },
                 { id: 'dashboard', icon: BarChart3, label: 'Analytics' }
               ].map(view => (
                 <button 
@@ -630,6 +633,11 @@ const BoardPage = () => {
             {currentView === 'map' && (
               <motion.div key="map" initial={{ opacity: 0, scale: 1.05 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="absolute inset-0 bg-white">
                 <DependencyMap />
+              </motion.div>
+            )}
+            {currentView === 'mindmap' && (
+              <motion.div key="mindmap" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.1 }} className="absolute inset-0 bg-white">
+                <MindmapView />
               </motion.div>
             )}
             {currentView === 'dashboard' && (

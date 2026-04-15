@@ -122,6 +122,7 @@ const InboxPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [captureInput, setCaptureInput] = useState('');
   const [selectedBoardId, setSelectedBoardId] = useState(null);
+  const [selectedAssigneeId, setSelectedAssigneeId] = useState(null);
   const [copied, setCopied] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -149,20 +150,17 @@ const InboxPage = () => {
   const handleProcess = () => {
     if (!selectedItem || !selectedBoardId) return;
 
-    const board = workspaces.flatMap(ws => ws.boards || []).find(b => b.id === selectedBoardId);
-    if (!board || !board.lists?.[0]) {
-       alert("Target board must have at least one list.");
-       return;
-    }
-
     dispatch(convertToCard({
       inboxId: selectedItem.id,
       boardId: selectedBoardId,
-      listId: board.lists[0].id,
-      position: 'a0'
+      listId: null, // Let the server pick the first list
+      position: 'a0',
+      assigneeId: selectedAssigneeId
     }));
     setSelectedItem(null);
     setSelectedBoardId(null);
+    setSelectedAssigneeId(null);
+    // Silent success - the item will disappear from the list automatically
   };
 
   const handleDelete = (e, id) => {
@@ -182,22 +180,39 @@ const InboxPage = () => {
   const simulateEmailByFunction = async () => {
     if (!profile?.inbound_capture_email) return;
     
-    // In a real scenario, an inbound parser calls the Edge Function.
-    // We can simulate this by calling our Edge Function directly if deployed, 
-    // or just inserting directly for local testing.
-    
+    // We call the Edge Function directly to test the parsing logic
     const sampleSubject = `Mission Objective: ${['Reconnaissance', 'Deep Sea Exploration', 'Lunar Base Maintenance', 'Quantum Encryption Setup'][Math.floor(Math.random() * 4)]}`;
     
-    dispatch(addInboxItem({
-      user_id: user.id,
-      title: sampleSubject,
-      source: 'EMAIL',
-      content: {
-        from: "hello@unitsconverter.in",
-        body_text: "Target coordinates confirmed. Proceed with operation at 0600 hours.",
-        captured_at: new Date().toISOString()
+    try {
+      // Use the supabase.auth URL or fallback to env
+      const baseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://wyrboobykiephmaolxmu.supabase.co';
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind5cmJvb2J5a2llcGhtYW9seG11Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5NzA3NzksImV4cCI6MjA5MTU0Njc3OX0.1sLeP0SYlxHkEYqRVFBUoEL0DrGKX4hoox5ygJqfo-o';
+
+      const response = await fetch(`${baseUrl}/functions/v1/inbound-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+          to: profile.inbound_capture_email,
+          from: "test@example.com",
+          subject: sampleSubject,
+          text: "Target coordinates confirmed. Proceed with operation at 0600 hours.",
+          html: "<p>Target coordinates confirmed. Proceed with operation at 0600 hours.</p>"
+        })
+      });
+      
+      if (response.ok) {
+        dispatch(fetchInbox());
+        alert("Simulated email processed by Edge Function!");
+      } else {
+        const err = await response.json();
+        alert(`Simulation failed: ${err.error || response.statusText}`);
       }
-    }));
+    } catch (err) {
+      alert(`Simulation error: ${err.message}`);
+    }
     
     setIsModalOpen(false);
   };
@@ -206,6 +221,7 @@ const InboxPage = () => {
     switch(source) {
       case 'SLACK': return <MessageSquare size={16} />;
       case 'EMAIL': return <Mail size={16} />;
+      case 'GMAIL': return <Mail size={16} className="text-red-500" />;
       case 'WEB': return <Globe size={16} />;
       default: return <Sparkles size={16} />;
     }
@@ -408,35 +424,107 @@ const InboxPage = () => {
                   </h2>
                 </div>
 
-                <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar">
-                   <label className="text-[10px] font-black text-text-tertiary uppercase tracking-[0.3em] ps-1">Select Target Board</label>
-                   <div className="grid grid-cols-2 gap-4">
-                     {workspaces.flatMap(ws => ws.boards || []).map(board => (
-                        <button 
-                          key={board.id}
-                          onClick={() => setSelectedBoardId(board.id)}
-                          className={`p-6 rounded-[28px] border-2 text-left transition-all active:scale-95 group/board ${selectedBoardId === board.id ? 'border-indigo-600 bg-indigo-50/30' : 'border-transparent bg-bg-secondary hover:bg-white hover:border-border-medium'}`}
-                        >
-                           <div className={`w-10 h-10 rounded-xl shadow-sm flex items-center justify-center mb-4 transition-colors ${selectedBoardId === board.id ? 'bg-indigo-600 text-white' : 'bg-white text-text-tertiary'}`}>
-                              <Layout size={18} />
-                           </div>
-                           <span className="text-[10px] font-black uppercase tracking-widest block truncate">{board.title}</span>
-                           <span className="text-[9px] font-bold text-text-tertiary opacity-60">Mission Deployment</span>
-                        </button>
-                     ))}
+                <div className="space-y-6 overflow-y-auto pr-2 custom-scrollbar flex-1">
+                   <div className="space-y-6">
+                      <label className="text-[10px] font-black text-text-tertiary uppercase tracking-[0.3em] ps-1">Select Target Board</label>
+                      <div className="grid grid-cols-2 gap-4">
+                        {workspaces.flatMap(ws => ws.boards || []).map(board => (
+                           <button 
+                             key={board.id}
+                             onClick={() => {
+                               setSelectedBoardId(board.id);
+                               setSelectedAssigneeId(null); // Reset when board changes
+                             }}
+                             className={`p-6 rounded-[28px] border-2 text-left transition-all active:scale-95 group/board ${selectedBoardId === board.id ? 'border-indigo-600 bg-indigo-50/30' : 'border-transparent bg-bg-secondary hover:bg-white hover:border-border-medium'}`}
+                           >
+                              <div className={`w-10 h-10 rounded-xl shadow-sm flex items-center justify-center mb-4 transition-colors ${selectedBoardId === board.id ? 'bg-indigo-600 text-white' : 'bg-white text-text-tertiary'}`}>
+                                 <Layout size={18} />
+                              </div>
+                              <span className="text-[10px] font-black uppercase tracking-widest block truncate">{board.title}</span>
+                              <span className="text-[9px] font-bold text-text-tertiary opacity-60">Mission Deployment</span>
+                           </button>
+                        ))}
+                      </div>
                    </div>
+
+                   {selectedBoardId && (
+                     <motion.div 
+                       initial={{ opacity: 0, y: 10 }}
+                       animate={{ opacity: 1, y: 0 }}
+                       className="space-y-6 pt-4"
+                     >
+                        <label className="text-[10px] font-black text-text-tertiary uppercase tracking-[0.3em] ps-1">Designate Operative</label>
+                        <div className="flex flex-wrap gap-3">
+                           {workspaces.find(ws => ws.boards?.some(b => b.id === selectedBoardId))?.workspace_members?.map(member => (
+                             <button
+                               key={member.user_id}
+                               onClick={() => setSelectedAssigneeId(selectedAssigneeId === member.user_id ? null : member.user_id)}
+                               className={`group relative p-1 rounded-2xl transition-all ${selectedAssigneeId === member.user_id ? 'ring-2 ring-indigo-600 ring-offset-2' : 'hover:scale-110'}`}
+                             >
+                               {member.profiles?.avatar_url ? (
+                                 <img src={member.profiles.avatar_url} className="w-12 h-12 rounded-xl object-cover shadow-sm" alt="" />
+                               ) : (
+                                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xs font-black uppercase text-white shadow-sm ${selectedAssigneeId === member.user_id ? 'bg-indigo-600' : 'bg-bg-tertiary text-text-tertiary'}`}>
+                                   {member.profiles?.full_name?.[0] || member.profiles?.email?.[0]}
+                                 </div>
+                               )}
+                               <div className={`absolute -bottom-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-text-primary text-white text-[8px] font-black uppercase rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10`}>
+                                 {member.profiles?.full_name || 'Team Member'}
+                               </div>
+                             </button>
+                           ))}
+                        </div>
+                     </motion.div>
+                   )}
                 </div>
 
-                <div className="mt-auto space-y-6">
-                   <div className="p-6 bg-indigo-50/50 rounded-3xl border border-indigo-100 flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-indigo-600 shadow-sm">
-                         <Zap size={20} className="fill-indigo-600" />
-                      </div>
-                      <div className="space-y-0.5">
-                         <p className="text-[10px] font-black text-text-primary uppercase tracking-widest">Rapid Deployment</p>
-                         <p className="text-[9px] font-bold text-indigo-600 opacity-70">Will be added to the backlog</p>
-                      </div>
-                   </div>
+                <div className="mt-auto space-y-8">
+                   {/* Mission Deployment Preview (The Table) */}
+                   {selectedBoardId && (
+                     <div className="p-6 bg-white border border-border-light rounded-[32px] shadow-sm space-y-4">
+                        <div className="flex items-center gap-2 mb-2">
+                           <div className="p-1 bg-indigo-50 rounded-lg text-indigo-600">
+                             <ShieldCheck size={12} />
+                           </div>
+                           <span className="text-[9px] font-black uppercase tracking-widest text-text-tertiary">Mission Manifest</span>
+                        </div>
+                        <div className="space-y-3">
+                           <div className="flex items-center justify-between py-2 border-b border-border-light/50">
+                              <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Objective</span>
+                              <span className="text-[10px] font-black text-text-primary truncate max-w-[180px]">{selectedItem.title}</span>
+                           </div>
+                           <div className="flex items-center justify-between py-2 border-b border-border-light/50">
+                              <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Source</span>
+                              <div className="flex items-center gap-2">
+                                 {getSourceIcon(selectedItem.source)}
+                                 <span className="text-[10px] font-black uppercase text-indigo-600">{selectedItem.source || 'Manual'}</span>
+                              </div>
+                           </div>
+                           <div className="flex items-center justify-between py-2 border-b border-border-light/50">
+                              <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Environment</span>
+                              <span className="text-[10px] font-black text-text-primary">
+                                {workspaces.flatMap(ws => ws.boards || []).find(b => b.id === selectedBoardId)?.title}
+                              </span>
+                           </div>
+                           <div className="flex items-center justify-between py-2">
+                              <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Operative</span>
+                              <div className="flex items-center gap-2">
+                                 <div className={`w-5 h-5 rounded-md flex items-center justify-center text-[8px] font-black uppercase ${selectedAssigneeId ? 'bg-indigo-600 text-white' : 'bg-bg-tertiary text-text-tertiary'}`}>
+                                    {selectedAssigneeId 
+                                      ? workspaces.flatMap(ws => ws.workspace_members || []).find(m => m.user_id === selectedAssigneeId)?.profiles?.full_name?.[0] || '?'
+                                      : 'UN'}
+                                 </div>
+                                 <span className="text-[10px] font-black text-text-primary">
+                                   {selectedAssigneeId 
+                                     ? workspaces.flatMap(ws => ws.workspace_members || []).find(m => m.user_id === selectedAssigneeId)?.profiles?.full_name || 'MEMBER'
+                                     : 'UNASSIGNED'}
+                                 </span>
+                              </div>
+                           </div>
+                        </div>
+                     </div>
+                   )}
+
                    <button 
                     disabled={!selectedBoardId}
                     onClick={handleProcess}

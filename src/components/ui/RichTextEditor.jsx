@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
+import { BubbleMenu } from '@tiptap/react/menus';
 import StarterKit from '@tiptap/starter-kit';
+import { BubbleMenu as BubbleMenuExtension } from '@tiptap/extension-bubble-menu';
 import Placeholder from '@tiptap/extension-placeholder';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
@@ -11,8 +13,10 @@ import {
   List, ListOrdered, CheckSquare, Plus, 
   Download, 
   Type as HeadingIcon, Underline as UnderlineIcon, 
-  Strikethrough, Code, Link as LinkIcon, Minus, Quote
+  Strikethrough, Code, Link as LinkIcon, Minus, Quote,
+  Sparkles, Wand2, RefreshCcw, FileText, CheckCheck, Maximize2, Minimize2, Loader2
 } from 'lucide-react';
+import { aiService } from '../../services/aiService';
 
 const MenuBar = ({ editor }) => {
   if (!editor) return null;
@@ -205,7 +209,93 @@ const MenuBar = ({ editor }) => {
   );
 };
 
+const AIMenu = ({ editor }) => {
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  if (!editor) return null;
+
+  const handleAIAction = async (action) => {
+    const { from, to } = editor.state.selection;
+    const selectedText = editor.state.doc.textBetween(from, to, ' ');
+    
+    if (!selectedText) return;
+
+    setIsGenerating(true);
+    try {
+      const completion = await aiService.getCompletion({ action, text: selectedText });
+      if (completion) {
+        editor.chain().focus().insertContentAt({ from, to }, completion).run();
+      }
+    } catch (err) {
+      console.error('AI Action Failed:', err);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  return (
+    <BubbleMenu 
+      editor={editor} 
+      tippyOptions={{ duration: 100, placement: 'top-start', zIndex: 9999, appendTo: () => document.body }}
+      className="flex items-center gap-0.5 bg-white border border-border-light shadow-2xl rounded-xl p-1 overflow-hidden animate-in fade-in zoom-in-95 z-[1000]"
+    >
+      <div className="flex items-center border-r border-border-light pr-1 mr-1">
+        <div className="p-1.5 text-brand-primary bg-brand-primary/10 rounded-lg mr-1">
+          {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+        </div>
+        <span className="text-[10px] font-black uppercase tracking-wider text-text-tertiary">Ask AI</span>
+      </div>
+
+      <button
+        disabled={isGenerating}
+        onClick={() => handleAIAction('IMPROVE')}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-text-secondary hover:text-brand-primary hover:bg-brand-primary/5 rounded-lg transition-all disabled:opacity-50"
+      >
+        <Wand2 size={13} />
+        Improve
+      </button>
+
+      <button
+        disabled={isGenerating}
+        onClick={() => handleAIAction('FIX_GRAMMAR')}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-text-secondary hover:text-brand-primary hover:bg-brand-primary/5 rounded-lg transition-all disabled:opacity-50"
+      >
+        <CheckCheck size={13} />
+        Fix Grammar
+      </button>
+
+      <button
+        disabled={isGenerating}
+        onClick={() => handleAIAction('LENGTHEN')}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-text-secondary hover:text-brand-primary hover:bg-brand-primary/5 rounded-lg transition-all disabled:opacity-50"
+      >
+        <Maximize2 size={13} />
+        Make Longer
+      </button>
+
+      <button
+        disabled={isGenerating}
+        onClick={() => handleAIAction('SHORTEN')}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-text-secondary hover:text-brand-primary hover:bg-brand-primary/5 rounded-lg transition-all disabled:opacity-50"
+      >
+        <Minimize2 size={13} />
+        Make Shorter
+      </button>
+
+      <button
+        disabled={isGenerating}
+        onClick={() => handleAIAction('SUMMARIZE')}
+        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-text-secondary hover:text-brand-primary hover:bg-brand-primary/5 rounded-lg transition-all disabled:opacity-50"
+      >
+        <FileText size={13} />
+        Summarize
+      </button>
+    </BubbleMenu>
+  );
+};
+
 const RichTextEditor = ({ content, onChange, placeholder = 'Write something...' }) => {
+  const [isAIActive, setIsAIActive] = useState(false);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -223,6 +313,11 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Write something...' 
       TaskList,
       TaskItem.configure({ nested: true }),
       Placeholder.configure({ placeholder }),
+      BubbleMenuExtension.configure({
+        shouldShow: ({ editor, view, state, from, to }) => {
+          return !state.selection.empty;
+        },
+      }),
     ],
     content,
     editorProps: {
@@ -238,7 +333,7 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Write something...' 
   if (!editor) return null;
 
   return (
-    <div className="rich-text-editor bg-white rounded-2xl border border-border-light shadow-sm focus-within:border-brand-primary/40 focus-within:ring-4 focus-within:ring-brand-primary/5 transition-all">
+    <div className="rich-text-editor bg-white rounded-2xl border border-border-light shadow-sm focus-within:border-brand-primary/40 focus-within:ring-4 focus-within:ring-brand-primary/5 transition-all relative">
       <style>{`
         .rich-text-editor .ProseMirror h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5em; }
         .rich-text-editor .ProseMirror h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5em; }
@@ -247,8 +342,16 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Write something...' 
         .rich-text-editor .ProseMirror ol { list-style-type: decimal; padding-left: 1.5em; }
         .rich-text-editor .ProseMirror blockquote { border-left: 3px solid #6366f1; padding-left: 1em; color: #4b5563; font-style: italic; }
         .rich-text-editor .ProseMirror a { color: #6366f1; text-decoration: underline; font-weight: 700; }
+        .rich-text-editor .ProseMirror p.is-editor-empty:first-child::before {
+          content: attr(data-placeholder);
+          float: left;
+          color: #adb5bd;
+          pointer-events: none;
+          height: 0;
+        }
       `}</style>
       <MenuBar editor={editor} />
+      <AIMenu editor={editor} />
       <EditorContent editor={editor} />
     </div>
   );

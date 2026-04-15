@@ -109,7 +109,7 @@ const Dashboard = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   {workspaces.flatMap(ws => ws.boards || []).slice(0, viewAllBoards ? 8 : 2).map((board, idx) => {
                     const ws = workspaces.find(w => w.id === board.workspace_id);
-                    // Cycle colors like the screenshot: Orange, Blue, etc.
+                    const hasThumbnail = board.thumbnail_url;
                     const colors = [
                       { bg: 'bg-[#FF9F7C]', tag: 'bg-[#FFB79D]', text: 'text-white', label: 'STRATEGY' },
                       { bg: 'bg-[#A3D9FF]', tag: 'bg-[#C5E8FF]', text: 'text-text-primary', label: 'DEVELOPMENT' }
@@ -120,33 +120,46 @@ const Dashboard = () => {
                       <Link
                         key={board.id}
                         to={`/w/${ws?.slug}/b/${board.id}`}
-                        className={`group relative h-72 rounded-[48px] overflow-hidden ${theme.bg} shadow-2xl shadow-black/5 hover:-translate-y-3 transition-all duration-700 p-10 flex flex-col justify-between`}
+                        className={`group relative h-72 rounded-[48px] overflow-hidden ${hasThumbnail ? 'bg-black' : theme.bg} shadow-2xl shadow-black/5 hover:-translate-y-3 transition-all duration-700 p-10 flex flex-col justify-between`}
                       >
+                        {/* Background Image with Overlay */}
+                        {hasThumbnail && (
+                          <>
+                            <div 
+                              className="absolute inset-0 bg-cover bg-center group-hover:scale-110 transition-transform duration-1000"
+                              style={{ backgroundImage: `url(${board.thumbnail_url})` }}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/60 group-hover:from-black/50 transition-colors" />
+                          </>
+                        )}
+
                         <div className="relative z-10 space-y-6">
-                          <div className={`px-4 py-2 rounded-2xl ${theme.tag} inline-flex items-center text-[10px] font-black uppercase tracking-[0.2em] ${theme.text} shadow-sm border border-white/10`}>
+                          <div className={`px-4 py-2 rounded-2xl ${hasThumbnail ? 'bg-white/10 backdrop-blur-md' : theme.tag} inline-flex items-center text-[10px] font-black uppercase tracking-[0.2em] ${hasThumbnail ? 'text-white' : theme.text} shadow-sm border border-white/10`}>
                             {theme.label}
                           </div>
-                          <h4 className={`text-4xl font-black leading-tight tracking-tight ${theme.text}`}>
+                          <h4 className={`text-4xl font-black leading-tight tracking-tight ${hasThumbnail ? 'text-white' : theme.text}`}>
                             {board.title}
                           </h4>
-                          <div className={`text-xs font-bold ${theme.text} opacity-70`}>
-                            Updated 2 hours ago by Sarah
+                          <div className={`text-xs font-bold ${hasThumbnail ? 'text-white/70' : theme.text + ' opacity-70'}`}>
+                            Updated by {ws?.profiles?.full_name?.split(' ')[0] || 'Team'}
                           </div>
                         </div>
 
                         <div className="relative z-10 space-y-4">
-                          <div className={`h-2.5 w-full bg-white/20 rounded-full overflow-hidden border border-white/10`}>
+                          <div className={`h-2.5 w-full ${hasThumbnail ? 'bg-white/20' : 'bg-white/20'} rounded-full overflow-hidden border border-white/10`}>
                             <div
-                              className={`h-full bg-black/40 group-hover:bg-black/60 transition-all duration-1000 ease-out`}
+                              className={`h-full ${hasThumbnail ? 'bg-brand-primary' : 'bg-black/40 group-hover:bg-black/60'} transition-all duration-1000 ease-out`}
                               style={{ width: idx === 0 ? '65%' : '40%' }}
                             />
                           </div>
                         </div>
 
-                        {/* Background Decorative Icon */}
-                        <div className="absolute bottom-[-20px] right-[-20px] opacity-10 group-hover:scale-110 transition-transform duration-1000 select-none pointer-events-none">
-                          <Layout size={200} strokeWidth={1} />
-                        </div>
+                        {/* Background Decorative Icon - Subtler on images */}
+                        {!hasThumbnail && (
+                          <div className="absolute bottom-[-20px] right-[-20px] opacity-10 group-hover:scale-110 transition-transform duration-1000 select-none pointer-events-none">
+                            <Layout size={200} strokeWidth={1} />
+                          </div>
+                        )}
                       </Link>
                     );
                   })}
@@ -277,12 +290,9 @@ const Dashboard = () => {
         {workspaceSlug && (
           <section className="animate-in fade-in slide-in-from-bottom-8 duration-700 space-y-12">
             {/* Header Area */}
-            {filteredWorkspaces.map(ws => (
-              <header key={ws.id}>
-                <h1 className="text-4xl font-black text-text-primary tracking-tight mb-2">{ws.name}</h1>
-                <p className="text-text-secondary">Manage boards for the {ws.name} workspace.</p>
-              </header>
-            ))}
+            {/* Dynamic Content Divider - No duplicate title needed as it is in the main header */}
+            <div className="h-px w-full bg-border-light/50" />
+
 
             {/* Vibrant Blue Banner */}
             <div className="relative bg-gradient-to-br from-blue-600 to-indigo-600 rounded-[48px] p-12 text-white overflow-hidden shadow-2xl shadow-blue-500/20 group">
@@ -334,13 +344,24 @@ const Dashboard = () => {
                     {/* Card Thumbnail */}
                     <div className="p-3">
                       <div 
-                         className="h-44 rounded-[32px] overflow-hidden relative shadow-inner"
-                         style={{ 
-                           background: board.background_type === 'IMAGE' ? board.background_value : board.background_value,
-                           backgroundSize: 'cover',
-                           backgroundPosition: 'center'
-                         }}
+                         className="h-44 rounded-[32px] overflow-hidden relative shadow-inner bg-bg-secondary"
                       >
+                         {board.thumbnail_url ? (
+                           <img 
+                             src={board.thumbnail_url} 
+                             alt="" 
+                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
+                           />
+                         ) : (
+                           <div 
+                             className="w-full h-full opacity-50"
+                             style={{ 
+                               background: board.background_type === 'IMAGE' ? board.background_value : board.background_value,
+                               backgroundSize: 'cover',
+                               backgroundPosition: 'center'
+                             }}
+                           />
+                         )}
                          <div className="absolute inset-0 bg-black/10 group-hover:bg-transparent transition-colors" />
                          <div className="absolute top-4 left-4 px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[9px] font-black uppercase tracking-widest text-white border border-white/20 shadow-sm">
                             Portfolio Project
@@ -351,7 +372,7 @@ const Dashboard = () => {
                     {/* Card Content */}
                     <div className="px-8 pb-8 pt-4 flex-1 flex flex-col">
                       <h3 className="text-xl font-black text-text-primary tracking-tight mb-2 group-hover:text-brand-primary transition-colors">{board.title}</h3>
-                      <p className="text-sm text-text-tertiary line-clamp-2 leading-relaxed mb-6 font-medium">Virtual design exploration for {board.title} development.</p>
+                      <p className="text-sm text-text-tertiary line-clamp-2 leading-relaxed mb-6 font-medium">Strategic roadmap and project milestones for this project.</p>
                       
                       <div className="mt-auto flex items-center justify-between">
                          <div className="flex -space-x-3">

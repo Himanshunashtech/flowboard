@@ -66,6 +66,7 @@ const CreateBoardModal = () => {
             ? (selectedTemplate.background.includes('gradient') ? 'GRADIENT' : 'COLOR')
             : 'COLOR',
           background_value: selectedTemplate ? selectedTemplate.background : background,
+          thumbnail_url: selectedTemplate?.coverImage || null,
           settings: {
             card_covers: true,
             voting: false,

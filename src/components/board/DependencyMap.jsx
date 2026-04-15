@@ -39,7 +39,7 @@ const CardNode = ({ data }) => {
   };
 
   return (
-    <div className={`p-4 rounded-3xl bg-white border-2 transition-all hover:shadow-2xl min-w-[200px] shadow-sm relative overflow-hidden group ${isCompleted ? 'border-green-500/30' : 'border-white hover:border-brand-primary'}`}>
+    <div className={`p-4 rounded-3xl bg-white border-2 transition-all hover:shadow-2xl min-w-[200px] shadow-sm relative overflow-hidden group ${isCompleted ? 'border-green-500/30' : 'border-slate-200 hover:border-brand-primary'}`}>
       <Handle type="target" position={Position.Left} className="!bg-slate-300 !w-2 !h-2" />
       
       <div className={`absolute top-0 left-0 w-1.5 h-full ${isCompleted ? 'bg-green-500' : priorityColors[priority]}`} />

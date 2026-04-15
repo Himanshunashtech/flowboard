@@ -21,35 +21,36 @@ import {
   Info
 } from 'lucide-react';
 
-import taskImg from '../../assets/templates/task_template.png';
-import gettingStartedImg from '../../assets/templates/getting_started.png';
-import roadmapImg from '../../assets/templates/roadmap.png';
-import marketingImg from '../../assets/templates/marketing.png';
-import salesImg from '../../assets/templates/sales.png';
-import personalImg from '../../assets/templates/personal.png';
-import agileImg from '../../assets/templates/agile.png';
-import contentImg from '../../assets/templates/content.png';
+// Template Assets (Moved to public/assets)
+const taskImg = '/assets/templates/task_template.png';
+const gettingStartedImg = '/assets/templates/getting_started.png';
+const roadmapImg = '/assets/templates/roadmap.png';
+const marketingImg = '/assets/templates/marketing.png';
+const salesImg = '/assets/templates/sales.png';
+const personalImg = '/assets/templates/personal.png';
+const agileImg = '/assets/templates/agile.png';
+const contentImg = '/assets/templates/content.png';
 
 // Card Covers
-import taskCardImg from '../../assets/templates/cards/task_card.png';
-import startedCardImg from '../../assets/templates/cards/started_card.png';
-import roadmapCardImg from '../../assets/templates/cards/roadmap_card.png';
-import marketingCardImg from '../../assets/templates/cards/marketing_card.png';
-import salesCardImg from '../../assets/templates/cards/sales_card.png';
-import personalCardImg from '../../assets/templates/cards/personal_card.png';
-import agileCardImg from '../../assets/templates/cards/agile_card.png';
-import contentCardImg from '../../assets/templates/cards/content_card.png';
-import inboxCardImg from '../../assets/templates/cards/inbox_card.png';
+const taskCardImg = '/assets/templates/cards/task_card.png';
+const startedCardImg = '/assets/templates/cards/started_card.png';
+const roadmapCardImg = '/assets/templates/cards/roadmap_card.png';
+const marketingCardImg = '/assets/templates/cards/marketing_card.png';
+const salesCardImg = '/assets/templates/cards/sales_card.png';
+const personalCardImg = '/assets/templates/cards/personal_card.png';
+const agileCardImg = '/assets/templates/cards/agile_card.png';
+const contentCardImg = '/assets/templates/cards/content_card.png';
+const inboxCardImg = '/assets/templates/cards/inbox_card.png';
 
 // New Template Assets
-import bugTrackerImg from '../../assets/templates/bug_tracker_cover.png';
-import bugTrackerCardImg from '../../assets/templates/bug_tracker_card.png';
-import apiDevImg from '../../assets/templates/api_dev_cover.png';
-import apiDevCardImg from '../../assets/templates/api_dev_card.png';
-import incidentImg from '../../assets/templates/incident_response_cover.png';
-import incidentCardImg from '../../assets/templates/incident_response_card.png';
-import openSourceImg from '../../assets/templates/open_source_cover.png';
-import openSourceCardImg from '../../assets/templates/open_source_card_one.png';
+const bugTrackerImg = '/assets/templates/bug_tracker_cover.png';
+const bugTrackerCardImg = '/assets/templates/bug_tracker_card.png';
+const apiDevImg = '/assets/templates/api_dev_cover.png';
+const apiDevCardImg = '/assets/templates/api_dev_card.png';
+const incidentImg = '/assets/templates/incident_response_cover.png';
+const incidentCardImg = '/assets/templates/incident_response_card.png';
+const openSourceImg = '/assets/templates/open_source_cover.png';
+const openSourceCardImg = '/assets/templates/open_source_card_one.png';
 
 export const TEMPLATES = [
   {
