@@ -157,7 +157,7 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
 
   return (
     <div 
-      className={`list-container ${isCollapsed ? 'w-16 h-[280px]' : 'w-[380px] max-h-full h-fit'} shrink-0 ${getListStyleClasses()} rounded-[32px] flex flex-col snap-center border relative transition-all duration-500 overflow-hidden shadow-2xl shadow-black/5`}
+      className={`list-container ${isCollapsed ? 'w-16 h-[280px]' : 'w-[380px] max-h-full h-fit'} shrink-0 ${getListStyleClasses()} rounded-2xl flex flex-col snap-center border relative transition-all duration-500 overflow-hidden shadow-2xl shadow-black/5`}
       style={{ 
         backgroundColor: list.color || '#ffffff',
         borderTop: list.color ? `10px solid ${hexToRgba(list.color, 0.2)}` : '1px solid transparent',
@@ -273,7 +273,7 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
                 initial={{ opacity: 0, scale: 0.95, y: -10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                className="mx-3 mb-2 bg-white border border-border-light rounded-[24px] shadow-2xl overflow-hidden relative z-50"
+                className="mx-3 mb-2 bg-white border border-border-light rounded-2xl shadow-2xl overflow-hidden relative z-50"
               >
                 <div className="p-5">
                   <div className="flex items-center justify-between mb-4">

@@ -81,7 +81,7 @@ const CreateWorkspaceModal = () => {
       <motion.div 
         initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        className="w-full max-w-5xl bg-white rounded-[48px] shadow-2xl overflow-hidden flex min-h-[540px]"
+        className="w-full max-w-5xl bg-white rounded-3xl shadow-2xl overflow-hidden flex min-h-[540px]"
         onClick={e => e.stopPropagation()}
       >
         {/* Left Side: Visual Branding (Panoramic Wing) */}
@@ -176,7 +176,7 @@ const CreateWorkspaceModal = () => {
                  <button 
                    type="submit" 
                    disabled={!name || loading}
-                   className="flex-1 h-16 bg-brand-primary text-white rounded-[28px] font-black uppercase tracking-widest text-xs shadow-2xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-3 group"
+                   className="flex-1 h-16 bg-brand-primary text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-2xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center gap-3 group"
                  >
                    {loading ? (
                      <span className="animate-pulse">Building...</span>

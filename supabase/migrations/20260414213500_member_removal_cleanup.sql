@@ -11,8 +11,8 @@ language plpgsql
 security definer
 as $$
 begin
-  -- STRIKE RULE: Prevent deletion of the owner
-  if OLD.role = 'OWNER' then
+  -- STRIKE RULE: Prevent deletion of the owner (unless explicitly allowed during account purge)
+  if OLD.role = 'OWNER' and current_setting('app.allow_owner_deletion', true) is distinct from 'true' then
     raise exception 'CRITICAL: The Workspace Owner cannot be terminated.';
   end if;
 

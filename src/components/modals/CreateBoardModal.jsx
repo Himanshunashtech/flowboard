@@ -20,6 +20,7 @@ const CreateBoardModal = () => {
   const [background, setBackground] = useState('#FFFFFF');
   const [loading, setLoading] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [activeCategory, setActiveCategory] = useState('basic');
 
   useEffect(() => {
     const data = modalData?.createBoard;
@@ -150,7 +151,7 @@ const CreateBoardModal = () => {
   if (!effectiveWorkspace && !loading) {
     return (
       <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-[9999] flex items-center justify-center p-6 animate-in fade-in duration-300">
-        <div className="w-full max-w-md bg-white rounded-[48px] p-12 text-center shadow-2xl">
+        <div className="w-full max-w-md bg-white rounded-3xl p-12 text-center shadow-2xl">
           <div className="w-20 h-20 bg-brand-primary/10 rounded-3xl flex items-center justify-center text-brand-primary mx-auto mb-6">
             <Layout size={40} />
           </div>
@@ -167,7 +168,7 @@ const CreateBoardModal = () => {
       <motion.div
         initial={{ scale: 0.9, opacity: 0, y: 40 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        className="w-full max-w-7xl bg-white rounded-[56px] shadow-[0_48px_120px_-24px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row min-h-[680px]"
+        className="w-full max-w-7xl bg-white rounded-3xl shadow-[0_48px_120px_-24px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col md:flex-row min-h-[680px]"
         onClick={e => e.stopPropagation()}
       >
         {/* Panoramic Wing 1: The Identity (Form) */}
@@ -179,7 +180,7 @@ const CreateBoardModal = () => {
 
           <div className="relative z-10 space-y-12">
             <header className="space-y-4">
-              <div className="w-14 h-14 bg-brand-primary rounded-[20px] shadow-xl shadow-brand-primary/20 flex items-center justify-center text-white mb-6">
+              <div className={`w-14 h-14 ${selectedTemplate?.color || 'bg-brand-primary text-white'} rounded-[20px] shadow-xl shadow-brand-primary/20 flex items-center justify-center mb-6`}>
                 <Target size={28} />
               </div>
               <h2 className="text-5xl font-black text-text-primary tracking-tighter leading-[1] mb-4">
@@ -265,7 +266,7 @@ const CreateBoardModal = () => {
                     onClick={() => {
                       setBackground(c);
                     }}
-                    className={`w-12 h-12 rounded-[18px] transition-all border-4 ${background === c && !selectedTemplate ? 'border-brand-primary scale-110 shadow-lg' : 'border-bg-secondary hover:scale-105'}`}
+                    className={`w-12 h-12 rounded-2xl transition-all border-4 ${background === c && !selectedTemplate ? 'border-brand-primary scale-110 shadow-lg' : 'border-bg-secondary hover:scale-105'}`}
                     style={{ backgroundColor: c }}
                   >
                     {background === c && !selectedTemplate && <Check size={18} className="text-white mx-auto shadow-sm" strokeWidth={4} />}
@@ -280,10 +281,26 @@ const CreateBoardModal = () => {
                   <h3 className="text-sm font-black uppercase tracking-[0.2em] text-text-primary mb-1">Strategic Blueprints</h3>
                   <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-normal underline decoration-brand-primary/20 decoration-2 underline-offset-4">Accelerate with pre-configured project workflows.</p>
                 </div>
+                
+                <div className="flex items-center gap-1 p-1 bg-bg-secondary rounded-xl border border-border-light/50 shadow-inner">
+                  {[
+                    { id: 'basic', label: 'Basic' },
+                    { id: 'developer', label: 'Dev' },
+                  ].map(cat => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setActiveCategory(cat.id)}
+                      className={`px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all ${activeCategory === cat.id ? 'bg-white text-brand-primary shadow-sm' : 'text-text-tertiary hover:bg-white/50'}`}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                {TEMPLATES.slice(0, 6).map(template => (
+                {TEMPLATES.filter(t => activeCategory === 'all' || t.category === activeCategory).map(template => (
                   <button
                     key={template.id}
                     type="button"
@@ -292,10 +309,10 @@ const CreateBoardModal = () => {
                       setTitle(`${template.name} - ${effectiveWorkspace.name}`);
                       setBackground(template.background);
                     }}
-                    className={`group relative p-6 rounded-[32px] border-2 text-left transition-all overflow-hidden ${selectedTemplate?.id === template.id ? 'border-brand-primary bg-brand-primary/5 ring-4 ring-brand-primary/5' : 'border-bg-secondary hover:border-border-light'}`}
+                    className={`group relative p-6 rounded-2xl border-2 text-left transition-all overflow-hidden ${selectedTemplate?.id === template.id ? 'border-brand-primary bg-brand-primary/5 ring-4 ring-brand-primary/5' : 'border-bg-secondary hover:border-border-light'}`}
                   >
                     <div className="flex items-center gap-4 relative z-10">
-                      <div className={`w-10 h-10 rounded-[14px] ${template.color} text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
+                      <div className={`w-10 h-10 rounded-[14px] ${template.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
                         {template.icon ? <template.icon size={18} /> : <Zap size={18} />}
                       </div>
                       <div>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff, Sparkles, Zap, Fingerprint, Target, Users, Shield, ArrowRight, Github } from 'lucide-react';
+import { Eye, EyeOff, Sparkles, Zap, Fingerprint, Target, Users, Shield, ArrowRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 const AuthPage = ({ type }) => {
@@ -14,25 +14,27 @@ const AuthPage = ({ type }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-
-  const handleGitHubLogin = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'github',
-        options: {
-          redirectTo: inviteToken 
-            ? `${window.location.origin}/invite/${inviteToken}`
-            : `${window.location.origin}/dashboard`
-        }
-      });
-      if (error) throw error;
-    } catch (err) {
-      setError(err.message);
-      setLoading(false);
-    }
+  
+  const validatePassword = (pass) => {
+    const minLength = pass.length >= 8;
+    const hasUpper = /[A-Z]/.test(pass);
+    const hasLower = /[a-z]/.test(pass);
+    const hasNumber = /[0-9]/.test(pass);
+    const hasSpecial = /[!@#$%^&*(),.?":{}|<>]/.test(pass);
+    
+    return {
+      isValid: minLength && hasUpper && hasLower && hasNumber && hasSpecial,
+      errors: {
+        minLength,
+        hasUpper,
+        hasLower,
+        hasNumber,
+        hasSpecial
+      }
+    };
   };
+
+
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -40,6 +42,13 @@ const AuthPage = ({ type }) => {
     setError(null);
 
     try {
+      if (type === 'signup') {
+        const validation = validatePassword(password);
+        if (!validation.isValid) {
+          throw new Error('Password must be at least 8 characters long and include uppercase, lowercase, numbers, and special characters.');
+        }
+      }
+
       const { data, error } = type === 'login'
         ? await supabase.auth.signInWithPassword({ email, password })
         : await supabase.auth.signUp({ 
@@ -166,23 +175,6 @@ const AuthPage = ({ type }) => {
                </motion.div>
             )}
 
-            <div className="space-y-4">
-               <button 
-                  type="button"
-                  onClick={handleGitHubLogin}
-                  disabled={loading}
-                  className="w-full h-16 bg-white border-2 border-border-light text-text-primary rounded-[32px] text-[11px] font-black uppercase tracking-[0.2em] shadow-lg shadow-black/5 hover:bg-bg-secondary hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-4 group"
-               >
-                  <Github size={20} className="group-hover:rotate-12 transition-transform" />
-                  <span>Continue with GitHub</span>
-               </button>
-
-               <div className="flex items-center gap-4 py-2">
-                  <div className="h-px flex-1 bg-border-light" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-text-tertiary">Or Nexus Protocol</span>
-                  <div className="h-px flex-1 bg-border-light" />
-               </div>
-            </div>
 
             <form onSubmit={handleAuth} className="space-y-6">
                <div className="space-y-3">
@@ -195,7 +187,7 @@ const AuthPage = ({ type }) => {
                         id="email"
                         type="email"
                         placeholder="name@nexus.pro"
-                        className="w-full h-16 pl-16 pr-8 bg-bg-secondary border-none rounded-[28px] text-base font-black text-text-primary focus:bg-white focus:ring-8 focus:ring-brand-primary/5 transition-all outline-none shadow-inner placeholder:text-text-tertiary/30"
+                        className="w-full h-16 pl-16 pr-8 bg-bg-secondary border-none rounded-2xl text-base font-black text-text-primary focus:bg-white focus:ring-8 focus:ring-brand-primary/5 transition-all outline-none shadow-inner placeholder:text-text-tertiary/30"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
@@ -209,33 +201,51 @@ const AuthPage = ({ type }) => {
                      {type === 'login' && <Link to="#" className="text-[10px] font-black text-brand-primary uppercase tracking-widest hover:underline decoration-2 underline-offset-4">Reset?</Link>}
                   </div>
                   <div className="relative group">
-                     <div className="absolute left-6 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand-primary transition-colors">
+                     <div className="absolute left-6 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand-primary transition-colors z-10">
                         <Fingerprint size={18} />
                      </div>
                      <input
                         id="password"
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        className="w-full h-16 pl-16 pr-14 bg-bg-secondary border-none rounded-[28px] text-base font-black text-text-primary focus:bg-white focus:ring-8 focus:ring-brand-primary/5 transition-all outline-none shadow-inner placeholder:text-text-tertiary/30"
+                        className="w-full h-16 pl-16 pr-14 bg-bg-secondary border-none rounded-2xl text-base font-black text-text-primary focus:bg-white focus:ring-8 focus:ring-brand-primary/5 transition-all outline-none shadow-inner placeholder:text-text-tertiary/30"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
-                        minLength={6}
+                        minLength={8}
                      />
                      <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-6 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary transition-colors p-1"
+                        className="absolute right-6 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary transition-colors p-1 z-10"
                      >
                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                      </button>
                   </div>
+                  {type === 'signup' && (
+                     <div className="mt-4 px-4 space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                           {[
+                              { id: 'length', label: '8+ Chars', check: password.length >= 8 },
+                              { id: 'upper', label: 'Upper', check: /[A-Z]/.test(password) },
+                              { id: 'lower', label: 'Lower', check: /[a-z]/.test(password) },
+                              { id: 'number', label: 'Number', check: /[0-9]/.test(password) },
+                              { id: 'special', label: 'Special (!@#)', check: /[!@#$%^&*(),.?":{}|<>]/.test(password) }
+                           ].map((req) => (
+                              <div key={req.id} className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all ${req.check ? 'bg-success/10 text-success' : 'bg-bg-secondary text-text-tertiary'}`}>
+                                 <Zap size={8} className={req.check ? 'fill-current' : ''} />
+                                 {req.label}
+                              </div>
+                           ))}
+                        </div>
+                     </div>
+                  )}
                </div>
 
                <button 
                   type="submit" 
                   disabled={loading}
-                  className="w-full h-16 bg-brand-primary text-white rounded-[32px] text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-brand-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none mt-4 flex items-center justify-center gap-4 group"
+                  className="w-full h-16 bg-brand-primary text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-brand-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none mt-4 flex items-center justify-center gap-4 group"
                >
                   <span>{loading ? 'Authenticating...' : (type === 'login' ? 'Establish Session' : 'Enlist in FlowBoard')}</span>
                   {!loading && <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />}

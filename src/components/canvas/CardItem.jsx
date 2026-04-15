@@ -73,10 +73,10 @@ const CardItem = ({ card, index, onClick, isSelected, stylePreset = 'modern' }) 
       case 'compact':
         return "rounded-xl shadow-sm hover:shadow-md border-border-light";
       case 'shadowed':
-        return "rounded-[32px] shadow-xl hover:shadow-2xl border-transparent mb-6";
+        return "rounded-2xl shadow-xl hover:shadow-2xl border-transparent mb-6";
       case 'modern':
       default:
-        return "rounded-[28px] shadow-md hover:shadow-2xl border-border-light transition-all duration-400";
+        return "rounded-xl shadow-md hover:shadow-2xl border-border-light transition-all duration-400";
     }
   };
 

@@ -193,7 +193,7 @@ const InboxPage = () => {
       title: sampleSubject,
       source: 'EMAIL',
       content: {
-        from: "headquarters@flowboard.io",
+        from: "hello@unitsconverter.in",
         body_text: "Target coordinates confirmed. Proceed with operation at 0600 hours.",
         captured_at: new Date().toISOString()
       }

@@ -264,6 +264,36 @@ const SettingsPage = () => {
     setLoading(false);
   };
 
+  const handleDeleteAccount = async () => {
+    if (!window.confirm('CRITICAL: Are you sure you want to delete your account? This action is permanent and will delete all your workspaces, boards, and data. This cannot be undone.')) {
+      return;
+    }
+
+    const doubleCheck = window.prompt('Please type "DELETE" to confirm permanent account deletion:');
+    if (doubleCheck !== 'DELETE') {
+      alert('Delete confirmation failed. Account was not deleted.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.rpc('delete_user_account');
+      
+      if (error) throw error;
+
+      // Successfully deleted. Sign out and redirect.
+      await supabase.auth.signOut();
+      dispatch(signOut());
+      window.location.href = '/';
+    } catch (err) {
+      console.error('Failed to delete account:', err);
+      alert('Failed to delete account: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   const tabs = [
     { id: 'profile', label: 'My Profile', icon: User },
     { id: 'workspace', label: 'Workspace', icon: Box },
@@ -594,15 +624,62 @@ const SettingsPage = () => {
               </div>
             )}
 
-            {(activeTab === 'notifications' || activeTab === 'security') && (
+            {activeTab === 'notifications' && (
               <div className="p-20 text-center space-y-4">
                 <div className="w-20 h-20 bg-bg-secondary rounded-full flex items-center justify-center mx-auto text-text-tertiary">
-                  {activeTab === 'notifications' ? <Bell size={32} /> : <Shield size={32} />}
+                  <Bell size={32} />
                 </div>
-                <h3 className="text-xl font-bold text-text-primary">Advanced {activeTab} coming soon</h3>
+                <h3 className="text-xl font-bold text-text-primary">Advanced notifications coming soon</h3>
                 <p className="text-text-secondary max-w-sm mx-auto">We're building these features to give you full control over your FlowBoard experience.</p>
               </div>
             )}
+
+            {activeTab === 'security' && (
+              <div className="p-10 space-y-12">
+                <div>
+                   <h3 className="text-2xl font-black text-text-primary tracking-tighter mb-2">Security & Privacy</h3>
+                   <p className="text-text-secondary font-medium">Manage your account security and data privacy settings.</p>
+                </div>
+
+                <div className="p-8 bg-bg-secondary/30 rounded-2xl border border-border-light space-y-6">
+                   <div className="flex items-center gap-4 text-warning">
+                      <Shield size={24} />
+                      <h4 className="font-bold text-text-primary uppercase tracking-widest text-xs">Identity Protection</h4>
+                   </div>
+                   <p className="text-sm text-text-secondary font-medium leading-relaxed">
+                      Your identity and sessions are protected by Supabase Auth with enterprise-grade encryption. 
+                      Multi-factor authentication (MFA) and SSO settings will be available in the next update.
+                   </p>
+                </div>
+
+                <div className="pt-10 border-t border-border-light">
+                   <div className="flex items-center gap-3 mb-6">
+                      <Trash2 size={24} className="text-danger" />
+                      <h3 className="text-xl font-bold text-danger">Danger Zone</h3>
+                   </div>
+                   
+                   <div className="bg-danger/5 border border-danger/10 rounded-2xl p-8 space-y-6">
+                      <div className="space-y-2">
+                         <h4 className="font-bold text-text-primary">Delete Account</h4>
+                         <p className="text-sm text-text-secondary leading-relaxed">
+                            Once you delete your account, there is no going back. All your workspaces where you are the owner, 
+                            all your boards, cards, and personal data will be permanently wiped from our servers. 
+                            Please be certain.
+                         </p>
+                      </div>
+                      <button 
+                         onClick={handleDeleteAccount}
+                         disabled={loading}
+                         className="btn bg-danger hover:bg-danger-dark text-white h-14 !rounded-2xl px-10 font-black uppercase tracking-widest text-xs shadow-xl shadow-danger/20 transition-all flex items-center gap-3"
+                      >
+                         {loading ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                         Delete My Account Permanently
+                      </button>
+                   </div>
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
       </div>

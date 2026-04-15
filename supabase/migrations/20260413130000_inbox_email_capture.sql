@@ -23,7 +23,7 @@ BEGIN
             v_random_id := lower(substring(md5(random()::text), 1, 8));
         END;
         
-        v_email := v_random_id || '@capture.flowboard.io';
+        v_email := v_random_id || '@unitsconverter.in';
         
         -- Check if it exists
         SELECT EXISTS(SELECT 1 FROM public.profiles WHERE inbound_capture_email = v_email) INTO v_exists;
@@ -56,5 +56,20 @@ CREATE TRIGGER tr_set_capture_email
 
 -- 4. BACKFILL EXISTING PROFILES
 UPDATE public.profiles 
+SET inbound_capture_email = replace(inbound_capture_email, '@capture.flowboard.io', '@unitsconverter.in')
+WHERE inbound_capture_email LIKE '%@capture.flowboard.io';
+
+-- 5. ENSURE MISSING PROFILES ARE FILLED
+UPDATE public.profiles 
 SET inbound_capture_email = generate_unique_capture_email()
 WHERE inbound_capture_email IS NULL;
+
+-- 6. ASSIGN EXACT ADDRESS TO PRIMARY USER
+-- We'll assign 'hello@unitsconverter.in' to the oldest profile (usually the admin/owner)
+UPDATE public.profiles
+SET inbound_capture_email = 'hello@unitsconverter.in'
+WHERE id IN (
+    SELECT id FROM public.profiles 
+    ORDER BY created_at ASC 
+    LIMIT 1
+);

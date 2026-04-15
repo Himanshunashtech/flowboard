@@ -61,8 +61,9 @@ const WorkspaceSettingsModal = () => {
 
   // Permission Logic
   const currentUserMember = members.find(m => m.user_id === user?.id);
-  const isAdmin = currentUserMember?.role === 'ADMIN' || currentUserMember?.role === 'OWNER';
-  const isOwner = currentUserMember?.role === 'OWNER';
+  const isWorkspaceOwner = activeWorkspace?.owner_id === user?.id;
+  const isAdmin = currentUserMember?.role === 'ADMIN' || currentUserMember?.role === 'OWNER' || isWorkspaceOwner;
+  const isOwner = currentUserMember?.role === 'OWNER' || isWorkspaceOwner;
 
   useEffect(() => {
     if (activeWorkspace) {
@@ -271,9 +272,9 @@ const WorkspaceSettingsModal = () => {
 
               <nav className="space-y-3 flex-1">
                 {[
-                  { id: 'general', label: 'Identity', icon: Globe, color: 'text-brand-primary', adminOnly: true },
+                  { id: 'general', label: 'Identity', icon: Globe, color: 'text-brand-primary', adminOnly: false },
                   { id: 'members', label: 'Directory', icon: Users, color: 'text-indigo-500', adminOnly: false },
-                  { id: 'danger', label: 'Danger Zone', icon: AlertTriangle, color: 'text-red-500', adminOnly: true },
+                  { id: 'danger', label: 'Danger Zone', icon: AlertTriangle, color: 'text-red-500', adminOnly: false },
                 ].filter(item => !item.adminOnly || isAdmin).map(item => (
                   <button
                     key={item.id}
@@ -305,7 +306,7 @@ const WorkspaceSettingsModal = () => {
         <div className="flex-1 flex flex-col min-w-0 bg-white relative">
            <div className="p-16 h-full overflow-y-auto scrollbar-hide">
               <AnimatePresence mode="wait">
-                {activeTab === 'general' && isAdmin && (
+                {activeTab === 'general' && (
                   <motion.div 
                     key="general"
                     initial={{ opacity: 0, x: 20 }}
@@ -350,14 +351,16 @@ const WorkspaceSettingsModal = () => {
                            </div>
                         </div>
 
-                        <button 
-                          type="submit"
-                          disabled={loading || !name || !slug}
-                          className="flex items-center gap-4 px-10 py-5 bg-brand-primary text-white rounded-[32px] text-[11px] font-black uppercase tracking-widest shadow-2xl shadow-brand-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
-                        >
-                           {loading ? <Loader2 size={16} className="animate-spin" /> : success ? <Check size={16} /> : <Zap size={16} />}
-                           <span>{success ? 'Protocol Updated' : 'Synchronize Identity'}</span>
-                        </button>
+                        {isAdmin && (
+                          <button 
+                            type="submit"
+                            disabled={loading || !name || !slug}
+                            className="flex items-center gap-4 px-10 py-5 bg-brand-primary text-white rounded-[32px] text-[11px] font-black uppercase tracking-widest shadow-2xl shadow-brand-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+                          >
+                             {loading ? <Loader2 size={16} className="animate-spin" /> : success ? <Check size={16} /> : <Zap size={16} />}
+                             <span>{success ? 'Protocol Updated' : 'Synchronize Identity'}</span>
+                          </button>
+                        )}
                      </form>
                   </motion.div>
                 )}
@@ -522,51 +525,86 @@ const WorkspaceSettingsModal = () => {
                            <AlertTriangle size={24} />
                            <span className="text-[10px] font-black uppercase tracking-[0.4em]">Destructive Axis</span>
                         </div>
-                        <h3 className="text-5xl font-black text-text-primary tracking-tighter leading-none">Danger Zone</h3>
-                        <p className="text-text-tertiary text-lg font-medium max-w-lg">Executing these protocols will permanently purge all workspace data from the mainframe.</p>
+                        {isAdmin ? (
+                          <>
+                            <h3 className="text-5xl font-black text-text-primary tracking-tighter leading-none">Danger Zone</h3>
+                            <p className="text-text-tertiary text-lg font-medium max-w-lg">Executing these protocols will permanently purge all workspace data from the mainframe.</p>
+                          </>
+                        ) : (
+                          <>
+                            <h3 className="text-5xl font-black text-text-primary tracking-tighter leading-none">Safe Passage</h3>
+                            <p className="text-text-tertiary text-lg font-medium max-w-lg">Would you like to revoke your access and leave this team ecosystem?</p>
+                          </>
+                        )}
                      </header>
 
-                     <div className="p-12 bg-red-50/50 border-2 border-red-100/50 rounded-[48px] space-y-10 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-8 text-red-500/5 pointer-events-none">
-                           <Trash2 size={240} />
-                        </div>
-                        
-                        <div className="space-y-6 relative z-10">
-                           <div>
-                              <h4 className="text-lg font-black text-red-600 mb-2">Delete Workspace Artifacts</h4>
-                              <p className="text-sm text-red-500/70 font-bold leading-relaxed max-w-lg">
-                                 This action is irreversible. All boards, card data, automations, and historical audit logs associated with this team will be TERMINATED globally.
-                              </p>
-                           </div>
+                      {isAdmin ? (
+                        <div className="bg-red-50/50 border-2 border-red-100/50 rounded-[48px] p-12 space-y-10 relative overflow-hidden">
+                          <div className="absolute top-0 right-0 p-8 text-red-500/5 pointer-events-none">
+                             <Trash2 size={240} />
+                          </div>
+                          
+                          <div className="space-y-6 relative z-10">
+                             <div>
+                                <h4 className="text-lg font-black text-red-600 mb-2">Delete Workspace Artifacts</h4>
+                                <p className="text-sm text-red-500/70 font-bold leading-relaxed max-w-lg">
+                                   This action is irreversible. All boards, card data, automations, and historical audit logs associated with this team will be TERMINATED globally.
+                                </p>
+                             </div>
 
-                           <div className="space-y-4 max-w-md">
-                              <label className="text-[10px] font-black uppercase tracking-widest text-red-400 ml-1">Confirm Identity (Enter Workspace Name)</label>
-                              <div className="relative">
-                                 <input 
-                                   type="text" 
-                                   value={confirmName}
-                                   onChange={e => setConfirmName(e.target.value)}
-                                   placeholder={activeWorkspace.name}
-                                   className="w-full h-16 bg-white border-2 border-red-100 rounded-[28px] px-8 text-lg font-black text-red-600 focus:ring-8 focus:ring-red-500/5 transition-all outline-none placeholder:text-red-200"
-                                 />
-                                 {confirmName === activeWorkspace.name && (
-                                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-red-500 animate-in zoom-in">
-                                       <Target size={20} />
-                                    </div>
-                                 )}
-                              </div>
-                           </div>
+                             <div className="space-y-4 max-w-md">
+                                <label className="text-[10px] font-black uppercase tracking-widest text-red-400 ml-1">Confirm Identity (Enter Workspace Name)</label>
+                                <div className="relative">
+                                   <input 
+                                     type="text" 
+                                     value={confirmName}
+                                     onChange={e => setConfirmName(e.target.value)}
+                                     placeholder={activeWorkspace.name}
+                                     className="w-full h-16 bg-white border-2 border-red-100 rounded-[28px] px-8 text-lg font-black text-red-600 focus:ring-8 focus:ring-red-500/5 transition-all outline-none placeholder:text-red-200"
+                                   />
+                                   {confirmName === activeWorkspace.name && (
+                                      <div className="absolute right-6 top-1/2 -translate-y-1/2 text-red-500 animate-in zoom-in">
+                                         <Target size={20} />
+                                      </div>
+                                   )}
+                                </div>
+                             </div>
 
-                           <button 
-                             onClick={handleDeleteWorkspace}
-                             disabled={loading || confirmName !== activeWorkspace.name}
-                             className="group flex items-center gap-4 px-10 py-5 bg-red-600 text-white rounded-[32px] text-[11px] font-black uppercase tracking-widest shadow-2xl shadow-red-600/20 hover:bg-black hover:shadow-black/20 transition-all disabled:opacity-50"
-                           >
-                              {loading ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} className="group-hover:scale-125 transition-transform" />}
-                              <span>Terminate Ecosystem</span>
-                           </button>
+                             <button 
+                               onClick={handleDeleteWorkspace}
+                               disabled={loading || confirmName !== activeWorkspace.name}
+                               className="group flex items-center gap-4 px-10 py-5 bg-red-600 text-white rounded-[32px] text-[11px] font-black uppercase tracking-widest shadow-2xl shadow-red-600/20 hover:bg-black hover:shadow-black/20 transition-all disabled:opacity-50"
+                             >
+                                {loading ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} className="group-hover:scale-125 transition-transform" />}
+                                <span>Terminate Ecosystem</span>
+                             </button>
+                          </div>
                         </div>
-                     </div>
+                      ) : (
+                        <div className="bg-bg-secondary/40 border-2 border-border-light/50 rounded-[48px] p-12 space-y-6 relative overflow-hidden">
+                           <div className="absolute top-0 right-0 p-8 text-brand-primary/5 pointer-events-none">
+                             <LogOut size={240} />
+                          </div>
+                          
+                          <div className="relative z-10 space-y-6">
+                            <div>
+                               <h4 className="text-lg font-black text-text-primary mb-2">Abandon Mission</h4>
+                               <p className="text-sm text-text-tertiary font-bold leading-relaxed max-w-lg">
+                                 Revoking your membership will remove your access to all boards and data in this workspace. You will need a new invitation to return.
+                               </p>
+                            </div>
+                            
+                            <button 
+                              onClick={() => removeMember(user.id)}
+                              disabled={loading}
+                              className="group flex items-center gap-4 px-10 py-5 bg-black text-white rounded-[32px] text-[11px] font-black uppercase tracking-widest shadow-2xl shadow-black/20 hover:bg-red-600 hover:shadow-red-600/20 transition-all"
+                            >
+                               <LogOut size={16} />
+                               <span>Leave Workspace</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
                   </motion.div>
                 )}
               </AnimatePresence>
