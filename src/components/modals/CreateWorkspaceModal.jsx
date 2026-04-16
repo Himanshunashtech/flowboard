@@ -12,6 +12,7 @@ const CreateWorkspaceModal = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [loading, setLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
 
   const handleClose = () => {
     dispatch(toggleModal({ modalName: 'createWorkspace', isOpen: false }));
@@ -28,10 +29,15 @@ const CreateWorkspaceModal = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!name || loading) return;
+    if (!name.trim()) {
+      setValidationErrors({ name: 'Workspace name is required' });
+      return;
+    }
+
+    const slug = generateSlug(name);
+    setValidationErrors({});
 
     setLoading(true);
-    let slug = generateSlug(name);
 
     try {
       // 1. Insert Workspace
@@ -144,6 +150,11 @@ const CreateWorkspaceModal = () => {
                     value={name}
                     onChange={e => setName(e.target.value)}
                   />
+                  {validationErrors.name && (
+                    <p className="text-[10px] font-bold text-danger ml-1 mt-1 animate-in fade-in slide-in-from-top-1 tracking-widest uppercase">
+                      {validationErrors.name}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">

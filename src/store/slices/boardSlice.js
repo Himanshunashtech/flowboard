@@ -38,12 +38,12 @@ const boardSlice = createSlice({
       }
     },
     setLists: (state, action) => {
-      state.lists = action.payload.sort((a, b) => 
+      state.lists = [...action.payload].sort((a, b) => 
         String(a.position || '').localeCompare(String(b.position || ''))
       );
     },
     setCards: (state, action) => {
-      state.cards = action.payload.sort((a, b) => 
+      state.cards = [...action.payload].sort((a, b) => 
         String(a.position || '').localeCompare(String(b.position || ''))
       );
     },

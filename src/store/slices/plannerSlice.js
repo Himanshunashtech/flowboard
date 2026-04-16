@@ -18,6 +18,7 @@ export const fetchAllAssignedCards = createAsyncThunk(
         .eq('user_id', userId);
       
       if (error) throw error;
+      
       return data.map(item => item.cards);
     } catch (error) {
       return rejectWithValue(error.message);
@@ -98,7 +99,7 @@ const plannerSlice = createSlice({
     dailyPriorities: [],
     loading: false,
     error: null,
-    viewMode: 'WEEK' // 'WEEK' | 'MONTH'
+    viewMode: 'MONTH' // 'WEEK' | 'MONTH'
   },
   reducers: {
     setViewMode: (state, action) => {

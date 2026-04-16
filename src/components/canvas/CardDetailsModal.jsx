@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  X, AlignLeft, CheckSquare, MessageCircle, Paperclip, Clock, 
-  UserPlus, Tag, Flag, Trash2, Share2, Plus, Timer, Play, Pause, 
+import {
+  X, AlignLeft, CheckSquare, MessageCircle, Paperclip, Clock,
+  UserPlus, Tag, Flag, Trash2, Share2, Plus, Timer, Play, Pause,
   Square, Calendar, MoreHorizontal, Check, ChevronDown, Copy,
   ArrowRight, Star, Eye, Zap, Archive, Edit3, Network, Settings2,
   Sparkles, AlertCircle, CheckCircle2, Palette, Loader2, ExternalLink, Globe,
@@ -27,11 +27,11 @@ import LocationSelector from './LocationSelector';
 
 // ─── Priority Config ──────────────────────────────────────────────────────────
 const PRIORITY_CONFIG = {
-  NONE:     { label: 'No Priority', color: 'text-gray-400',   bg: 'bg-gray-100',      dot: 'bg-gray-300' },
-  LOW:      { label: 'Low',         color: 'text-blue-500',   bg: 'bg-blue-50',       dot: 'bg-blue-400' },
-  MEDIUM:   { label: 'Medium',      color: 'text-yellow-600', bg: 'bg-yellow-50',     dot: 'bg-yellow-400' },
-  HIGH:     { label: 'High',        color: 'text-orange-500', bg: 'bg-orange-50',     dot: 'bg-orange-400' },
-  CRITICAL: { label: 'Critical',    color: 'text-red-600',    bg: 'bg-red-50',        dot: 'bg-red-500' },
+  NONE: { label: 'No Priority', color: 'text-gray-400', bg: 'bg-gray-100', dot: 'bg-gray-300' },
+  LOW: { label: 'Low', color: 'text-blue-500', bg: 'bg-blue-50', dot: 'bg-blue-400' },
+  MEDIUM: { label: 'Medium', color: 'text-yellow-600', bg: 'bg-yellow-50', dot: 'bg-yellow-400' },
+  HIGH: { label: 'High', color: 'text-orange-500', bg: 'bg-orange-50', dot: 'bg-orange-400' },
+  CRITICAL: { label: 'Critical', color: 'text-red-600', bg: 'bg-red-50', dot: 'bg-red-500' },
 };
 
 // ─── Timer Hook ───────────────────────────────────────────────────────────────
@@ -76,9 +76,9 @@ function useTimer(cardId, userId, onStart, onStop) {
       .from('time_entries')
       .insert({ card_id: cardId, user_id: userId, started_at: new Date().toISOString() })
       .select().single();
-    if (data) { 
-      setActiveEntry(data); 
-      setRunning(true); 
+    if (data) {
+      setActiveEntry(data);
+      setRunning(true);
       if (onStart) onStart(data);
     }
   };
@@ -89,7 +89,7 @@ function useTimer(cardId, userId, onStart, onStop) {
       .update({ ended_at: new Date().toISOString(), duration_seconds: elapsed })
       .eq('id', activeEntry.id)
       .select().single();
-    
+
     setRunning(false);
     setActiveEntry(null);
     setElapsed(0);
@@ -100,7 +100,7 @@ function useTimer(cardId, userId, onStart, onStop) {
     const h = Math.floor(s / 3600);
     const m = Math.floor((s % 3600) / 60);
     const sec = s % 60;
-    return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
 
   return { running, elapsed, fmt, start, stop };
@@ -115,7 +115,7 @@ const ChecklistProgress = ({ items }) => {
     <div className="flex items-center gap-3 mb-2">
       <span className={`text-xs font-black tabular-nums ${pct === 100 ? 'text-green-600' : 'text-text-tertiary'}`}>{pct}%</span>
       <div className="flex-1 h-1.5 bg-bg-tertiary rounded-full overflow-hidden">
-        <motion.div 
+        <motion.div
           className={`h-full rounded-full ${pct === 100 ? 'bg-green-500' : 'bg-brand-primary'}`}
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
@@ -173,7 +173,7 @@ const CardDetailsModal = () => {
   const [commentText, setCommentText] = useState('');
   const [commentDraft, setCommentDraft] = useState(null);
   const [timeEntries, setTimeEntries] = useState([]);
-  
+
   // Label management state
   const [editingLabel, setEditingLabel] = useState(null);
   const [labelSubView, setLabelSubView] = useState('list'); // 'list', 'edit', 'create'
@@ -184,7 +184,7 @@ const CardDetailsModal = () => {
   const [showLocationPanel, setShowLocationPanel] = useState(false);
   const [isGeneratingSubtasks, setIsGeneratingSubtasks] = useState(false);
 
-  const timer = useTimer(card?.id, user?.id, 
+  const timer = useTimer(card?.id, user?.id,
     (newEntry) => {
       // Update board store for real-time icon
       const newEntries = [...(card.time_entries || []), newEntry];
@@ -193,7 +193,7 @@ const CardDetailsModal = () => {
     (stoppedEntry) => {
       setTimeEntries(prev => [stoppedEntry, ...prev]);
       // Update board store (mark all as ended or just update the one)
-      const newEntries = (card.time_entries || []).map(t => 
+      const newEntries = (card.time_entries || []).map(t =>
         t.id === stoppedEntry.id ? stoppedEntry : t
       );
       dispatch(updateCard({ id: card.id, time_entries: newEntries }));
@@ -255,7 +255,7 @@ const CardDetailsModal = () => {
       if (attachError) throw attachError;
 
       setAttachments(prev => [attachment, ...prev]);
-      
+
       // Update board store to reflect count on card item immediately
       const newAttachments = [...(card.attachments || []), attachment];
       dispatch(updateCard({ id: card.id, attachments: newAttachments }));
@@ -277,7 +277,7 @@ const CardDetailsModal = () => {
     const { error } = await supabase.from('attachments').delete().eq('id', id);
     if (!error) {
       setAttachments(prev => prev.filter(a => a.id !== id));
-      
+
       // Update board store
       const newAttachments = (card.attachments || []).filter(a => a.id !== id);
       dispatch(updateCard({ id: card.id, attachments: newAttachments }));
@@ -289,7 +289,7 @@ const CardDetailsModal = () => {
     throttle((data) => {
       if (!card) return;
       const channel = getBoardChannel(card.board_id);
-      
+
       // Safety check: Don't track if the channel isn't fully joined yet
       // This prevents the "tried to push presence before joining" error
       if (channel.state !== 'joined') return;
@@ -340,7 +340,7 @@ const CardDetailsModal = () => {
       setAttachments(card.attachments || []);
       setCardLabels((card.card_labels || []).map(cl => cl.label_id));
       setCardAssignees(card.card_assignments || []);
-      
+
       // Calculate local dependencies from board state
       if (allBoardDependencies) {
         setBlockers(allBoardDependencies.filter(d => d.blocked_card_id === card.id));
@@ -376,7 +376,7 @@ const CardDetailsModal = () => {
     if (subs.data) setSubtasks(subs.data);
 
     // Fetch Similar Cards
-    const { data: similar } = await supabase.rpc('get_similar_cards', { 
+    const { data: similar } = await supabase.rpc('get_similar_cards', {
       source_card_id: cardId,
       match_threshold: 0.5 // Lower threshold for demo if sync is patchy
     });
@@ -402,14 +402,14 @@ const CardDetailsModal = () => {
     if (cardLabels.includes(labelId)) {
       await supabase.from('card_labels').delete().eq('card_id', card.id).eq('label_id', labelId);
       setCardLabels(prev => prev.filter(id => id !== labelId));
-      
+
       // Update store for real-time consistency on card item
       const newLabels = card.card_labels?.filter(cl => cl.label_id !== labelId) || [];
       dispatch(updateCard({ id: card.id, card_labels: newLabels }));
     } else {
       await supabase.from('card_labels').insert({ card_id: card.id, label_id: labelId });
       setCardLabels(prev => [...prev, labelId]);
-      
+
       // Update store
       const newLabels = [...(card.card_labels || []), { label_id: labelId }];
       dispatch(updateCard({ id: card.id, card_labels: newLabels }));
@@ -425,10 +425,10 @@ const CardDetailsModal = () => {
         .select()
         .single();
       if (!error && data) {
-         // Update Redux labels
-         const newLabels = (labels || []).map(l => l.id === data.id ? data : l);
-         dispatch(setLabels(newLabels));
-         setLabelSubView('list');
+        // Update Redux labels
+        const newLabels = (labels || []).map(l => l.id === data.id ? data : l);
+        dispatch(setLabels(newLabels));
+        setLabelSubView('list');
       }
     } else {
       // Create
@@ -437,8 +437,8 @@ const CardDetailsModal = () => {
         .select()
         .single();
       if (!error && data) {
-         dispatch(setLabels([...(labels || []), data]));
-         setLabelSubView('list');
+        dispatch(setLabels([...(labels || []), data]));
+        setLabelSubView('list');
       }
     }
   };
@@ -495,7 +495,7 @@ const CardDetailsModal = () => {
     // 2. DB
     const { error } = await supabase.from('cards').update({ location: locationData }).eq('id', card.id);
     if (error) {
-       dispatch(addNotification({ message: 'Failed to save location', type: 'error' }));
+      dispatch(addNotification({ message: 'Failed to save location', type: 'error' }));
     }
   };
 
@@ -534,7 +534,7 @@ const CardDetailsModal = () => {
     if (!text?.trim()) return;
     const { data } = await supabase.from('checklist_items').insert({ checklist_id: checklistId, title: text }).select().single();
     if (data) {
-      setChecklists(prev => prev.map(cl => 
+      setChecklists(prev => prev.map(cl =>
         cl.id === checklistId ? { ...cl, checklist_items: [...(cl.checklist_items || []), data] } : cl
       ));
       setNewItemText(prev => ({ ...prev, [checklistId]: '' }));
@@ -545,8 +545,8 @@ const CardDetailsModal = () => {
     await supabase.from('checklist_items').update({ is_completed: !current }).eq('id', itemId);
     setChecklists(prev => prev.map(cl =>
       cl.id === checklistId ? {
-        ...cl, 
-        checklist_items: cl.checklist_items.map(item => 
+        ...cl,
+        checklist_items: cl.checklist_items.map(item =>
           item.id === itemId ? { ...item, is_completed: !current } : item
         )
       } : cl
@@ -564,14 +564,14 @@ const CardDetailsModal = () => {
       'DROPDOWN': 'text_value',
       'RATING': 'number_value'
     };
-    
+
     const col = fieldMap[type] || 'text_value';
     const { error } = await supabase
       .from('custom_field_values')
-      .upsert({ 
-        card_id: card.id, 
-        custom_field_id: fieldId, 
-        [col]: value 
+      .upsert({
+        card_id: card.id,
+        custom_field_id: fieldId,
+        [col]: value
       }, { onConflict: 'card_id,custom_field_id' });
 
     if (!error) {
@@ -585,29 +585,29 @@ const CardDetailsModal = () => {
       dispatch(addNotification({ message: 'Add a description first to generate subtasks', type: 'error' }));
       return;
     }
-    
+
     setIsGeneratingSubtasks(true);
     try {
       const subtaskTitles = await aiService.generateSubtasks(card.title, card.description_text);
-      
+
       const { data: newChecklist } = await supabase
         .from('checklists')
         .insert({ card_id: card.id, title: 'AI Generated Subtasks' })
         .select()
         .single();
-        
+
       if (newChecklist) {
         const items = subtaskTitles.map((title, idx) => ({
           checklist_id: newChecklist.id,
           title,
           position: idx
         }));
-        
+
         const { data: newItems } = await supabase
           .from('checklist_items')
           .insert(items)
           .select();
-          
+
         setChecklists(prev => [...prev, { ...newChecklist, checklist_items: newItems || [] }]);
         dispatch(addNotification({ message: 'Subtasks generated successfully!', type: 'success' }));
       }
@@ -624,18 +624,18 @@ const CardDetailsModal = () => {
       dispatch(addNotification({ message: 'Add a title first', type: 'error' }));
       return;
     }
-    
+
     setIsGeneratingSubtasks(true); // Re-using state for loading
     try {
-      const completion = await aiService.getCompletion({ 
-        action: 'LENGTHEN', 
+      const completion = await aiService.getCompletion({
+        action: 'LENGTHEN',
         text: card.title,
         context: { title: card.title }
       });
       if (completion) {
-        updateField({ 
+        updateField({
           description: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: completion }] }] },
-          description_text: completion 
+          description_text: completion
         });
       }
     } catch (err) {
@@ -661,7 +661,7 @@ const CardDetailsModal = () => {
       })
       .select()
       .single();
-    
+
     if (data) setSubtasks([...subtasks, data]);
   };
   const handleCoverUpload = async (e) => {
@@ -670,10 +670,10 @@ const CardDetailsModal = () => {
 
     try {
       setIsUploading(true);
-      
+
       // Enforce 100kb limit as requested
       const compressedFile = await compressImage(file, 100);
-      
+
       const fileExt = compressedFile.name.split('.').pop() || 'jpg';
       const fileName = `${card.id}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       const filePath = `${fileName}`;
@@ -688,9 +688,9 @@ const CardDetailsModal = () => {
         .from('card-covers')
         .getPublicUrl(filePath);
 
-      await updateField({ 
-        cover_type: 'IMAGE', 
-        cover_value: publicUrl 
+      await updateField({
+        cover_type: 'IMAGE',
+        cover_value: publicUrl
       });
 
       dispatch(addNotification({ message: 'Cover updated!', type: 'success' }));
@@ -719,7 +719,7 @@ const CardDetailsModal = () => {
     if (data) {
       setComments(prev => [...prev, data]);
       setCommentText('');
-      
+
       // Update board store
       const newComments = [...(card.comments || []), data];
       dispatch(updateCard({ id: card.id, comments: newComments }));
@@ -730,7 +730,7 @@ const CardDetailsModal = () => {
   const handleMoveCopyAction = async ({ type, boardId, listId, position, numericIndex }) => {
     if (type === 'move') {
       const isCrossBoard = boardId !== activeBoard.id;
-      
+
       // 1. Optimistic Update
       if (!isCrossBoard) {
         dispatch(moveCard({ cardId: card.id, newListId: listId, newPosition: position }));
@@ -791,7 +791,7 @@ const CardDetailsModal = () => {
               .from('checklists')
               .insert({ card_id: newCard.id, title: cl.title, position: cl.position })
               .select().single();
-            
+
             if (newCl && cl.checklist_items?.length > 0) {
               await supabase.from('checklist_items').insert(
                 cl.checklist_items.map(item => ({
@@ -866,16 +866,16 @@ const CardDetailsModal = () => {
           {/* Cover Strip */}
           {card.cover_type !== 'NONE' && (card.cover_value || card.cover_image_url) && (
             <div className="h-48 w-full relative overflow-hidden">
-               {card.cover_type === 'IMAGE' ? (
-                 <img 
-                   src={card.cover_value || card.cover_image_url} 
-                   className="w-full h-full object-cover"
-                   alt="Card Cover"
-                 />
-               ) : (
-                 <div className="w-full h-full" style={{ backgroundColor: card.cover_value }} />
-               )}
-               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+              {card.cover_type === 'IMAGE' ? (
+                <img
+                  src={card.cover_value || card.cover_image_url}
+                  className="w-full h-full object-cover"
+                  alt="Card Cover"
+                />
+              ) : (
+                <div className="w-full h-full" style={{ backgroundColor: card.cover_value }} />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
             </div>
           )}
 
@@ -963,11 +963,11 @@ const CardDetailsModal = () => {
                   </div>
                 )}
                 {card.location && (
-                  <div 
+                  <div
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-primary/10 text-brand-primary rounded-lg text-xs font-bold cursor-pointer hover:bg-brand-primary/20 transition-all"
                     onClick={() => {
-                       const section = document.getElementById('location-section');
-                       section?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      const section = document.getElementById('location-section');
+                      section?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }}
                   >
                     <MapPin size={11} />
@@ -993,18 +993,18 @@ const CardDetailsModal = () => {
             <NavBtn icon={Calendar} label="Dates" onClick={() => setShowDatePanel(p => !p)} active={showDatePanel} />
             <NavBtn icon={Palette} label="Cover" onClick={() => setShowCoverPanel(p => !p)} active={showCoverPanel} />
             <NavBtn icon={Paperclip} label="Attachment" onClick={() => fileInputRef.current?.click()} />
-            
+
             <div className="h-6 w-px bg-gray-200 mx-2" />
-            
+
             <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary mr-2">Card</p>
             <div className="relative">
               <NavBtn icon={ArrowRight} label="Move" onClick={() => { setMovePopoverMode('move'); setShowMovePopover(p => !p); }} active={showMovePopover && movePopoverMode === 'move'} />
               {showMovePopover && movePopoverMode === 'move' && (
                 <div className="absolute top-full left-0 mt-2 z-[250]">
-                  <MoveCardPopover 
-                    card={card} 
-                    initialBoard={activeBoard} 
-                    initialList={list} 
+                  <MoveCardPopover
+                    card={card}
+                    initialBoard={activeBoard}
+                    initialList={list}
                     mode="move"
                     onAction={handleMoveCopyAction}
                     onClose={() => setShowMovePopover(false)}
@@ -1016,10 +1016,10 @@ const CardDetailsModal = () => {
               <NavBtn icon={Copy} label="Copy" onClick={() => { setMovePopoverMode('copy'); setShowMovePopover(p => !p); }} active={showMovePopover && movePopoverMode === 'copy'} />
               {showMovePopover && movePopoverMode === 'copy' && (
                 <div className="absolute top-full left-0 mt-2 z-[250]">
-                  <MoveCardPopover 
-                    card={card} 
-                    initialBoard={activeBoard} 
-                    initialList={list} 
+                  <MoveCardPopover
+                    card={card}
+                    initialBoard={activeBoard}
+                    initialList={list}
                     mode="copy"
                     onAction={handleMoveCopyAction}
                     onClose={() => setShowMovePopover(false)}
@@ -1027,12 +1027,12 @@ const CardDetailsModal = () => {
                 </div>
               )}
             </div>
-            
+
             <div className="relative">
               <NavBtn icon={MapPin} label="Location" onClick={() => setShowLocationPanel(p => !p)} active={showLocationPanel} />
               {showLocationPanel && (
                 <div className="absolute top-full left-0 mt-2 z-[250]">
-                  <LocationSelector 
+                  <LocationSelector
                     onSelect={handleSaveLocation}
                     onClose={() => setShowLocationPanel(false)}
                   />
@@ -1050,21 +1050,21 @@ const CardDetailsModal = () => {
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden py-4 border-b border-gray-100">
                   <div className="flex items-center justify-between mb-3 px-1">
                     <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Select Card Cover Color</p>
-                    <button onClick={() => setShowCoverPanel(false)} className="text-text-tertiary hover:text-text-primary"><X size={14}/></button>
+                    <button onClick={() => setShowCoverPanel(false)} className="text-text-tertiary hover:text-text-primary"><X size={14} /></button>
                   </div>
                   <div className="space-y-6">
                     <div>
                       <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary mb-3 px-1">Select Cover Color</p>
                       <div className="flex flex-wrap gap-3 px-1">
                         {['#F4F5F7', '#0052CC', '#36B37E', '#FFab00', '#FF5630', '#00B8D9', '#6554C0', '#FF8B00'].map(c => (
-                          <button 
+                          <button
                             key={c}
                             onClick={() => updateField({ cover_type: 'COLOR', cover_value: c })}
                             className={`w-10 h-10 rounded-xl border-2 transition-all ${card.cover_type === 'COLOR' && card.cover_value === c ? 'border-brand-primary ring-4 ring-brand-primary/10 scale-110' : 'border-transparent hover:scale-110 shadow-sm'}`}
                             style={{ backgroundColor: c }}
                           />
                         ))}
-                        <button 
+                        <button
                           onClick={() => updateField({ cover_type: 'NONE', cover_value: null })}
                           className="w-10 h-10 rounded-xl bg-white border-2 border-dashed border-border-light flex items-center justify-center text-text-tertiary hover:text-text-primary hover:border-brand-primary transition-all"
                         >
@@ -1077,27 +1077,27 @@ const CardDetailsModal = () => {
                       <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary mb-3 px-1">Predefined Blueprints</p>
                       <div className="grid grid-cols-3 md:grid-cols-6 gap-3 px-1">
                         {PREDEFINED_COVERS.map((url, idx) => (
-                          <button 
+                          <button
                             key={url}
                             onClick={() => updateField({ cover_type: 'IMAGE', cover_value: url })}
                             className={`aspect-video rounded-xl bg-bg-secondary overflow-hidden border-2 transition-all ${card.cover_type === 'IMAGE' && card.cover_value === url ? 'border-brand-primary ring-4 ring-brand-primary/10 scale-105' : 'border-transparent hover:scale-105 shadow-sm'}`}
                           >
-                             <img src={url} alt={`Material Cover ${idx + 1}`} className="w-full h-full object-cover" />
+                            <img src={url} alt={`Material Cover ${idx + 1}`} className="w-full h-full object-cover" />
                           </button>
                         ))}
-                        <button 
+                        <button
                           onClick={() => coverImageUploadRef.current?.click()}
                           className="aspect-video rounded-xl bg-bg-secondary border-2 border-dashed border-border-light flex flex-col items-center justify-center gap-1 text-text-tertiary hover:text-brand-primary hover:border-brand-primary transition-all group"
                         >
-                           <CloudUpload size={18} className="group-hover:scale-110 transition-transform" />
-                           <span className="text-[8px] font-black uppercase tracking-tighter">Upload</span>
+                          <CloudUpload size={18} className="group-hover:scale-110 transition-transform" />
+                          <span className="text-[8px] font-black uppercase tracking-tighter">Upload</span>
                         </button>
-                        <input 
-                          type="file" 
-                          ref={coverImageUploadRef} 
-                          className="hidden" 
+                        <input
+                          type="file"
+                          ref={coverImageUploadRef}
+                          className="hidden"
                           accept="image/*"
-                          onChange={handleCoverUpload} 
+                          onChange={handleCoverUpload}
                         />
                       </div>
                     </div>
@@ -1112,7 +1112,7 @@ const CardDetailsModal = () => {
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden py-4 border-b border-gray-100">
                   <div className="flex items-center justify-between mb-3 px-1">
                     <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Assign Board Members</p>
-                    <button onClick={() => setShowMemberPanel(false)} className="text-text-tertiary hover:text-text-primary"><X size={14}/></button>
+                    <button onClick={() => setShowMemberPanel(false)} className="text-text-tertiary hover:text-text-primary"><X size={14} /></button>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {members?.map(m => {
@@ -1137,14 +1137,14 @@ const CardDetailsModal = () => {
             {/* Label Panel (New Popover Style) */}
             <AnimatePresence>
               {showLabelPanel && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95, y: -20 }} 
-                  animate={{ opacity: 1, scale: 1, y: 0 }} 
-                  exit={{ opacity: 0, scale: 0.95, y: -10 }} 
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
                   className="absolute left-40 top-48 z-[210]"
                 >
                   {labelSubView === 'list' ? (
-                    <LabelsPopover 
+                    <LabelsPopover
                       labels={labels}
                       cardLabels={cardLabels}
                       onToggleLabel={toggleLabel}
@@ -1153,7 +1153,7 @@ const CardDetailsModal = () => {
                       onClose={() => setShowLabelPanel(false)}
                     />
                   ) : (
-                    <EditLabelPopover 
+                    <EditLabelPopover
                       label={editingLabel}
                       onSave={saveLabel}
                       onDelete={() => deleteLabel(editingLabel?.id)}
@@ -1169,14 +1169,14 @@ const CardDetailsModal = () => {
             <AnimatePresence>
               {showDatePanel && (
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden py-4 border-b border-gray-100 max-w-2xl">
-                   <div className="flex items-center justify-between mb-3 px-1">
+                  <div className="flex items-center justify-between mb-3 px-1">
                     <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Scheduling & Priority</p>
-                    <button onClick={() => setShowDatePanel(false)} className="text-text-tertiary hover:text-text-primary"><X size={14}/></button>
+                    <button onClick={() => setShowDatePanel(false)} className="text-text-tertiary hover:text-text-primary"><X size={14} /></button>
                   </div>
                   <div className="flex flex-wrap gap-6 px-1">
                     <div className="space-y-2 flex-1 min-w-[200px]">
                       <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Due Date</p>
-                      <input 
+                      <input
                         type="datetime-local"
                         defaultValue={card.due_date ? card.due_date.slice(0, 16) : ''}
                         onChange={e => updateField({ due_date: e.target.value ? new Date(e.target.value).toISOString() : null })}
@@ -1206,7 +1206,7 @@ const CardDetailsModal = () => {
           <div className="flex flex-1 overflow-hidden min-h-[600px]">
             {/* ── Main Content ── */}
             <div className="flex-1 px-8 pb-8 overflow-y-auto max-h-[calc(90vh-180px)] space-y-8">
-              
+
               {/* ── Time Tracker ─ */}
               <section>
                 <div className="flex items-center gap-2 mb-3">
@@ -1263,7 +1263,7 @@ const CardDetailsModal = () => {
                   <AlignLeft size={16} className="text-gray-500" />
                   <h3 className="text-sm font-bold text-gray-700">Description</h3>
                   {!card.description_text && (
-                    <button 
+                    <button
                       onClick={draftWithAI}
                       disabled={isGeneratingSubtasks}
                       className="ml-auto flex items-center gap-1.5 px-3 py-1 bg-brand-primary/10 text-brand-primary rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-brand-primary/20 transition-all group disabled:opacity-50"
@@ -1281,76 +1281,76 @@ const CardDetailsModal = () => {
               {/* ── Location ── */}
               {card.location && (
                 <section>
-                   <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-2">
-                        <MapPin size={16} className="text-gray-500" />
-                        <h3 className="text-sm font-bold text-gray-700">Location</h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <MapPin size={16} className="text-gray-500" />
+                      <h3 className="text-sm font-bold text-gray-700">Location</h3>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.location.address)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] font-black uppercase tracking-widest text-brand-primary hover:underline flex items-center gap-1"
+                      >
+                        Open in Maps <ExternalLink size={10} />
+                      </a>
+                      <button
+                        onClick={handleRemoveLocation}
+                        className="text-[10px] font-black uppercase tracking-widest text-danger hover:underline"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                  <div className="pl-6">
+                    <div className="group relative bg-bg-secondary/40 rounded-3xl border border-border-light overflow-hidden hover:shadow-2xl transition-all duration-500 min-h-[300px] flex flex-col">
+                      {/* Interactive Map Embed */}
+                      <div className="flex-1 w-full relative">
+                        {card.location.google_place_id && import.meta.env.VITE_GOOGLE_MAPS_API_KEY ? (
+                          <iframe
+                            width="100%"
+                            height="300"
+                            style={{ border: 0 }}
+                            loading="lazy"
+                            allowFullScreen
+                            referrerPolicy="no-referrer-when-downgrade"
+                            className="opacity-90 group-hover:opacity-100 transition-opacity"
+                            src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=place_id:${card.location.google_place_id}`}
+                          />
+                        ) : (
+                          <iframe
+                            width="100%"
+                            height="300"
+                            style={{ border: 0 }}
+                            loading="lazy"
+                            className="opacity-90 group-hover:opacity-100 transition-opacity"
+                            src={card.location.lat && card.location.lng
+                              ? `https://www.openstreetmap.org/export/embed.html?bbox=${card.location.lng - 0.01},${card.location.lat - 0.01},${card.location.lng + 0.01},${card.location.lat + 0.01}&layer=mapnik&marker=${card.location.lat},${card.location.lng}`
+                              : `https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(card.location.address)}`
+                            }
+                          />
+                        )}
                       </div>
-                      <div className="flex items-center gap-4">
-                        <a 
-                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.location.address)}`}
-                           target="_blank" 
-                           rel="noopener noreferrer"
-                           className="text-[10px] font-black uppercase tracking-widest text-brand-primary hover:underline flex items-center gap-1"
+
+                      <div className="relative z-10 flex flex-col gap-4">
+                        <div>
+                          <p className="text-xs font-black text-text-primary mb-1 uppercase tracking-wider">{card.location.name}</p>
+                          <p className="text-[11px] font-medium text-text-tertiary leading-relaxed max-w-[80%]">{card.location.address}</p>
+                        </div>
+
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.location.address)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-brand-primary text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-brand-primary/90 transition-all w-fit shadow-lg shadow-brand-primary/20"
                         >
-                           Open in Maps <ExternalLink size={10} />
+                          <ExternalLink size={12} />
+                          View on Google Maps
                         </a>
-                        <button 
-                           onClick={handleRemoveLocation}
-                           className="text-[10px] font-black uppercase tracking-widest text-danger hover:underline"
-                        >
-                           Remove
-                        </button>
                       </div>
-                   </div>
-                   <div className="pl-6">
-                      <div className="group relative bg-bg-secondary/40 rounded-3xl border border-border-light overflow-hidden hover:shadow-2xl transition-all duration-500 min-h-[300px] flex flex-col">
-                         {/* Interactive Map Embed */}
-                         <div className="flex-1 w-full relative">
-                            {card.location.google_place_id && import.meta.env.VITE_GOOGLE_MAPS_API_KEY ? (
-                              <iframe
-                                width="100%"
-                                height="300"
-                                style={{ border: 0 }}
-                                loading="lazy"
-                                allowFullScreen
-                                referrerPolicy="no-referrer-when-downgrade"
-                                className="opacity-90 group-hover:opacity-100 transition-opacity"
-                                src={`https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=place_id:${card.location.google_place_id}`}
-                              />
-                            ) : (
-                              <iframe
-                                width="100%"
-                                height="300"
-                                style={{ border: 0 }}
-                                loading="lazy"
-                                className="opacity-90 group-hover:opacity-100 transition-opacity"
-                                src={card.location.lat && card.location.lng 
-                                  ? `https://www.openstreetmap.org/export/embed.html?bbox=${card.location.lng-0.01},${card.location.lat-0.01},${card.location.lng+0.01},${card.location.lat+0.01}&layer=mapnik&marker=${card.location.lat},${card.location.lng}`
-                                  : `https://www.google.com/maps/embed/v1/place?key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}&q=${encodeURIComponent(card.location.address)}`
-                                }
-                              />
-                            )}
-                         </div>
-                         
-                         <div className="relative z-10 flex flex-col gap-4">
-                            <div>
-                               <p className="text-xs font-black text-text-primary mb-1 uppercase tracking-wider">{card.location.name}</p>
-                               <p className="text-[11px] font-medium text-text-tertiary leading-relaxed max-w-[80%]">{card.location.address}</p>
-                            </div>
-                            
-                            <a 
-                               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.location.address)}`}
-                               target="_blank" 
-                               rel="noopener noreferrer"
-                               className="inline-flex items-center gap-2 px-4 py-2 bg-brand-primary text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-brand-primary/90 transition-all w-fit shadow-lg shadow-brand-primary/20"
-                            >
-                               <ExternalLink size={12} />
-                               View on Google Maps
-                            </a>
-                         </div>
-                      </div>
-                   </div>
+                    </div>
+                  </div>
                 </section>
               )}
 
@@ -1366,7 +1366,7 @@ const CardDetailsModal = () => {
                       <label className="text-[10px] font-black uppercase tracking-widest text-text-tertiary ml-1">{field.name}</label>
                       <div className="relative group">
                         {field.type === 'CHECKBOX' ? (
-                          <button 
+                          <button
                             onClick={() => updateCustomField(field.id, field.type, !customFieldValues[field.id])}
                             className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 transition-all ${customFieldValues[field.id] ? 'border-brand-primary bg-brand-primary/5 text-brand-primary' : 'border-bg-secondary text-text-tertiary'}`}
                           >
@@ -1376,14 +1376,14 @@ const CardDetailsModal = () => {
                             <span className="text-xs font-bold uppercase tracking-tight">{customFieldValues[field.id] ? 'Enabled' : 'Disabled'}</span>
                           </button>
                         ) : field.type === 'DATE' ? (
-                          <input 
+                          <input
                             type="date"
                             className="w-full h-10 bg-bg-secondary border-none rounded-xl px-4 text-xs font-bold text-text-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/5 transition-all outline-none"
                             value={customFieldValues[field.id]?.slice(0, 10) || ''}
                             onChange={(e) => updateCustomField(field.id, field.type, e.target.value)}
                           />
                         ) : (
-                          <input 
+                          <input
                             type={field.type === 'NUMBER' ? 'number' : 'text'}
                             placeholder={`Enter ${field.name.toLowerCase()}...`}
                             className="w-full h-10 bg-bg-secondary border-none rounded-xl px-4 text-xs font-bold text-text-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/5 transition-all outline-none"
@@ -1397,8 +1397,8 @@ const CardDetailsModal = () => {
                   {(!activeBoard.custom_fields || activeBoard.custom_fields.length === 0) && (
                     <div className="col-span-2 py-4 px-6 bg-bg-secondary/30 rounded-2xl border-2 border-dashed border-border-light text-center">
                       <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">No custom fields defined for this board.</p>
-                      <button 
-                        onClick={() => dispatch(toggleModal({ modalName: 'boardSettings', isOpen: true }))} 
+                      <button
+                        onClick={() => dispatch(toggleModal({ modalName: 'boardSettings', isOpen: true }))}
                         className="text-[10px] text-brand-primary font-bold hover:underline mt-1"
                       >
                         Configure Fields
@@ -1447,8 +1447,8 @@ const CardDetailsModal = () => {
                     <h3 className="text-sm font-bold text-gray-700">Dependencies</h3>
                   </div>
                   <div className="relative">
-                    <button 
-                      onClick={() => { setDepPanelType('blocker'); setShowDependencyPanel(p => !p); }} 
+                    <button
+                      onClick={() => { setDepPanelType('blocker'); setShowDependencyPanel(p => !p); }}
                       className="text-xs font-bold text-brand-primary flex items-center gap-1 hover:underline"
                     >
                       <Plus size={14} />
@@ -1456,8 +1456,8 @@ const CardDetailsModal = () => {
                     </button>
                     {showDependencyPanel && (
                       <div className="absolute right-0 top-full mt-2 z-[250]">
-                        <DependencySelector 
-                          currentCardId={card.id} 
+                        <DependencySelector
+                          currentCardId={card.id}
                           onSelect={(c) => addDependencyAction(c, depPanelType)}
                           onClose={() => setShowDependencyPanel(false)}
                         />
@@ -1467,7 +1467,7 @@ const CardDetailsModal = () => {
                 </div>
                 <div className="pl-6 space-y-4">
                   {blockers.length > 0 && (
-                  <div className="space-y-2">
+                    <div className="space-y-2">
                       <p className="text-[10px] font-black uppercase tracking-widest text-danger">Blocking this card</p>
                       {blockers.map(dep => (
                         <div key={dep.blocking_card_id} className="group flex items-center justify-between p-3 bg-danger/5 rounded-2xl border border-danger/10 hover:bg-danger/10 transition-all">
@@ -1475,7 +1475,7 @@ const CardDetailsModal = () => {
                             <AlertCircle size={14} className="text-danger" />
                             <span className="text-[13px] font-bold text-text-primary">{dep.cards?.title || 'Unknown Card'}</span>
                           </div>
-                          <button 
+                          <button
                             onClick={() => removeDependencyAction(dep.blocking_card_id, dep.blocked_card_id)}
                             className="opacity-0 group-hover:opacity-100 p-1 text-danger hover:bg-danger/10 rounded-lg transition-all"
                           >
@@ -1490,11 +1490,11 @@ const CardDetailsModal = () => {
                       <p className="text-[10px] font-black uppercase tracking-widest text-success">Blocked by this card</p>
                       {cardsBlockingOthers.map(dep => (
                         <div key={dep.blocked_card_id} className="group flex items-center justify-between p-3 bg-success/5 rounded-2xl border border-success/10 hover:bg-success/10 transition-all">
-                           <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-3">
                             <CheckCircle2 size={14} className="text-success" />
                             <span className="text-[13px] font-bold text-text-primary">{dep.cards_blocked?.title || 'Another Card'}</span>
                           </div>
-                          <button 
+                          <button
                             onClick={() => removeDependencyAction(dep.blocking_card_id, dep.blocked_card_id)}
                             className="opacity-0 group-hover:opacity-100 p-1 text-danger hover:bg-danger/10 rounded-lg transition-all"
                           >
@@ -1515,51 +1515,7 @@ const CardDetailsModal = () => {
 
 
               {/* ── Location & Maps ── */}
-              {card.location && (
-                <section id="location-section" className="scroll-mt-6 mb-8">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                       <MapPin size={16} className="text-gray-500" />
-                       <h3 className="text-sm font-bold text-gray-700">Location</h3>
-                    </div>
-                    <button 
-                      onClick={handleRemoveLocation}
-                      className="text-[10px] font-black uppercase tracking-widest text-danger hover:underline"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                  <div className="pl-6">
-                    <div className="bg-white rounded-3xl border border-border-light shadow-xl overflow-hidden group">
-                       <div className="h-[220px] w-full bg-bg-secondary relative">
-                          <iframe
-                            width="100%"
-                            height="100%"
-                            style={{ border: 0 }}
-                            loading="lazy"
-                            allowFullScreen
-                            referrerPolicy="no-referrer-when-downgrade"
-                            src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyD7_ibpCTgMRShrNQJbnZyY1KaWhrRrT4g&q=${encodeURIComponent(card.location.address || card.location.name)}`}
-                          ></iframe>
-                          <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/60 to-transparent flex items-end justify-between">
-                             <div className="min-w-0">
-                                <p className="text-white text-sm font-black truncate">{card.location.name}</p>
-                                <p className="text-white/70 text-[10px] font-medium truncate">{card.location.address}</p>
-                             </div>
-                             <a 
-                               href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.location.address || card.location.name)}`}
-                               target="_blank"
-                               rel="noopener noreferrer"
-                               className="p-2 bg-white/20 backdrop-blur-md rounded-xl text-white hover:bg-white/40 transition-all"
-                             >
-                                <Globe size={16} />
-                             </a>
-                          </div>
-                       </div>
-                    </div>
-                  </div>
-                </section>
-              )}
+
 
               {/* ── Attachments ── */}
               <section>
@@ -1568,7 +1524,7 @@ const CardDetailsModal = () => {
                     <Paperclip size={16} className="text-gray-500" />
                     <h3 className="text-sm font-bold text-gray-700">Attachments</h3>
                   </div>
-                  <button 
+                  <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading || isCompressing}
                     className="text-xs font-bold text-brand-primary flex items-center gap-1.5 hover:underline disabled:opacity-50 transition-all"
@@ -1592,54 +1548,54 @@ const CardDetailsModal = () => {
                   </button>
                 </div>
                 <div className="pl-6 space-y-4">
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    className="hidden" 
-                    onChange={handleFileUpload} 
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    onChange={handleFileUpload}
                   />
-                  
+
                   {attachments.map(att => (
                     <div key={att.id} className="flex gap-4 p-3 bg-bg-secondary/40 rounded-2xl border border-transparent hover:border-border-light hover:bg-white transition-all group">
-                       {(att.mime_type?.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp)$/i.test(att.url)) ? (
-                         <div className="w-24 h-24 rounded-xl overflow-hidden bg-bg-tertiary shrink-0 border border-border-light">
-                            <img src={att.url} alt={att.name} className="w-full h-full object-cover" />
-                         </div>
-                       ) : (
-                         <div className="w-24 h-24 rounded-xl bg-bg-secondary flex items-center justify-center text-text-tertiary shrink-0 border border-border-light">
-                            <Paperclip size={24} />
-                         </div>
-                       )}
-                       <div className="flex-1 min-w-0 py-1">
-                          <p className="font-bold text-sm text-text-primary truncate">{att.name}</p>
-                          <div className="flex items-center gap-3 mt-1 text-[10px] font-bold text-text-tertiary uppercase tracking-widest">
-                             <span>Added {att.created_at && !isNaN(new Date(att.created_at).getTime()) ? formatDistanceToNow(new Date(att.created_at), { addSuffix: true }) : 'recently'}</span>
-                             <span>•</span>
-                             <span>{(att.size_bytes / 1024).toFixed(1)} KB</span>
-                          </div>
-                          <div className="flex items-center gap-4 mt-3">
-                             <a 
-                               href={att.url} 
-                               target="_blank" 
-                               rel="noopener noreferrer"
-                               className="text-[10px] font-black uppercase tracking-widest text-brand-primary hover:underline flex items-center gap-1"
-                             >
-                               <ExternalLink size={10} />
-                               Open
-                             </a>
-                             <button 
-                               onClick={() => removeAttachment(att.id, att.storage_path)}
-                               className="text-[10px] font-black uppercase tracking-widest text-danger hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
-                             >
-                               Delete
-                             </button>
-                          </div>
-                       </div>
+                      {(att.mime_type?.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp)$/i.test(att.url)) ? (
+                        <div className="w-24 h-24 rounded-xl overflow-hidden bg-bg-tertiary shrink-0 border border-border-light">
+                          <img src={att.url} alt={att.name} className="w-full h-full object-cover" />
+                        </div>
+                      ) : (
+                        <div className="w-24 h-24 rounded-xl bg-bg-secondary flex items-center justify-center text-text-tertiary shrink-0 border border-border-light">
+                          <Paperclip size={24} />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0 py-1">
+                        <p className="font-bold text-sm text-text-primary truncate">{att.name}</p>
+                        <div className="flex items-center gap-3 mt-1 text-[10px] font-bold text-text-tertiary uppercase tracking-widest">
+                          <span>Added {att.created_at && !isNaN(new Date(att.created_at).getTime()) ? formatDistanceToNow(new Date(att.created_at), { addSuffix: true }) : 'recently'}</span>
+                          <span>•</span>
+                          <span>{(att.size_bytes / 1024).toFixed(1)} KB</span>
+                        </div>
+                        <div className="flex items-center gap-4 mt-3">
+                          <a
+                            href={att.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[10px] font-black uppercase tracking-widest text-brand-primary hover:underline flex items-center gap-1"
+                          >
+                            <ExternalLink size={10} />
+                            Open
+                          </a>
+                          <button
+                            onClick={() => removeAttachment(att.id, att.storage_path)}
+                            className="text-[10px] font-black uppercase tracking-widest text-danger hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   ))}
 
                   {attachments.length === 0 && !isUploading && (
-                    <div 
+                    <div
                       onClick={() => fileInputRef.current?.click()}
                       className="p-8 border-2 border-dashed border-border-light rounded-[32px] text-center cursor-pointer hover:border-brand-primary/40 hover:bg-brand-primary/5 transition-all group"
                     >
@@ -1658,7 +1614,7 @@ const CardDetailsModal = () => {
                     <h3 className="text-sm font-bold text-gray-700">Checklist</h3>
                   </div>
                   <div className="flex items-center gap-2">
-                    <button 
+                    <button
                       disabled={isGeneratingSubtasks}
                       onClick={handleGenerateSubtasks}
                       className="flex items-center gap-1.5 px-2.5 py-1 bg-brand-primary/10 text-brand-primary rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-brand-primary/20 transition-all disabled:opacity-50"
@@ -1679,7 +1635,7 @@ const CardDetailsModal = () => {
                       </div>
                       <ChecklistProgress items={cl.checklist_items || []} />
                       <div className="space-y-1 mt-2">
-                        {(cl.checklist_items || []).sort((a,b) => a.position - b.position).map(item => (
+                        {(cl.checklist_items || []).sort((a, b) => a.position - b.position).map(item => (
                           <div key={item.id} className="flex items-center gap-3 py-1 px-2 rounded-lg hover:bg-gray-50 group transition-colors">
                             <button
                               onClick={() => toggleChecklistItem(cl.id, item.id, item.is_completed)}
@@ -1737,59 +1693,59 @@ const CardDetailsModal = () => {
 
             {/* ── Side Nav: Activity & Timeline ── */}
             <div className="w-[380px] shrink-0 border-l border-gray-100 bg-gray-50/40 flex flex-col h-full overflow-hidden">
-               <div className="p-6 border-b border-gray-100 bg-white/50">
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-2">
-                       <Sparkles size={18} className="text-brand-primary" />
-                       <h3 className="text-sm font-black uppercase tracking-widest text-gray-800">Timeline</h3>
+              <div className="p-6 border-b border-gray-100 bg-white/50">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <Sparkles size={18} className="text-brand-primary" />
+                    <h3 className="text-sm font-black uppercase tracking-widest text-gray-800">Timeline</h3>
+                  </div>
+                  <button className="p-2 text-gray-400 hover:bg-gray-100 rounded-xl transition-all">
+                    <MoreHorizontal size={18} />
+                  </button>
+                </div>
+
+                {/* Comment composer moved here */}
+                <div className="space-y-4">
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 rounded-xl bg-brand-primary flex items-center justify-center text-white font-black text-[10px] shrink-0 shadow-lg shadow-brand-primary/20">
+                      {(user?.email || 'U')[0].toUpperCase()}
                     </div>
-                    <button className="p-2 text-gray-400 hover:bg-gray-100 rounded-xl transition-all">
-                       <MoreHorizontal size={18} />
-                    </button>
-                  </div>
-
-                  {/* Comment composer moved here */}
-                  <div className="space-y-4">
-                      <div className="flex gap-3">
-                        <div className="w-8 h-8 rounded-xl bg-brand-primary flex items-center justify-center text-white font-black text-[10px] shrink-0 shadow-lg shadow-brand-primary/20">
-                          {(user?.email || 'U')[0].toUpperCase()}
+                    <div className="flex-1">
+                      <div className="relative group">
+                        <textarea
+                          rows={3}
+                          value={commentText}
+                          onChange={e => setCommentText(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); postComment(); } }}
+                          placeholder="Add to timeline..."
+                          className="w-full text-[13px] bg-white border border-gray-100 rounded-2xl px-4 py-3 outline-none focus:ring-4 focus:ring-brand-primary/5 focus:border-brand-primary/40 transition-all resize-none placeholder:text-text-tertiary font-bold shadow-sm"
+                        />
+                        <div className="absolute right-2 bottom-2 flex gap-2 opacity-0 group-focus-within:opacity-100 transition-opacity">
+                          <button onClick={postComment} className="p-2 bg-brand-primary text-white rounded-xl shadow-lg shadow-brand-primary/20 hover:scale-110 transition-all">
+                            <Plus size={14} strokeWidth={3} />
+                          </button>
                         </div>
-                        <div className="flex-1">
-                          <div className="relative group">
-                            <textarea
-                              rows={3}
-                              value={commentText}
-                              onChange={e => setCommentText(e.target.value)}
-                              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); postComment(); } }}
-                              placeholder="Add to timeline..."
-                              className="w-full text-[13px] bg-white border border-gray-100 rounded-2xl px-4 py-3 outline-none focus:ring-4 focus:ring-brand-primary/5 focus:border-brand-primary/40 transition-all resize-none placeholder:text-text-tertiary font-bold shadow-sm"
-                            />
-                            <div className="absolute right-2 bottom-2 flex gap-2 opacity-0 group-focus-within:opacity-100 transition-opacity">
-                              <button onClick={postComment} className="p-2 bg-brand-primary text-white rounded-xl shadow-lg shadow-brand-primary/20 hover:scale-110 transition-all">
-                                <Plus size={14} strokeWidth={3} />
-                              </button>
+                        {typers.length > 0 && (
+                          <div className="absolute left-2 -bottom-5 flex items-center gap-1.5">
+                            <div className="flex gap-0.5">
+                              <span className="w-1 h-1 bg-brand-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
+                              <span className="w-1 h-1 bg-brand-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
+                              <span className="w-1 h-1 bg-brand-primary rounded-full animate-bounce" />
                             </div>
-                            {typers.length > 0 && (
-                              <div className="absolute left-2 -bottom-5 flex items-center gap-1.5">
-                                <div className="flex gap-0.5">
-                                  <span className="w-1 h-1 bg-brand-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
-                                  <span className="w-1 h-1 bg-brand-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
-                                  <span className="w-1 h-1 bg-brand-primary rounded-full animate-bounce" />
-                                </div>
-                                <span className="text-[9px] font-black text-brand-primary uppercase tracking-widest">
-                                  {typers[0].user.full_name.split(' ')[0]} typing...
-                                </span>
-                              </div>
-                            )}
+                            <span className="text-[9px] font-black text-brand-primary uppercase tracking-widest">
+                              {typers[0].user.full_name.split(' ')[0]} typing...
+                            </span>
                           </div>
-                        </div>
+                        )}
                       </div>
+                    </div>
                   </div>
-               </div>
+                </div>
+              </div>
 
-               <div className="flex-1 overflow-y-auto px-6 py-6 scrollbar-thin">
-                  <CardActivityList cardId={card.id} />
-               </div>
+              <div className="flex-1 overflow-y-auto px-6 py-6 scrollbar-thin">
+                <CardActivityList cardId={card.id} />
+              </div>
             </div>
           </div>
         </motion.div>

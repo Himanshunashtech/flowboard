@@ -19,6 +19,7 @@ const CreateBoardModal = () => {
   const [visibility, setVisibility] = useState('WORKSPACE');
   const [background, setBackground] = useState('#FFFFFF');
   const [loading, setLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [activeCategory, setActiveCategory] = useState('basic');
 
@@ -49,7 +50,13 @@ const CreateBoardModal = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title || loading || !effectiveWorkspace) return;
+    if (!title.trim()) {
+      setValidationErrors({ title: 'Board title is required' });
+      return;
+    }
+    
+    if (loading || !effectiveWorkspace) return;
+    setValidationErrors({});
 
     setLoading(true);
 
@@ -203,6 +210,11 @@ const CreateBoardModal = () => {
                   value={title}
                   onChange={e => setTitle(e.target.value)}
                 />
+                {validationErrors.title && (
+                  <p className="text-[10px] font-bold text-danger ml-1 mt-1 animate-in fade-in slide-in-from-top-1 tracking-widest uppercase">
+                    {validationErrors.title}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-3">

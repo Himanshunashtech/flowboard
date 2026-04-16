@@ -9,10 +9,24 @@ import {
   CheckCircle2, 
   AlertCircle,
   ChevronRight,
+  ChevronLeft,
   ArrowRight,
   Target
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  format, 
+  addMonths, 
+  subMonths, 
+  startOfMonth, 
+  endOfMonth, 
+  startOfWeek, 
+  endOfWeek, 
+  eachDayOfInterval, 
+  isSameMonth, 
+  isSameDay,
+  isToday
+} from 'date-fns';
 import { 
   fetchAllAssignedCards, 
   fetchExternalEvents, 
@@ -36,6 +50,7 @@ const PlannerPage = () => {
     viewMode 
   } = useSelector((state) => state.planner);
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [currentDate, setCurrentDate] = React.useState(new Date());
 
   useEffect(() => {
     if (user) {
@@ -64,16 +79,81 @@ const PlannerPage = () => {
     LOW: 'bg-gray-400'
   };
 
+  const calendarDays = React.useMemo(() => {
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(monthStart);
+    const startDate = startOfWeek(monthStart);
+    const endDate = endOfWeek(monthEnd);
+    return eachDayOfInterval({ start: startDate, end: endDate });
+  }, [currentDate]);
+
+  const eventsByDay = React.useMemo(() => {
+    const combined = [
+      ...externalEvents.map(e => ({ 
+        ...e, 
+        type: 'external',
+        display_time: new Date(e.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      })),
+      ...cards.filter(c => c.due_date).map(c => ({
+        ...c,
+        start_time: c.due_date,
+        type: 'internal',
+        display_time: new Date(c.due_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }))
+    ].sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+
+    return combined.reduce((acc, event) => {
+      const dateKey = format(new Date(event.start_time), 'yyyy-MM-dd');
+      if (!acc[dateKey]) acc[dateKey] = [];
+      acc[dateKey].push(event);
+      return acc;
+    }, {});
+  }, [cards, externalEvents]);
+
+  const handlePrevMonth = () => setCurrentDate(subMonths(currentDate, 1));
+  const handleNextMonth = () => setCurrentDate(addMonths(currentDate, 1));
+  const handleToday = () => setCurrentDate(new Date());
+
   return (
     <AppLayout>
       <div className="h-full flex flex-col bg-bg-secondary/30 pb-20">
-        <header className="px-10 py-10 bg-white border-b border-border-light flex items-center justify-between sticky top-0 z-10">
+        <header className="px-10 py-10 bg-white border-b border-border-light flex items-center justify-between sticky top-0 z-20">
           <div className="space-y-1">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-indigo-50 rounded-2xl text-indigo-600 shadow-sm shadow-indigo-100">
-                <CalendarDays size={28} />
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-indigo-50 rounded-2xl text-indigo-600 shadow-sm shadow-indigo-100">
+                  <CalendarDays size={28} />
+                </div>
+                {viewMode === 'MONTH' ? (
+                  <div className="flex items-center gap-8">
+                    <h1 className="text-4xl font-black text-text-primary tracking-tighter w-64">
+                      {format(currentDate, 'MMMM yyyy')}
+                    </h1>
+                    <div className="flex items-center gap-2 bg-bg-secondary p-1 rounded-xl border border-border-light">
+                      <button 
+                        onClick={handlePrevMonth}
+                        className="p-1.5 hover:bg-white hover:text-indigo-600 rounded-lg transition-all text-text-tertiary"
+                      >
+                        <ChevronLeft size={18} />
+                      </button>
+                      <button 
+                         onClick={handleToday}
+                         className="px-4 py-1.5 text-[10px] font-black uppercase tracking-widest hover:text-indigo-600 transition-all text-text-tertiary"
+                      >
+                         Today
+                      </button>
+                      <button 
+                        onClick={handleNextMonth}
+                        className="p-1.5 hover:bg-white hover:text-indigo-600 rounded-lg transition-all text-text-tertiary"
+                      >
+                        <ChevronRight size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <h1 className="text-4xl font-black text-text-primary tracking-tighter">My Planner</h1>
+                )}
               </div>
-              <h1 className="text-4xl font-black text-text-primary tracking-tighter">My Planner</h1>
             </div>
             <p className="text-sm font-bold text-text-tertiary flex items-center gap-2 ps-1">
               <span className="text-indigo-600">{cards.length} assigned tasks</span>
@@ -98,13 +178,13 @@ const PlannerPage = () => {
                   onClick={() => dispatch(setViewMode('WEEK'))}
                   className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${viewMode === 'WEEK' ? 'bg-white text-indigo-600 shadow-sm' : 'text-text-tertiary hover:text-text-primary'}`}
                 >
-                  Briefing
+                  Daily Focus
                 </button>
                 <button 
                   onClick={() => dispatch(setViewMode('MONTH'))}
                   className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${viewMode === 'MONTH' ? 'bg-white text-indigo-600 shadow-sm' : 'text-text-tertiary hover:text-text-primary'}`}
                 >
-                  Timeline
+                  Full Calendar
                 </button>
              </div>
           </div>
@@ -212,57 +292,100 @@ const PlannerPage = () => {
                </section>
             </div>
           ) : viewMode === 'MONTH' ? (
-            <div className="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
-               <section className="space-y-8">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-xs font-black text-text-tertiary uppercase tracking-[0.4em]">Integrated Timeline</h2>
-                    <div className="flex items-center gap-4 text-[10px] font-bold text-text-tertiary">
-                       <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-indigo-600" /> Internal Tasks</div>
-                       <div className="flex items-center gap-2"><div className="w-2 h-2 rounded-full bg-emerald-500" /> External Events</div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    {[
-                      ...externalEvents.map(e => ({ ...e, type: 'external' })),
-                      ...timeBlocks.map(b => ({ ...b, type: 'internal' }))
-                    ].sort((a, b) => new Date(a.start_time) - new Date(b.start_time)).map((item, idx) => (
-                      <div key={idx} className="flex gap-8 group">
-                        <div className="w-32 pt-1 text-right">
-                           <span className="text-[10px] font-black text-text-tertiary uppercase tracking-widest">
-                             {new Date(item.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                           </span>
-                        </div>
-                        <div className="relative pb-10 flex-1">
-                          <div className="absolute left-[-21px] top-2 bottom-0 w-0.5 bg-border-light group-last:bg-transparent" />
-                          <div className={`absolute left-[-24px] top-1.5 w-2 h-2 rounded-full border-2 border-white ring-4 ${item.type === 'external' ? 'ring-emerald-500 bg-emerald-500' : 'ring-indigo-600 bg-indigo-600'}`} />
-                          
-                          <div className={`p-6 rounded-[24px] border border-border-light shadow-sm flex items-center justify-between group-hover:shadow-md transition-all ${item.type === 'external' ? 'bg-emerald-50/20' : 'bg-white'}`}>
-                            <div className="flex items-center gap-4">
-                               <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${item.type === 'external' ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-100 text-indigo-600'}`}>
-                                  {item.type === 'external' ? <CalendarDays size={20} /> : <Clock size={20} />}
-                               </div>
-                               <div>
-                                  <h4 className="text-sm font-black text-text-primary">{item.title}</h4>
-                                  <p className="text-[10px] font-bold text-text-tertiary">
-                                    {Math.round((new Date(item.end_time) - new Date(item.start_time)) / 60000)} minutes • {item.type === 'external' ? (item.service || 'Calendar') : 'Deep Work Session'}
-                                  </p>
-                               </div>
-                            </div>
-                            {item.card_id && (
-                              <button 
-                                onClick={() => dispatch(setActiveCardId(item.card_id))}
-                                className="px-4 py-2 bg-text-primary text-white text-[9px] font-black uppercase tracking-widest rounded-xl hover:bg-indigo-600 transition-colors"
-                              >
-                                View Task
-                              </button>
-                            )}
-                          </div>
-                        </div>
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+               <div className="bg-white rounded-[40px] border border-border-light shadow-xl shadow-indigo-500/5 overflow-hidden">
+                  {/* Calendar Grid Header */}
+                  <div className="grid grid-cols-7 border-b border-border-light bg-bg-secondary/20">
+                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                      <div key={day} className="py-6 text-center">
+                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-text-tertiary">
+                          {day}
+                        </span>
                       </div>
                     ))}
                   </div>
-               </section>
+
+                  {/* Calendar Grid Body */}
+                  <div className="grid grid-cols-7 border-r border-border-light">
+                    {calendarDays.map((day, i) => {
+                      const dayKey = format(day, 'yyyy-MM-dd');
+                      const dayEvents = eventsByDay[dayKey] || [];
+                      const isCurrMonth = isSameMonth(day, currentDate);
+                      const isTd = isToday(day);
+
+                      return (
+                        <div 
+                          key={i} 
+                          className={`min-h-[160px] p-4 border-l border-b border-border-light transition-all hover:bg-bg-secondary/30 relative group ${!isCurrMonth ? 'bg-bg-secondary/10' : 'bg-white'}`}
+                        >
+                          <div className="flex items-center justify-between mb-4">
+                            <span className={`text-sm font-black flex items-center justify-center w-8 h-8 rounded-full transition-all ${
+                              isTd ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 scale-110' : 
+                              isCurrMonth ? 'text-text-primary group-hover:text-indigo-600' : 'text-text-tertiary'
+                            }`}>
+                              {format(day, 'd')}
+                            </span>
+                            {dayEvents.length > 0 && (
+                               <div className="w-1.5 h-1.5 rounded-full bg-indigo-600/30 group-hover:scale-150 transition-transform" />
+                            )}
+                          </div>
+
+                          <div className="space-y-1.5 overflow-y-auto max-h-[100px] custom-scrollbar scrollbar-hide">
+                            {dayEvents.map((event, idx) => (
+                              <button
+                                key={idx}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (event.type === 'internal') dispatch(setActiveCardId(event.id));
+                                }}
+                                className={`w-full text-left px-3 py-1.5 rounded-xl border transition-all flex flex-col gap-0.5 group/chip ${
+                                  event.type === 'external' 
+                                  ? 'bg-emerald-50 border-emerald-100/50 hover:bg-emerald-100 hover:border-emerald-200' 
+                                  : 'bg-indigo-50 border-indigo-100/50 hover:bg-indigo-100 hover:border-indigo-200 shadow-sm'
+                                }`}
+                              >
+                                <span className={`text-[8px] font-black uppercase tracking-wider ${event.type === 'external' ? 'text-emerald-600' : 'text-indigo-600'}`}>
+                                  {event.display_time}
+                                </span>
+                                <span className={`text-[10px] font-bold truncate ${event.type === 'external' ? 'text-emerald-900' : 'text-indigo-950'}`}>
+                                  {event.title}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+
+                          {!isCurrMonth && (
+                            <div className="absolute inset-0 bg-white/40 pointer-events-none" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+               </div>
+
+               {/* Alignment/Analysis Status Bar */}
+               <div className="mt-12 p-8 rounded-[40px] bg-white border border-border-light flex items-center justify-between shadow-sm">
+                  <div className="flex items-center gap-10">
+                     <div className="space-y-1">
+                        <p className="text-[10px] font-black text-text-tertiary uppercase tracking-widest">Planned Capacity</p>
+                        <div className="flex items-center gap-3">
+                           <div className="w-32 h-2 bg-bg-secondary rounded-full overflow-hidden">
+                              <div className="w-3/4 h-full bg-indigo-600 rounded-full" />
+                           </div>
+                           <span className="text-sm font-black text-text-primary">75%</span>
+                        </div>
+                     </div>
+                     <div className="h-10 w-[1px] bg-border-light" />
+                     <div className="space-y-1">
+                        <p className="text-[10px] font-black text-text-tertiary uppercase tracking-widest">Active Boards</p>
+                        <p className="text-sm font-black text-text-primary">{Object.keys(groupedCards).length} Projects Aligned</p>
+                     </div>
+                  </div>
+                  <button className="flex items-center gap-2 px-6 py-3 bg-text-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-100">
+                    <Target size={14} />
+                    Optimize View
+                  </button>
+               </div>
             </div>
           ) : (
             <div className="space-y-12">

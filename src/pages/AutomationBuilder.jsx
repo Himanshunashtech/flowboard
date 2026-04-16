@@ -74,7 +74,8 @@ const AutomationBuilder = () => {
     name: '',
     trigger: 'CARD_CREATED',
     action: 'NOTIFY_USER',
-    targetListId: ''
+    targetListId: '',
+    conditions: []
   });
 
   // Hydrate Board Context if missing
@@ -350,6 +351,62 @@ const AutomationBuilder = () => {
                       onChange={e => setNewProtocol({ ...newProtocol, name: e.target.value })}
                     />
                   </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between ml-1">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">Protocol Guards (Conditions)</label>
+                      <button 
+                        onClick={() => setNewProtocol(p => ({ 
+                          ...p, 
+                          conditions: [...p.conditions, { type: 'PRIORITY_IS', value: 'MEDIUM' }] 
+                        }))}
+                        className="text-[10px] font-black text-brand-primary hover:underline uppercase tracking-widest"
+                      >
+                        + Add Filter
+                      </button>
+                    </div>
+                    <div className="space-y-3">
+                      {newProtocol.conditions.map((cond, idx) => (
+                        <div key={idx} className="flex gap-3 animate-in slide-in-from-left-2">
+                           <select 
+                             className="flex-1 h-12 bg-bg-secondary border-none rounded-xl px-4 font-bold text-[10px] outline-none"
+                             value={cond.type}
+                             onChange={e => {
+                               const newConds = [...newProtocol.conditions];
+                               newConds[idx].type = e.target.value;
+                               setNewProtocol({ ...newProtocol, conditions: newConds });
+                             }}
+                           >
+                             <option value="PRIORITY_IS">Priority is...</option>
+                             <option value="TITLE_CONTAINS">Title contains...</option>
+                             <option value="IS_COMPLETED">Completion is...</option>
+                           </select>
+                           <input 
+                             className="flex-1 h-12 bg-bg-secondary border-none rounded-xl px-4 font-bold text-[10px] outline-none"
+                             placeholder="Value..."
+                             value={cond.value}
+                             onChange={e => {
+                               const newConds = [...newProtocol.conditions];
+                               newConds[idx].value = e.target.value;
+                               setNewProtocol({ ...newProtocol, conditions: newConds });
+                             }}
+                           />
+                           <button 
+                             onClick={() => {
+                               const newConds = newProtocol.conditions.filter((_, i) => i !== idx);
+                               setNewProtocol({ ...newProtocol, conditions: newConds });
+                             }}
+                             className="p-3 text-text-tertiary hover:text-danger"
+                           >
+                             <Trash2 size={14} />
+                           </button>
+                        </div>
+                      ))}
+                      {newProtocol.conditions.length === 0 && (
+                        <p className="text-[10px] text-text-tertiary italic ml-1 opacity-60">This protocol will fire every time. Add a guard to focus its execution.</p>
+                      )}
+                    </div>
+                  </div>
                   
                   <div className="grid grid-cols-2 gap-6">
                      <div className="space-y-3">
@@ -379,14 +436,24 @@ const AutomationBuilder = () => {
                           value={newProtocol.action}
                           onChange={e => setNewProtocol({ ...newProtocol, action: e.target.value })}
                         >
-                          <option value="NOTIFY_USER">Notify Assignee</option>
-                          <option value="ASSIGN_TAG">Apply Tag</option>
-                          <option value="ARCHIVE">Archive Protocol</option>
-                          <option value="SET_PRIORITY">Set Priority</option>
-                          <option value="CREATE_CARD">Create Recurring Task</option>
+                          <option value="SET_DUE_DATE_RELATIVE">Set Due Date (Relative)</option>
+                          <option value="ADD_COMMENT">Post System Comment</option>
                         </select>
                      </div>
                   </div>
+
+                  {(newProtocol.action === 'ADD_COMMENT' || newProtocol.action === 'NOTIFY_USER') && (
+                    <div className="p-4 bg-bg-secondary/50 rounded-2xl border border-border-light/50 animate-in fade-in">
+                       <p className="text-[9px] font-black uppercase tracking-widest text-text-tertiary mb-2">Available Ritual Variables</p>
+                       <div className="flex flex-wrap gap-2">
+                          {['{{title}}', '{{priority}}', '{{due_date}}'].map(v => (
+                            <code key={v} className="px-2 py-0.5 bg-white rounded text-[10px] font-bold text-brand-primary border border-brand-primary/10 select-all cursor-pointer hover:bg-brand-primary hover:text-white transition-colors">
+                              {v}
+                            </code>
+                          ))}
+                       </div>
+                    </div>
+                  )}
 
                   {newProtocol.action === 'CREATE_CARD' && (
                     <motion.div 
@@ -426,7 +493,11 @@ const AutomationBuilder = () => {
                       const actionConfig = {};
                       if (newProtocol.action === 'CREATE_CARD') {
                         actionConfig.list_id = newProtocol.targetListId;
-                        actionConfig.title = newProtocol.name; // Use protocol name as task title by default
+                        actionConfig.title = newProtocol.name; 
+                      } else if (newProtocol.action === 'SET_DUE_DATE_RELATIVE') {
+                        actionConfig.days = 7; // Default
+                      } else if (newProtocol.action === 'ADD_COMMENT') {
+                        actionConfig.text = 'Mission update: {{title}} has reached a major checkpoint.';
                       }
 
                       const { data, error } = await supabase.from('automations').insert({
@@ -435,6 +506,7 @@ const AutomationBuilder = () => {
                         name: newProtocol.name,
                         trigger_type: newProtocol.trigger,
                         actions: [{ type: newProtocol.action, config: actionConfig }],
+                        conditions: newProtocol.conditions,
                         is_enabled: true
                       }).select().single();
                       

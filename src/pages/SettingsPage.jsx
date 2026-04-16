@@ -32,6 +32,7 @@ const SettingsPage = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
 
   // Profile Form State
   const [fullName, setFullName] = useState(profile?.full_name || '');
@@ -228,6 +229,13 @@ const SettingsPage = () => {
 
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
+    if (!fullName.trim()) {
+      setValidationErrors({ full_name: 'Full name is required' });
+      return;
+    }
+
+    setValidationErrors({});
+
     setLoading(true);
     const { data, error } = await supabase
       .from('profiles')
@@ -247,6 +255,17 @@ const SettingsPage = () => {
   const handleUpdateWorkspace = async (e) => {
     e.preventDefault();
     if (!activeWorkspace) return;
+    if (!wsName.trim()) {
+      setValidationErrors({ name: 'Workspace name is required' });
+      return;
+    }
+    if (!wsSlug.trim()) {
+      setValidationErrors({ slug: 'Workspace slug is required' });
+      return;
+    }
+
+    setValidationErrors({});
+
     setLoading(true);
     const { data, error } = await supabase
       .from('workspaces')
@@ -389,6 +408,11 @@ const SettingsPage = () => {
                         onChange={e => setFullName(e.target.value)}
                       />
                     </div>
+                    {validationErrors.full_name && (
+                      <p className="text-[10px] font-bold text-danger ml-1 mt-1 animate-in fade-in slide-in-from-top-1">
+                        {validationErrors.full_name}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
@@ -422,6 +446,11 @@ const SettingsPage = () => {
                         <option value="GMT">GMT (Greenwich Mean Time)</option>
                       </select>
                     </div>
+                    {validationErrors.timezone && (
+                      <p className="text-[10px] font-bold text-danger ml-1 mt-1 animate-in fade-in slide-in-from-top-1">
+                        {validationErrors.timezone}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -504,6 +533,11 @@ const SettingsPage = () => {
                           value={wsName}
                           onChange={e => setWsName(e.target.value)}
                         />
+                        {validationErrors.name && (
+                          <p className="text-[10px] font-bold text-danger ml-1 mt-1 animate-in fade-in slide-in-from-top-1">
+                            {validationErrors.name}
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black uppercase tracking-widest text-text-tertiary ml-1">Workspace URL ID (Slug)</label>
@@ -515,6 +549,11 @@ const SettingsPage = () => {
                             onChange={e => setWsSlug(e.target.value)}
                           />
                         </div>
+                        {validationErrors.slug && (
+                          <p className="text-[10px] font-bold text-danger ml-1 mt-1 animate-in fade-in slide-in-from-top-1">
+                            {validationErrors.slug}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="space-y-2">
