@@ -92,16 +92,16 @@ const BoardWiki = ({ boardId, isOpen, onClose, isReadOnly = false }) => {
           {/* Header */}
           <div className="h-16 px-6 border-b border-border-light flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-brand-primary/10 rounded-xl text-brand-primary">
+              <div className="p-2 bg-primary/10 rounded-xl text-primary">
                 <BookOpen size={18} />
               </div>
-              <h3 className="text-sm font-black uppercase tracking-widest text-text-primary">Board Wiki</h3>
+              <h3 className="text-sm font-black uppercase tracking-widest text-foreground">Board Wiki</h3>
             </div>
             <div className="flex items-center gap-2">
               {!isReadOnly && (
                 <button
                   onClick={() => setEditMode(!editMode)}
-                  className={`p-2 rounded-xl transition-all ${editMode ? 'bg-brand-primary text-white shadow-lg' : 'text-text-tertiary hover:bg-bg-secondary'}`}
+                  className={`p-2 rounded-xl transition-all ${editMode ? 'bg-primary text-white shadow-lg' : 'text-text-tertiary hover:bg-bg-secondary'}`}
                   title={editMode ? 'Switch to View Mode' : 'Switch to Edit Mode'}
                 >
                   {editMode ? <Eye size={18} /> : <Edit3 size={18} />}
@@ -147,7 +147,7 @@ const BoardWiki = ({ boardId, isOpen, onClose, isReadOnly = false }) => {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex items-center gap-2 px-6 py-2.5 bg-brand-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-brand-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
+                className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:scale-100"
               >
                 {saving ? (
                    <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />

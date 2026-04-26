@@ -79,15 +79,15 @@ const ClientPortal = () => {
   );
 
   return (
-    <div className="min-h-screen bg-bg-secondary flex flex-col selection:bg-brand-primary/10">
+    <div className="min-h-screen bg-bg-secondary flex flex-col selection:bg-primary/10">
       {/* Portal Header */}
       <header className="px-10 py-6 bg-white border-b border-border-light flex items-center justify-between shadow-sm sticky top-0 z-50">
         <div className="flex items-center gap-5">
-          <div className="w-12 h-12 rounded-2xl bg-brand-primary flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-brand-primary/20">
+          <div className="w-12 h-12 rounded-2xl bg-primary flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-primary/20">
             {board?.title[0]}
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-text-primary tracking-tight">{board?.title}</h1>
+            <h1 className="text-2xl font-bold text-foreground tracking-tight">{board?.title}</h1>
             <div className="flex items-center gap-3 text-xs font-bold text-text-tertiary">
               <div className="flex items-center gap-1.5 text-success">
                 <ShieldCheck size={14} strokeWidth={3} />
@@ -113,7 +113,7 @@ const ClientPortal = () => {
       </header>
 
       {/* Info Banner */}
-      <div className="bg-brand-primary/5 px-10 py-3 border-b border-brand-primary/10 flex items-center gap-3 text-xs font-bold text-brand-primary">
+      <div className="bg-primary/5 px-10 py-3 border-b border-primary/10 flex items-center gap-3 text-xs font-bold text-primary">
          <Info size={16} />
          <p className="uppercase tracking-widest">You are viewing a secure read-only version of this board portal.</p>
       </div>
@@ -124,7 +124,7 @@ const ClientPortal = () => {
             {lists.map(list => (
               <div key={list.id} className="w-[320px] shrink-0 bg-white/40 backdrop-blur-md rounded-[32px] p-6 border border-border-light flex flex-col gap-6 shadow-sm">
                  <div className="flex items-center justify-between px-2">
-                    <h3 className="font-black text-xs uppercase tracking-widest text-text-primary">{list.title}</h3>
+                    <h3 className="font-black text-xs uppercase tracking-widest text-foreground">{list.title}</h3>
                     <div className="px-2 py-0.5 bg-bg-tertiary rounded-md text-[10px] font-bold text-text-tertiary">
                       {cards.filter(c => c.list_id === list.id).length}
                     </div>
@@ -139,12 +139,12 @@ const ClientPortal = () => {
                             <div className="flex items-center gap-1.5 mb-3">
                               <div className={`w-1.5 h-1.5 rounded-full ${
                                 card.priority === 'CRITICAL' ? 'bg-danger' : 
-                                card.priority === 'HIGH' ? 'bg-orange-500' : 'bg-brand-primary'
+                                card.priority === 'HIGH' ? 'bg-orange-500' : 'bg-primary'
                               }`} />
                               <span className="text-[9px] font-black uppercase tracking-widest text-text-tertiary">{card.priority}</span>
                             </div>
                           )}
-                          <h4 className="text-sm font-bold text-text-primary mb-3 leading-relaxed">{card.title}</h4>
+                          <h4 className="text-sm font-bold text-foreground mb-3 leading-relaxed">{card.title}</h4>
                           <div className="flex items-center gap-4 text-text-tertiary">
                              {card.due_date && (
                                <div className="flex items-center gap-1.5">

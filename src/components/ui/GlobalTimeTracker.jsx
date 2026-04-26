@@ -99,7 +99,7 @@ const GlobalTimeTracker = () => {
         className="flex items-center gap-6 px-6 py-3 bg-black/90 text-white rounded-[32px] shadow-2xl border border-white/20 backdrop-blur-xl"
       >
         <div className="flex items-center gap-4 border-r border-white/20 pr-6">
-          <div className="w-10 h-10 rounded-full bg-brand-primary flex items-center justify-center animate-pulse shadow-[0_0_20px_rgba(var(--brand-primary-rgb),0.5)]">
+          <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center animate-pulse shadow-[0_0_20px_rgba(var(--primary-rgb),0.5)]">
             <Timer size={20} className="text-white" />
           </div>
           <div className="flex flex-col">

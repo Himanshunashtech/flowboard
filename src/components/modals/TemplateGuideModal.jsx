@@ -23,7 +23,7 @@ const TemplateGuideModal = ({ isOpen, onClose, template }) => {
                  alt={template.name} 
                  className="w-full h-full object-cover"
                />
-               <div className="absolute inset-0 bg-gradient-to-tr from-brand-primary/40 to-transparent mix-blend-overlay" />
+               <div className="absolute inset-0 bg-gradient-to-tr from-primary/40 to-transparent mix-blend-overlay" />
                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                
                <div className="absolute bottom-12 left-12 right-12 space-y-4">
@@ -32,7 +32,7 @@ const TemplateGuideModal = ({ isOpen, onClose, template }) => {
                   </div>
                   <h2 className="text-4xl font-black text-white tracking-tighter leading-tight">
                      Introducing the <br/>
-                     <span className="text-brand-primary brightness-150">{template.name}</span>
+                     <span className="text-primary brightness-150">{template.name}</span>
                   </h2>
                   <div className="flex items-center gap-3">
                      <span className="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest text-white border border-white/10">
@@ -49,12 +49,12 @@ const TemplateGuideModal = ({ isOpen, onClose, template }) => {
             <div className="w-full md:w-1/2 flex flex-col bg-white">
                <div className="p-8 border-b border-border-light flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                     <Sparkles className="text-brand-primary" size={18} />
+                     <Sparkles className="text-primary" size={18} />
                      <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">Operational manual</span>
                   </div>
                   <button 
                     onClick={onClose}
-                    className="p-3 hover:bg-bg-secondary rounded-2xl transition-all text-text-tertiary hover:text-text-primary"
+                    className="p-3 hover:bg-bg-secondary rounded-2xl transition-all text-text-tertiary hover:text-foreground"
                   >
                      <X size={20} />
                   </button>
@@ -63,8 +63,8 @@ const TemplateGuideModal = ({ isOpen, onClose, template }) => {
                <div className="flex-1 overflow-y-auto p-12 space-y-8 custom-scrollbar">
                   <section className="space-y-6">
                      <div className="flex items-center gap-3 mb-2">
-                        <Zap className="text-brand-primary" size={24} />
-                        <h3 className="text-xl font-black text-text-primary tracking-tight">Executive Strategy</h3>
+                        <Zap className="text-primary" size={24} />
+                        <h3 className="text-xl font-black text-foreground tracking-tight">Executive Strategy</h3>
                      </div>
                      
                      {/* The Long Description Content */}
@@ -86,9 +86,9 @@ const TemplateGuideModal = ({ isOpen, onClose, template }) => {
                            "Configure automation triggers in settings",
                            "Share the project with your strategic partners"
                         ].map((step, idx) => (
-                           <div key={idx} className="flex items-center gap-3 p-4 bg-bg-secondary/50 rounded-2xl border border-transparent hover:border-brand-primary/10 transition-all">
-                              <CheckCircle2 size={18} className="text-brand-primary" />
-                              <span className="text-sm font-bold text-text-primary">{step}</span>
+                           <div key={idx} className="flex items-center gap-3 p-4 bg-bg-secondary/50 rounded-2xl border border-transparent hover:border-primary/10 transition-all">
+                              <CheckCircle2 size={18} className="text-primary" />
+                              <span className="text-sm font-bold text-foreground">{step}</span>
                            </div>
                         ))}
                      </div>
@@ -98,7 +98,7 @@ const TemplateGuideModal = ({ isOpen, onClose, template }) => {
                <div className="p-8 bg-bg-secondary/30 border-t border-border-light">
                   <button 
                     onClick={onClose}
-                    className="w-full h-16 bg-brand-primary text-white rounded-[24px] font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-brand-primary/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
+                    className="w-full h-16 bg-primary text-white rounded-[24px] font-black uppercase tracking-widest text-[11px] shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
                   >
                      <span>Initialize Protocol</span>
                      <ArrowRight size={18} />

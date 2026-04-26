@@ -13,13 +13,33 @@ serve(async (req) => {
   }
 
   try {
-    const { action, text, context } = await req.json()
+    const { action, text, context, userId } = await req.json()
 
     if (!GEMINI_API_KEY) {
       return new Response(
         JSON.stringify({ error: 'GEMINI_API_KEY not set on server' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
+    }
+
+    // Fetch User Preferences if userId is provided
+    let userPrefs = null;
+    if (userId) {
+       const supabaseUrl = Deno.env.get('SUPABASE_URL')
+       const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+       if (supabaseUrl && supabaseKey) {
+          const prefRes = await fetch(`${supabaseUrl}/rest/v1/rpc/get_user_ai_context`, {
+             method: 'POST',
+             headers: {
+                'Content-Type': 'application/json',
+                'apikey': supabaseKey,
+                'Authorization': `Bearer ${supabaseKey}`
+             },
+             body: JSON.stringify({ p_user_id: userId })
+          });
+          const prefData = await prefRes.json();
+          userPrefs = prefData?.preferences;
+       }
     }
 
     let prompt = ""
@@ -31,17 +51,60 @@ serve(async (req) => {
       case 'FIX_GRAMMAR':
         prompt = `Fix any spelling and grammar mistakes in the following text: "${text}"`
         break
-      case 'LENGTHEN':
-        prompt = `Expand on the following text to make it more detailed and comprehensive: "${text}"`
+      case 'PARSE_INTENTION':
+        prompt = `
+          Analyze the following "Quick Capture" text and extract the task details.
+          Current local time: ${new Date().toISOString()}
+          Input: "${text}"
+          
+          Return ONLY a JSON object with:
+          - title: (short version of the task)
+          - due_date: (ISO string or null)
+          - priority: ("HIGH", "MEDIUM", "LOW" or null)
+          - category: (one word like "Work", "Personal", "Meeting" or null)
+          - is_actionable: (boolean)
+          
+          Only return the JSON object, no markdown or extra text.
+        `
         break
-      case 'SHORTEN':
-        prompt = `Make the following text more concise and direct while keeping the key information: "${text}"`
+      case 'GENERATE_DAILY_PLAN':
+        prompt = `
+          You are an expert Productivity AI Agent. 
+          Goal: ${userPrefs?.goal || 'BALANCED'}
+          Core Hours: ${userPrefs?.schedule?.start || '09:00:00'} to ${userPrefs?.schedule?.end || '17:00:00'}
+          
+          Generate an optimized daily schedule based on these available tasks and external events.
+          Tasks: "${JSON.stringify(context?.tasks)}"
+          External Events: "${JSON.stringify(context?.externalEvents)}"
+          
+          Optimization Strategy:
+          - (Goal: PRODUCTIVITY) Focus on high-intensity blocks and Eat the Frog.
+          - (Goal: WELLBEING) Ensure 15min breaks every 90min and avoid back-to-back deep work.
+          - Use "energy_level" and "focus_score" metadata for placement.
+          - Respect Core Hours as the primary working window.
+          - Respect existing "externalEvents" as hard constraints.
+          
+          Return ONLY a JSON array of time blocks:
+          [
+            { "title": "...", "start_time": "ISO", "end_time": "ISO", "card_id": "UUID or null" }
+          ]
+        `
         break
-      case 'SUMMARIZE':
-        prompt = `Summarize the following text into a few key bullet points: "${text}"`
-        break
-      case 'GENERATE_SUBTASKS':
-        prompt = `Based on the following card title and description, generate a JSON array of subtask titles. Only return the JSON array of strings, nothing else. Title: "${context?.title}", Description: "${text}"`
+      case 'GET_FOCUS_TIPS':
+        prompt = `
+          You are a Zen-like Focus Agent with a ${userPrefs?.ai_tone || 'PROFESSIONAL'} personality.
+          Provide 3-4 concise, highly actionable "Zen Session" tips for a user about to start a deep work focus block.
+          Task Title: "${context?.title}"
+          Task Context: "${context?.description || 'Deep work'}"
+          
+          Tone Instructions:
+          - PROFESSIONAL: Data-driven, efficient, focused on output.
+          - CASUAL: Supportive, friendly, human-centric.
+          - ZEN: Minimalist, poetic, focused on breath and stillness.
+          - CHALLENGING: High-intensity, disciplined, zero-excuses.
+          
+          Return ONLY a JSON array of strings.
+        `
         break
       default:
         prompt = text

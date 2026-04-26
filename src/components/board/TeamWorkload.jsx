@@ -32,8 +32,8 @@ const TeamWorkload = ({ boardId }) => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-black uppercase tracking-widest text-text-primary flex items-center gap-3">
-          <Gauge size={18} className="text-brand-primary" />
+        <h3 className="text-sm font-black uppercase tracking-widest text-foreground flex items-center gap-3">
+          <Gauge size={18} className="text-primary" />
           Resource Capacity
         </h3>
       </div>
@@ -50,11 +50,11 @@ const TeamWorkload = ({ boardId }) => {
               className="p-6 bg-white rounded-3xl border border-border-light shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row md:items-center justify-between gap-6 group"
             >
               <div className="flex items-center gap-4 min-w-[200px]">
-                <div className="w-12 h-12 rounded-2xl bg-brand-primary/10 text-brand-primary flex items-center justify-center font-black text-lg">
+                <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black text-lg">
                   {member.full_name?.[0] || '?'}
                 </div>
                 <div>
-                  <p className="font-bold text-text-primary">{member.full_name || 'Anonymous'}</p>
+                  <p className="font-bold text-foreground">{member.full_name || 'Anonymous'}</p>
                   <div className="flex items-center gap-2 mt-1">
                     <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-tighter ${isOverloaded ? 'bg-danger/10 text-danger' : 'bg-success/10 text-success'}`}>
                       {isOverloaded ? 'At Capacity' : 'Available'}
@@ -66,7 +66,7 @@ const TeamWorkload = ({ boardId }) => {
               <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-8">
                 <div className="space-y-1">
                   <p className="text-[9px] font-black uppercase tracking-widest text-text-tertiary">Active Cards</p>
-                  <p className="text-lg font-black text-text-primary">{member.card_count}</p>
+                  <p className="text-lg font-black text-foreground">{member.card_count}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-[9px] font-black uppercase tracking-widest text-text-tertiary">Completed</p>
@@ -78,12 +78,12 @@ const TeamWorkload = ({ boardId }) => {
                 </div>
                 <div className="space-y-1">
                   <p className="text-[9px] font-black uppercase tracking-widest text-text-tertiary">Est. Hours</p>
-                  <p className="text-lg font-black text-brand-primary">{member.total_estimated_hours}h</p>
+                  <p className="text-lg font-black text-primary">{member.total_estimated_hours}h</p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
-                <button className="p-2.5 bg-bg-secondary text-text-tertiary hover:text-brand-primary rounded-xl transition-all">
+                <button className="p-2.5 bg-bg-secondary text-text-tertiary hover:text-primary rounded-xl transition-all">
                   <Layout size={18} />
                 </button>
               </div>

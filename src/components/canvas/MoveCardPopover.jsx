@@ -120,13 +120,13 @@ const MoveCardPopover = ({ card, initialBoard, initialList, mode = 'move', onAct
         <div className="flex bg-bg-secondary p-1 rounded-xl">
           <button 
             onClick={() => setActiveTab('move')}
-            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'move' ? 'bg-white text-brand-primary shadow-sm' : 'text-text-tertiary hover:text-text-primary'}`}
+            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'move' ? 'bg-white text-primary shadow-sm' : 'text-text-tertiary hover:text-foreground'}`}
           >
             Move
           </button>
           <button 
             onClick={() => setActiveTab('copy')}
-            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'copy' ? 'bg-white text-brand-primary shadow-sm' : 'text-text-tertiary hover:text-text-primary'}`}
+            className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'copy' ? 'bg-white text-primary shadow-sm' : 'text-text-tertiary hover:text-foreground'}`}
           >
             Copy
           </button>
@@ -144,10 +144,10 @@ const MoveCardPopover = ({ card, initialBoard, initialList, mode = 'move', onAct
             <span className="text-[10px] font-black uppercase tracking-widest">Suggested Destination</span>
           </div>
           <div className="bg-bg-secondary/50 rounded-xl p-3 flex items-center gap-3 border border-border-light/50 opacity-60">
-             <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-brand-primary">
+             <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-primary">
                 <ArrowRight size={14} />
              </div>
-             <p className="text-[11px] font-bold text-text-primary">Continue in {initialList?.title}</p>
+             <p className="text-[11px] font-bold text-foreground">Continue in {initialList?.title}</p>
           </div>
         </section>
 
@@ -165,7 +165,7 @@ const MoveCardPopover = ({ card, initialBoard, initialList, mode = 'move', onAct
                   <select 
                     value={selectedBoardId}
                     onChange={e => setSelectedBoardId(e.target.value)}
-                    className="w-full h-11 bg-bg-secondary border border-border-light hover:border-brand-primary/40 rounded-xl px-4 text-xs font-bold text-text-primary appearance-none outline-none transition-all cursor-pointer"
+                    className="w-full h-11 bg-bg-secondary border border-border-light hover:border-primary/40 rounded-xl px-4 text-xs font-bold text-foreground appearance-none outline-none transition-all cursor-pointer"
                   >
                     {allBoards.map(b => (
                       <option key={b.id} value={b.id}>{b.workspaceName} / {b.title}</option>
@@ -184,7 +184,7 @@ const MoveCardPopover = ({ card, initialBoard, initialList, mode = 'move', onAct
                       value={selectedListId}
                       onChange={e => setSelectedListId(e.target.value)}
                       disabled={loading || targetLists.length === 0}
-                      className="w-full h-11 bg-bg-secondary border border-border-light hover:border-brand-primary/40 rounded-xl px-4 text-xs font-bold text-text-primary appearance-none outline-none transition-all cursor-pointer disabled:opacity-50"
+                      className="w-full h-11 bg-bg-secondary border border-border-light hover:border-primary/40 rounded-xl px-4 text-xs font-bold text-foreground appearance-none outline-none transition-all cursor-pointer disabled:opacity-50"
                     >
                       {targetLists.map(l => (
                         <option key={l.id} value={l.id}>{l.title}</option>
@@ -202,7 +202,7 @@ const MoveCardPopover = ({ card, initialBoard, initialList, mode = 'move', onAct
                       value={selectedPosition}
                       onChange={e => setSelectedPosition(parseInt(e.target.value))}
                       disabled={loading || !selectedListId}
-                      className="w-full h-11 bg-bg-secondary border border-border-light hover:border-brand-primary/40 rounded-xl px-4 text-xs font-bold text-text-primary appearance-none outline-none transition-all cursor-pointer disabled:opacity-50"
+                      className="w-full h-11 bg-bg-secondary border border-border-light hover:border-primary/40 rounded-xl px-4 text-xs font-bold text-foreground appearance-none outline-none transition-all cursor-pointer disabled:opacity-50"
                     >
                       {/* If moving within same list, length is targetCards.length. 
                           If moving to new list or copying, length is targetCards.length + 1 */}
@@ -221,7 +221,7 @@ const MoveCardPopover = ({ card, initialBoard, initialList, mode = 'move', onAct
         <button 
           onClick={handleExecute}
           disabled={isProcessing || loading || !selectedBoardId || !selectedListId}
-          className="w-full py-4 bg-brand-primary text-white rounded-[18px] text-[11px] font-black uppercase tracking-widest shadow-xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
+          className="w-full py-4 bg-primary text-white rounded-[18px] text-[11px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50"
         >
           {isProcessing ? 'Processing...' : activeTab === 'move' ? 'Relocate Card' : 'Duplicate Card'}
         </button>

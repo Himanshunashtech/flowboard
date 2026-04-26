@@ -80,7 +80,7 @@ const AuthPage = ({ type }) => {
   };
 
   return (
-    <div className="flex h-screen w-full bg-white overflow-hidden selection:bg-brand-primary/10">
+    <div className="flex h-screen w-full bg-background overflow-hidden selection:bg-primary/10">
       {/* Wing 1: Panoramic Visual (60%) */}
       <div className="relative hidden lg:block lg:w-[60%] h-full bg-black overflow-hidden group">
          {/* Background Image with Parallax-ready containment */}
@@ -117,18 +117,18 @@ const AuthPage = ({ type }) => {
                className="max-w-xl space-y-8"
             >
                <h2 className="text-6xl font-black text-white leading-[0.95] tracking-tighter">
-                  The architecture of <span className="text-brand-primary">deep work</span> is built on flow.
+                  The architecture of <span className="text-primary">deep work</span> is built on flow.
                </h2>
                <div className="flex items-center gap-10">
-                  <div className="h-0.5 w-24 bg-brand-primary" />
+                  <div className="h-0.5 w-24 bg-primary" />
                   <p className="text-xl font-medium text-white/60 tracking-tight">
                      Kinetic. Decentralized. Infinite.
                   </p>
                </div>
                
-               <div className="grid grid-cols-2 gap-10 pt-10 border-t border-white/10">
+                <div className="grid grid-cols-2 gap-10 pt-10 border-t border-white/10">
                   <div className="space-y-2">
-                     <p className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-primary">Efficiency</p>
+                     <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Efficiency</p>
                      <p className="text-white/80 font-bold tracking-tight">Zero-latency planning for modern engineering teams.</p>
                   </div>
                   <div className="space-y-2">
@@ -143,32 +143,32 @@ const AuthPage = ({ type }) => {
       {/* Wing 2: Authentication Console (40%) */}
       <div className="w-full lg:w-[40%] flex flex-col items-center p-8 md:p-24 pt-32 lg:justify-center relative overflow-y-auto">
          <div className="w-full max-w-sm space-y-12">
-            <header className="space-y-6">
+             <header className="space-y-6">
                <div className="lg:hidden flex items-center justify-center gap-3 mb-12">
-                  <div className="w-12 h-12 bg-white flex items-center justify-center text-brand-primary rounded-2xl shadow-xl shadow-brand-primary/10 border border-border-light">
+                  <div className="w-12 h-12 bg-card flex items-center justify-center text-primary rounded-2xl shadow-xl shadow-primary/10 border border-border">
                      <Sparkles size={24} />
                   </div>
-                  <span className="text-2xl font-black text-text-primary tracking-tighter">FlowBoard</span>
+                  <span className="text-2xl font-black text-foreground tracking-tighter">FlowBoard</span>
                </div>
-               <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-bg-secondary rounded-full text-[10px] font-black uppercase tracking-widest text-text-tertiary">
-                  <Zap size={12} className="text-brand-primary" />
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-secondary rounded-full text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                  <Zap size={12} className="text-primary" />
                   <span>Protocol Initialize</span>
                </div>
-               <h1 className="text-4xl font-black text-text-primary tracking-tighter leading-none">
+                <h1 className="text-4xl font-black text-foreground tracking-tighter leading-none">
                   {type === 'login' ? 'Welcome Back' : 'Join the Nexus'}
                </h1>
-               <p className="text-text-tertiary font-medium">
+               <p className="text-muted-foreground font-medium">
                   {type === 'login' 
                     ? 'Authenticate your credentials to resume flow.' 
                     : 'Initialize your free environment in seconds.'}
                </p>
             </header>
 
-            {error && (
+             {error && (
                <motion.div 
                  initial={{ opacity: 0, x: -10 }}
                  animate={{ opacity: 1, x: 0 }}
-                 className="p-5 bg-red-50 border border-red-100 rounded-3xl flex items-center gap-4 text-xs font-black text-red-600 leading-tight"
+                 className="p-5 bg-destructive/10 border border-destructive/20 rounded-3xl flex items-center gap-4 text-xs font-black text-destructive leading-tight"
                >
                   <Shield size={16} />
                   {error}
@@ -177,17 +177,17 @@ const AuthPage = ({ type }) => {
 
 
             <form onSubmit={handleAuth} className="space-y-6">
-               <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary ml-1">Authentication Hash (Email)</label>
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Authentication Hash (Email)</label>
                   <div className="relative group">
-                     <div className="absolute left-6 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand-primary transition-colors">
+                     <div className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors">
                         <Users size={18} />
                      </div>
-                     <input
+                      <input
                         id="email"
                         type="email"
                         placeholder="name@nexus.pro"
-                        className="w-full h-16 pl-16 pr-8 bg-bg-secondary border-none rounded-2xl text-base font-black text-text-primary focus:bg-white focus:ring-8 focus:ring-brand-primary/5 transition-all outline-none shadow-inner placeholder:text-text-tertiary/30"
+                        className="w-full h-16 pl-16 pr-8 bg-secondary border-none rounded-2xl text-base font-black text-foreground focus:bg-card focus:ring-8 focus:ring-primary/5 transition-all outline-none shadow-inner placeholder:text-muted-foreground/30"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
@@ -195,29 +195,29 @@ const AuthPage = ({ type }) => {
                   </div>
                </div>
 
-               <div className="space-y-3">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between ml-1">
-                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">Security Vector (Password)</label>
-                     {type === 'login' && <Link to="#" className="text-[10px] font-black text-brand-primary uppercase tracking-widest hover:underline decoration-2 underline-offset-4">Reset?</Link>}
+                     <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Security Vector (Password)</label>
+                     {type === 'login' && <Link to="#" className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline decoration-2 underline-offset-4">Reset?</Link>}
                   </div>
                   <div className="relative group">
-                     <div className="absolute left-6 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand-primary transition-colors z-10">
+                     <div className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors z-10">
                         <Fingerprint size={18} />
                      </div>
-                     <input
+                      <input
                         id="password"
                         type={showPassword ? "text" : "password"}
                         placeholder="••••••••"
-                        className="w-full h-16 pl-16 pr-14 bg-bg-secondary border-none rounded-2xl text-base font-black text-text-primary focus:bg-white focus:ring-8 focus:ring-brand-primary/5 transition-all outline-none shadow-inner placeholder:text-text-tertiary/30"
+                        className="w-full h-16 pl-16 pr-14 bg-secondary border-none rounded-2xl text-base font-black text-foreground focus:bg-card focus:ring-8 focus:ring-primary/5 transition-all outline-none shadow-inner placeholder:text-muted-foreground/30"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
                         minLength={8}
                      />
-                     <button
+                      <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-6 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary transition-colors p-1 z-10"
+                        className="absolute right-6 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 z-10"
                      >
                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                      </button>
@@ -230,9 +230,9 @@ const AuthPage = ({ type }) => {
                               { id: 'upper', label: 'Upper', check: /[A-Z]/.test(password) },
                               { id: 'lower', label: 'Lower', check: /[a-z]/.test(password) },
                               { id: 'number', label: 'Number', check: /[0-9]/.test(password) },
-                              { id: 'special', label: 'Special (!@#)', check: /[!@#$%^&*(),.?":{}|<>]/.test(password) }
+                               { id: 'special', label: 'Special (!@#)', check: /[!@#$%^&*(),.?":{}|<>]/.test(password) }
                            ].map((req) => (
-                              <div key={req.id} className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all ${req.check ? 'bg-success/10 text-success' : 'bg-bg-secondary text-text-tertiary'}`}>
+                              <div key={req.id} className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all ${req.check ? 'bg-green-500/10 text-green-500' : 'bg-secondary text-muted-foreground'}`}>
                                  <Zap size={8} className={req.check ? 'fill-current' : ''} />
                                  {req.label}
                               </div>
@@ -242,24 +242,24 @@ const AuthPage = ({ type }) => {
                   )}
                </div>
 
-               <button 
-                  type="submit" 
-                  disabled={loading}
-                  className="w-full h-16 bg-brand-primary text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-brand-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none mt-4 flex items-center justify-center gap-4 group"
-               >
-                  <span>{loading ? 'Authenticating...' : (type === 'login' ? 'Establish Session' : 'Enlist in FlowBoard')}</span>
-                  {!loading && <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />}
-               </button>
+                <button 
+                   type="submit" 
+                   disabled={loading}
+                   className="w-full h-16 bg-primary text-primary-foreground rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none mt-4 flex items-center justify-center gap-4 group"
+                >
+                   <span>{loading ? 'Authenticating...' : (type === 'login' ? 'Establish Session' : 'Enlist in FlowBoard')}</span>
+                   {!loading && <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />}
+                </button>
             </form>
 
-            <footer className="pt-12 text-center">
+             <footer className="pt-12 text-center">
                {type === 'login' ? (
-                 <p className="text-sm font-bold text-text-tertiary">
-                   First time in the nexus? <Link to="/signup" className="text-brand-primary font-black hover:underline decoration-2 underline-offset-4">Initialize Account</Link>
+                 <p className="text-sm font-bold text-muted-foreground">
+                   First time in the nexus? <Link to="/signup" className="text-primary font-black hover:underline decoration-2 underline-offset-4">Initialize Account</Link>
                  </p>
                ) : (
-                 <p className="text-sm font-bold text-text-tertiary">
-                   Already enlisted? <Link to="/login" className="text-brand-primary font-black hover:underline decoration-2 underline-offset-4">Authenticate Instead</Link>
+                 <p className="text-sm font-bold text-muted-foreground">
+                   Already enlisted? <Link to="/login" className="text-primary font-black hover:underline decoration-2 underline-offset-4">Authenticate Instead</Link>
                  </p>
                )}
             </footer>

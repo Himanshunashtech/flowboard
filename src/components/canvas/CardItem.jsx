@@ -1,7 +1,7 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Draggable } from '@hello-pangea/dnd';
-import { MessageSquare, Paperclip, Clock, Check, MoreVertical, Plus, Circle, MapPin, Trash2, CheckCircle2 } from 'lucide-react';
+import { MessageSquare, Paperclip, Clock, Check, MoreVertical, Plus, Circle, MapPin, Trash2, CheckCircle2, Zap } from 'lucide-react';
 import { setActiveCardId, toggleModal } from '../../store/slices/uiSlice';
 import { updateCard, deleteCard } from '../../store/slices/boardSlice';
 import { isPast } from 'date-fns';
@@ -9,11 +9,11 @@ import { supabase } from '../../lib/supabase';
 import ReactDOM from 'react-dom';
 
 const PRIORITY_STYLES = {
-  CRITICAL: { color: 'text-red-600',    bg: 'bg-red-50',    label: 'Critical' },
-  HIGH:     { color: 'text-orange-600', bg: 'bg-orange-50', label: 'High' },
-  MEDIUM:   { color: 'text-yellow-600', bg: 'bg-yellow-50', label: 'Medium' },
-  LOW:      { color: 'text-blue-600',   bg: 'bg-blue-50',   label: 'Low' },
-  NONE:     { color: 'text-gray-400',  bg: '',             label: '' },
+  CRITICAL: { color: 'text-red-500',    bg: 'bg-red-500/10',    label: 'Critical' },
+  HIGH:     { color: 'text-orange-500', bg: 'bg-orange-500/10', label: 'High' },
+  MEDIUM:   { color: 'text-yellow-500', bg: 'bg-yellow-500/10', label: 'Medium' },
+  LOW:      { color: 'text-blue-500',   bg: 'bg-blue-500/10',   label: 'Low' },
+  NONE:     { color: 'text-muted-foreground',  bg: '',             label: '' },
 };
 
 const CardItem = ({ card, index, onClick, isSelected, stylePreset = 'modern' }) => {
@@ -71,12 +71,12 @@ const CardItem = ({ card, index, onClick, isSelected, stylePreset = 'modern' }) 
   const getCardStyleClasses = () => {
     switch (stylePreset) {
       case 'compact':
-        return "rounded-xl shadow-sm hover:shadow-md border-border-light";
+        return "rounded-xl shadow-sm hover:shadow-md border-border";
       case 'shadowed':
         return "rounded-2xl shadow-xl hover:shadow-2xl border-transparent mb-6";
       case 'modern':
       default:
-        return "rounded-xl shadow-md hover:shadow-2xl border-border-light transition-all duration-400";
+        return "rounded-xl shadow-md hover:shadow-2xl border-border transition-all duration-400";
     }
   };
 
@@ -89,11 +89,11 @@ const CardItem = ({ card, index, onClick, isSelected, stylePreset = 'modern' }) 
             {...provided.draggableProps}
             {...provided.dragHandleProps}
             onClick={handleClick}
-            className={`relative bg-white border cursor-pointer select-none group overflow-hidden transition-all duration-300 flex-shrink-0
+            className={`relative bg-card border cursor-pointer select-none group overflow-hidden transition-all duration-300 flex-shrink-0
               ${getCardStyleClasses()}
-              ${isSelected ? 'ring-4 ring-brand-primary border-transparent' : ''}
-              group-hover:border-black
-              ${snapshot.isDragging ? 'shadow-2xl ring-4 ring-brand-primary/20 rotate-1 scale-[1.03] z-[9999]' : ''}`}
+              ${isSelected ? 'ring-4 ring-primary border-transparent' : ''}
+              group-hover:border-foreground/20
+              ${snapshot.isDragging ? 'shadow-2xl ring-4 ring-primary/20 rotate-1 scale-[1.03] z-[9999]' : ''}`}
             style={{
               ...provided.draggableProps.style,
             }}
@@ -130,24 +130,24 @@ const CardItem = ({ card, index, onClick, isSelected, stylePreset = 'modern' }) 
                   <button 
                     onClick={toggleComplete}
                     className={`mt-0.5 shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-all shadow-sm
-                      ${card.is_completed ? 'bg-success text-white' : 'bg-bg-secondary text-text-tertiary hover:bg-brand-primary/10 hover:text-brand-primary'}`}
+                      ${card.is_completed ? 'bg-green-500 text-white' : 'bg-secondary text-muted-foreground hover:bg-primary/10 hover:text-primary'}`}
                   >
                     {card.is_completed ? <CheckCircle2 size={12} strokeWidth={4} /> : <Circle size={12} strokeWidth={3} />}
                   </button>
-                  <h4 className={`text-[15px] font-black tracking-tight leading-tight transition-colors break-words
-                    ${card.is_completed ? 'text-text-tertiary line-through decoration-text-tertiary/40' : 'text-text-primary group-hover:text-brand-primary'}`}>
+                  <h4 className={`text-[17px] font-black tracking-tight leading-tight transition-colors break-words
+                    ${card.is_completed ? 'text-muted-foreground line-through decoration-muted-foreground/40' : 'text-foreground group-hover:text-primary'}`}>
                     {card.title}
                   </h4>
                 </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                   <button 
                     onClick={handleDelete}
-                    className="p-1.5 text-text-tertiary hover:bg-danger/10 hover:text-danger rounded-lg transition-colors"
+                    className="p-1.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-lg transition-colors"
                     title="Delete card"
                   >
                     <Trash2 size={14} />
                   </button>
-                  <button className="p-1.5 text-text-tertiary hover:bg-bg-secondary rounded-lg">
+                  <button className="p-1.5 text-muted-foreground hover:bg-secondary rounded-lg">
                     <MoreVertical size={16} />
                   </button>
                 </div>
@@ -179,16 +179,16 @@ const CardItem = ({ card, index, onClick, isSelected, stylePreset = 'modern' }) 
               {/* Enhanced Checklist & Meta Section */}
               {totalItems > 0 && (
                 <div className="space-y-3 mb-4">
-                   <div className="flex items-center justify-between text-[10px] font-black text-text-tertiary uppercase tracking-widest">
+                   <div className="flex items-center justify-between text-[10px] font-black text-muted-foreground uppercase tracking-widest">
                       <div className="flex items-center gap-1.5">
-                         <div className={`w-1.5 h-1.5 rounded-full ${completedItems === totalItems ? 'bg-success' : 'bg-brand-primary'}`} />
+                         <div className={`w-1.5 h-1.5 rounded-full ${completedItems === totalItems ? 'bg-green-500' : 'bg-primary'}`} />
                          <span>Checklist</span>
                       </div>
-                      <span className="tabular-nums font-bold text-text-secondary">{completedItems}/{totalItems}</span>
+                      <span className="tabular-nums font-bold text-muted-foreground">{completedItems}/{totalItems}</span>
                    </div>
-                   <div className="h-1.5 bg-bg-secondary rounded-full overflow-hidden border border-border-light">
+                   <div className="h-1.5 bg-secondary rounded-full overflow-hidden border border-border">
                       <div 
-                         className={`h-full transition-all duration-1000 ${completedItems === totalItems ? 'bg-success shadow-[0_0_8px_rgba(34,197,94,0.3)]' : 'bg-brand-primary'}`}
+                         className={`h-full transition-all duration-1000 ${completedItems === totalItems ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.3)]' : 'bg-primary'}`}
                          style={{ width: `${(completedItems / totalItems) * 100}%` }}
                       />
                    </div>
@@ -196,49 +196,70 @@ const CardItem = ({ card, index, onClick, isSelected, stylePreset = 'modern' }) 
               )}
 
               {/* Card Footer: Metadata (Comments, Date, Assignees) */}
-              <div className="flex items-center justify-between pt-2 border-t border-border-light">
-                <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold text-text-tertiary">
-                  {dueDateObj && (
-                    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-lg transition-all ${isOverdue && !card.is_completed ? 'bg-red-50 text-red-600' : 'bg-bg-secondary text-text-secondary'}`} title="Due date">
-                      <Clock size={12} />
-                      <span className="tabular-nums tracking-widest uppercase">{dueDateObj.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+              <div className="flex items-center justify-between pt-2 border-t border-border">
+                <div className="flex flex-wrap items-center gap-3 text-[11px] font-black text-muted-foreground">
+                    {card.comments?.length > 0 && (
+                      <div className="flex items-center gap-1.5" title="Comments">
+                        <MessageSquare size={16} className="text-muted-foreground" />
+                        <span className="tabular-nums">{card.comments.length}</span>
+                      </div>
+                    )}
+                    {card.attachments?.length > 0 && (
+                      <div className="flex items-center gap-1.5" title="Attachments">
+                        <Paperclip size={16} className="text-muted-foreground" />
+                        <span className="tabular-nums">{card.attachments.length}</span>
+                      </div>
+                    )}
+                    {checklist.length > 0 && (
+                      <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg transition-colors ${completedItems === totalItems ? 'bg-green-500/10 text-green-600' : 'bg-secondary text-muted-foreground'}`} title="Checklist progress">
+                        <Check size={16} strokeWidth={3} />
+                        <span className="tabular-nums">{completedItems}/{totalItems}</span>
+                      </div>
+                    )}
+                    {dueDateObj && (
+                      <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-lg transition-colors
+                        ${card.is_completed ? 'bg-green-500/10 text-green-600' : isOverdue ? 'bg-red-500/10 text-red-600' : 'bg-secondary text-muted-foreground'}`}
+                        title={card.is_completed ? 'Completed' : isOverdue ? 'Overdue' : 'Due date'}
+                      >
+                        <Clock size={16} />
+                        <span className="tabular-nums uppercase">{format(dueDateObj, 'MMM d')}</span>
+                      </div>
+                    )}
+                    {card.location && (
+                      <div className="flex items-center gap-1.5" title="Location">
+                        <MapPin size={16} className="text-muted-foreground" />
+                      </div>
+                    )}
+                    {card.time_entries?.some(t => !t.ended_at) && (
+                      <div className="flex items-center gap-1 text-primary animate-pulse" title="Timer is running">
+                        <Clock size={16} className="fill-primary/20 shadow-sm" />
+                        <span className="font-black uppercase tracking-tight">Live</span>
+                      </div>
+                    )}
+                </div>
+                   {card.story_points > 0 && (
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-primary/10 text-primary rounded-lg border border-primary/10 transition-all hover:bg-primary/20" title={`${card.story_points} Story Points`}>
+                      <Zap size={10} className="fill-current" />
+                      <span className="text-[9px] font-black tabular-nums">{card.story_points}</span>
                     </div>
                   )}
-                  {card.description_text && (
-                    <div className="flex items-center gap-1 opacity-60" title="Has description">
-                      <Circle size={10} className="fill-brand-primary text-brand-primary" />
-                    </div>
-                  )}
-                  {card.attachments?.length > 0 && (
-                    <div className="flex items-center gap-1 hover:text-brand-primary transition-colors cursor-help" title={`${card.attachments.length} attachment(s)`}>
-                      <Paperclip size={12} />
-                      <span className="tabular-nums">{card.attachments.length}</span>
-                    </div>
-                  )}
-                  {card.comments?.length > 0 && (
-                    <div className="flex items-center gap-1 hover:text-brand-primary transition-colors cursor-help" title={`${card.comments.length} comment(s)`}>
-                      <MessageSquare size={12} />
-                      <span className="tabular-nums">{card.comments.length}</span>
-                    </div>
-                  )}
-                  {card.location && (
-                    <div className="flex items-center gap-1 hover:text-brand-primary transition-colors cursor-help" title={`Location: ${card.location.name}`}>
-                      <MapPin size={12} className="text-brand-primary" />
-                    </div>
-                  )}
-                  {card.time_entries?.some(t => !t.ended_at) && (
-                    <div className="flex items-center gap-1 text-brand-primary animate-pulse" title="Timer is running">
-                      <Clock size={12} className="fill-brand-primary/20" />
-                      <span className="text-[9px] font-black uppercase tracking-widest">Live</span>
-                    </div>
-                  )}
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      dispatch(toggleModal({ modalName: 'automations', isOpen: true, data: { cardId: card.id } }));
+                    }}
+                    className="flex items-center gap-1 text-warning hover:text-amber-500 transition-colors p-1 rounded-md hover:bg-warning/10" 
+                    title="Card Automations"
+                  >
+                    <Zap size={12} className="fill-current" />
+                  </button>
                 </div>
 
                 <div className="flex -space-x-2.5">
                   {assignees.map((assignee) => (
                     <div 
                       key={assignee.user_id}
-                      className="w-7 h-7 rounded-full border-2 border-white bg-bg-tertiary flex items-center justify-center text-[9px] font-black overflow-hidden hover:z-10 hover:scale-110 transition-all cursor-pointer shadow-sm"
+                      className="w-7 h-7 rounded-full border-2 border-card bg-muted flex items-center justify-center text-[9px] font-black overflow-hidden hover:z-10 hover:scale-110 transition-all cursor-pointer shadow-sm"
                       title={assignee.profiles?.full_name}
                     >
                       {assignee.profiles?.avatar_url ? (
@@ -251,7 +272,6 @@ const CardItem = ({ card, index, onClick, isSelected, stylePreset = 'modern' }) 
                 </div>
               </div>
             </div>
-          </div>
         );
 
         const portalRoot = document.getElementById('portal-root');

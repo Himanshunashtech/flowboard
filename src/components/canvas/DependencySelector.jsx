@@ -31,7 +31,7 @@ const DependencySelector = ({ currentCardId, onSelect, onClose }) => {
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary" />
           <input
             autoFocus
-            className="w-full h-10 bg-bg-secondary border-none rounded-xl pl-9 pr-4 text-xs font-bold text-text-primary outline-none focus:ring-2 focus:ring-brand-primary/20 transition-all"
+            className="w-full h-10 bg-bg-secondary border-none rounded-xl pl-9 pr-4 text-xs font-bold text-foreground outline-none focus:ring-2 focus:ring-primary/20 transition-all"
             placeholder="Search cards by title..."
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -47,11 +47,11 @@ const DependencySelector = ({ currentCardId, onSelect, onClose }) => {
                 onClick={() => onSelect(card)}
                 className="w-full flex items-center gap-3 p-2.5 hover:bg-bg-secondary rounded-xl transition-all group text-left"
               >
-                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-text-tertiary border border-border-light group-hover:bg-brand-primary group-hover:text-white group-hover:border-brand-primary transition-all">
+                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-text-tertiary border border-border-light group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all">
                   <Hash size={14} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-bold text-text-primary truncate">{card.title}</p>
+                  <p className="text-[11px] font-bold text-foreground truncate">{card.title}</p>
                   <p className="text-[9px] font-black uppercase tracking-widest text-text-tertiary">{list?.title || 'Unknown List'}</p>
                 </div>
               </button>

@@ -20,9 +20,9 @@ const ACTION_CONFIG = {
   'card.completed': { icon: CheckCircle2, color: 'text-success', bg: 'bg-success/5' },
   'card.reopened': { icon: AlertCircle, color: 'text-warning', bg: 'bg-warning/5' },
   'card.archived': { icon: Archive, color: 'text-text-tertiary', bg: 'bg-bg-secondary' },
-  'card.unarchived': { icon: PlusCircle, color: 'text-brand-primary', bg: 'bg-brand-primary/5' },
+  'card.unarchived': { icon: PlusCircle, color: 'text-primary', bg: 'bg-primary/5' },
   'card.priority_changed': { icon: AlertCircle, color: 'text-danger', bg: 'bg-danger/5' },
-  'card.member_added': { icon: UserPlus, color: 'text-brand-secondary', bg: 'bg-brand-secondary/5' },
+  'card.member_added': { icon: UserPlus, color: 'text-primary', bg: 'bg-primary/5' },
   'comment.created': { icon: MessageSquare, color: 'text-indigo-500', bg: 'bg-indigo-50' },
 };
 
@@ -77,7 +77,7 @@ const ActivityLogItem = ({ log }) => {
       
       <div className="flex-1 min-w-0 space-y-1">
         <div className="text-sm text-text-secondary leading-relaxed">
-          <span className="font-black text-text-primary mr-1 hover:text-brand-primary cursor-pointer transition-colors">
+          <span className="font-black text-foreground mr-1 hover:text-primary cursor-pointer transition-colors">
             {log.profiles?.full_name || log.profiles?.email}
           </span>
           {renderActionText()}

@@ -7,7 +7,7 @@ import {
   Square, Calendar, MoreHorizontal, Check, ChevronDown, Copy,
   ArrowRight, Star, Eye, Zap, Archive, Edit3, Network, Settings2,
   Sparkles, AlertCircle, CheckCircle2, Palette, Loader2, ExternalLink, Globe,
-  MapPin, CloudUpload
+  MapPin, CloudUpload, Repeat
 } from 'lucide-react';
 import { updateCard, setLabels, moveCard, addCard, deleteCard, addDependency, removeDependency } from '../../store/slices/boardSlice';
 import { addNotification, toggleModal, setActiveCardId } from '../../store/slices/uiSlice';
@@ -24,6 +24,7 @@ import EditLabelPopover from './EditLabelPopover';
 import MoveCardPopover from './MoveCardPopover';
 import DependencySelector from './DependencySelector';
 import LocationSelector from './LocationSelector';
+import CardAuditHistory from './CardAuditHistory';
 
 // ─── Priority Config ──────────────────────────────────────────────────────────
 const PRIORITY_CONFIG = {
@@ -116,7 +117,7 @@ const ChecklistProgress = ({ items }) => {
       <span className={`text-xs font-black tabular-nums ${pct === 100 ? 'text-green-600' : 'text-text-tertiary'}`}>{pct}%</span>
       <div className="flex-1 h-1.5 bg-bg-tertiary rounded-full overflow-hidden">
         <motion.div
-          className={`h-full rounded-full ${pct === 100 ? 'bg-green-500' : 'bg-brand-primary'}`}
+          className={`h-full rounded-full ${pct === 100 ? 'bg-green-500' : 'bg-primary'}`}
           initial={{ width: 0 }}
           animate={{ width: `${pct}%` }}
           transition={{ duration: 0.4 }}
@@ -132,7 +133,7 @@ const NavBtn = ({ icon: Icon, label, onClick, danger, active }) => (
   <button
     onClick={onClick}
     className={`px-3 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider flex items-center gap-2 transition-all border
-      ${danger ? 'border-red-100 bg-red-50 text-red-600 hover:bg-red-100' : active ? 'border-brand-primary/20 bg-brand-primary/10 text-brand-primary shadow-sm' : 'border-transparent text-text-secondary hover:bg-bg-secondary hover:text-text-primary'}`}
+      ${danger ? 'border-red-100 bg-red-50 text-red-600 hover:bg-red-100' : active ? 'border-primary/20 bg-primary/10 text-primary shadow-sm' : 'border-transparent text-text-secondary hover:bg-bg-secondary hover:text-foreground'}`}
   >
     <Icon size={14} className="shrink-0" />
     <span>{label}</span>
@@ -183,6 +184,58 @@ const CardDetailsModal = () => {
   const [depPanelType, setDepPanelType] = useState('blocker'); // 'blocker' or 'blocked'
   const [showLocationPanel, setShowLocationPanel] = useState(false);
   const [isGeneratingSubtasks, setIsGeneratingSubtasks] = useState(false);
+  const [sideNavTab, setSideNavTab] = useState('timeline'); // 'timeline' or 'history'
+  const titleInputRef = useRef(null);
+
+  const handleClose = () => {
+    dispatch(setActiveCardId(null));
+    dispatch(toggleModal({ modalName: 'cardDetails', isOpen: false }));
+  };
+
+  // ── Keyboard Shortcuts ──────────────────────────────────────────────────────
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Don't trigger if user is typing in an input or contenteditable
+      if (
+        e.target.tagName === 'INPUT' || 
+        e.target.tagName === 'TEXTAREA' || 
+        e.target.isContentEditable
+      ) {
+        if (e.key === 'Escape') {
+          e.target.blur(); // Blur on Escape so next Escape closes modal
+        }
+        return;
+      }
+
+      switch (e.key.toLowerCase()) {
+        case 'e':
+          e.preventDefault();
+          titleInputRef.current?.focus();
+          break;
+        case 'd':
+          e.preventDefault();
+          setShowDatePanel(prev => !prev);
+          break;
+        case 'm':
+          e.preventDefault();
+          setShowMemberPanel(prev => !prev);
+          break;
+        case 'l':
+          e.preventDefault();
+          setShowLabelPanel(prev => !prev);
+          break;
+        case 'escape':
+          handleClose();
+          break;
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleClose]);
+
 
   const timer = useTimer(card?.id, user?.id,
     (newEntry) => {
@@ -383,10 +436,6 @@ const CardDetailsModal = () => {
     if (similar) setSimilarCards(similar);
   };
 
-  const handleClose = () => {
-    dispatch(setActiveCardId(null));
-    dispatch(toggleModal({ modalName: 'cardDetails', isOpen: false }));
-  };
 
   // ── Card Updates ─────────────────────────────────────────────────────────────
   const updateField = async (fields) => {
@@ -726,6 +775,7 @@ const CardDetailsModal = () => {
     }
   };
 
+  const totalTrackedIncludingLive = timeEntries.reduce((acc, t) => acc + (t.duration_seconds || 0), 0) + (timer.running ? timer.elapsed : 0);
   const totalTracked = timeEntries.reduce((acc, t) => acc + (t.duration_seconds || 0), 0);
   const handleMoveCopyAction = async ({ type, boardId, listId, position, numericIndex }) => {
     if (type === 'move') {
@@ -901,7 +951,7 @@ const CardDetailsModal = () => {
                         {v.user.avatar_url ? (
                           <img src={v.user.avatar_url} alt={v.user.full_name} className="w-7 h-7 rounded-full border-2 border-white ring-1 ring-black/5 object-cover" />
                         ) : (
-                          <div className="w-7 h-7 rounded-full bg-brand-primary border-2 border-white ring-1 ring-black/5 flex items-center justify-center text-[10px] font-bold text-white uppercase">
+                          <div className="w-7 h-7 rounded-full bg-primary border-2 border-white ring-1 ring-black/5 flex items-center justify-center text-[10px] font-bold text-white uppercase">
                             {v.user.full_name?.[0] || 'U'}
                           </div>
                         )}
@@ -919,6 +969,7 @@ const CardDetailsModal = () => {
 
               <input
                 key={card.id}
+                ref={titleInputRef}
                 defaultValue={card.title}
                 onBlur={e => { if (e.target.value !== card.title) updateField({ title: e.target.value }); }}
                 onKeyDown={e => e.key === 'Enter' && e.target.blur()}
@@ -926,7 +977,7 @@ const CardDetailsModal = () => {
               />
               <div className="flex items-center gap-1.5 mt-2 px-2">
                 <span className="text-sm text-gray-400">in list</span>
-                <span className="text-sm font-semibold text-gray-600 underline decoration-gray-300 underline-offset-2 cursor-pointer hover:text-brand-primary">{list?.title}</span>
+                <span className="text-sm font-semibold text-gray-600 underline decoration-gray-300 underline-offset-2 cursor-pointer hover:text-primary">{list?.title}</span>
               </div>
 
               {/* Meta pills row */}
@@ -943,7 +994,7 @@ const CardDetailsModal = () => {
                   <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 rounded-lg text-xs font-semibold text-gray-600 cursor-pointer hover:bg-gray-200 transition-colors" onClick={() => setShowMemberPanel(true)}>
                     <div className="flex -space-x-1.5">
                       {cardAssignees.slice(0, 3).map(a => (
-                        <div key={a.user_id} className="w-5 h-5 rounded-full bg-brand-primary flex items-center justify-center text-[9px] font-bold text-white ring-1 ring-white">
+                        <div key={a.user_id} className="w-5 h-5 rounded-full bg-primary flex items-center justify-center text-[9px] font-bold text-white ring-1 ring-white">
                           {(a.profiles?.full_name || a.profiles?.email || '?')[0].toUpperCase()}
                         </div>
                       ))}
@@ -964,7 +1015,7 @@ const CardDetailsModal = () => {
                 )}
                 {card.location && (
                   <div
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-primary/10 text-brand-primary rounded-lg text-xs font-bold cursor-pointer hover:bg-brand-primary/20 transition-all"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-xs font-bold cursor-pointer hover:bg-primary/20 transition-all"
                     onClick={() => {
                       const section = document.getElementById('location-section');
                       section?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -974,6 +1025,36 @@ const CardDetailsModal = () => {
                     {card.location.name}
                   </div>
                 )}
+
+                {/* Story Points Pill (Always visible in Header) */}
+                <div className="flex items-center gap-2 group/points">
+                  <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-black transition-all border
+                    ${card.story_points > 0 ? 'bg-primary/5 border-primary/20 text-primary shadow-sm' : 'bg-gray-50 border-gray-200 text-gray-400'}`}>
+                    <Zap size={12} className={card.story_points > 0 ? 'fill-primary' : ''} />
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={card.story_points || ''}
+                      onChange={e => updateField({ story_points: e.target.value ? parseInt(e.target.value) : null })}
+                      className="w-8 bg-transparent outline-none border-none text-center tabular-nums hover:bg-black/5 rounded transition-all focus:bg-white focus:shadow-inner"
+                    />
+                    <span className="text-[10px] opacity-60">PTS</span>
+                  </div>
+                  
+                  {/* Fibonacci Scale - Visible on hover */}
+                  <div className="flex gap-1 opacity-0 group-hover/points:opacity-100 transition-opacity">
+                    {[1, 2, 3, 5, 8, 13].map(pt => (
+                      <button
+                        key={pt}
+                        onClick={() => updateField({ story_points: pt })}
+                        className={`w-7 h-7 rounded-lg text-[10px] font-black transition-all border flex items-center justify-center
+                          ${card.story_points === pt ? 'bg-primary text-white border-primary scale-110' : 'bg-white border-gray-100 text-gray-400 hover:border-gray-300'}`}
+                      >
+                        {pt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -993,6 +1074,7 @@ const CardDetailsModal = () => {
             <NavBtn icon={Calendar} label="Dates" onClick={() => setShowDatePanel(p => !p)} active={showDatePanel} />
             <NavBtn icon={Palette} label="Cover" onClick={() => setShowCoverPanel(p => !p)} active={showCoverPanel} />
             <NavBtn icon={Paperclip} label="Attachment" onClick={() => fileInputRef.current?.click()} />
+            <NavBtn icon={Zap} label="Focus Mode" onClick={() => dispatch(toggleModal({ modalName: 'focusMode', isOpen: true, data: { card } }))} />
 
             <div className="h-6 w-px bg-gray-200 mx-2" />
 
@@ -1050,7 +1132,7 @@ const CardDetailsModal = () => {
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden py-4 border-b border-gray-100">
                   <div className="flex items-center justify-between mb-3 px-1">
                     <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Select Card Cover Color</p>
-                    <button onClick={() => setShowCoverPanel(false)} className="text-text-tertiary hover:text-text-primary"><X size={14} /></button>
+                    <button onClick={() => setShowCoverPanel(false)} className="text-text-tertiary hover:text-foreground"><X size={14} /></button>
                   </div>
                   <div className="space-y-6">
                     <div>
@@ -1060,13 +1142,13 @@ const CardDetailsModal = () => {
                           <button
                             key={c}
                             onClick={() => updateField({ cover_type: 'COLOR', cover_value: c })}
-                            className={`w-10 h-10 rounded-xl border-2 transition-all ${card.cover_type === 'COLOR' && card.cover_value === c ? 'border-brand-primary ring-4 ring-brand-primary/10 scale-110' : 'border-transparent hover:scale-110 shadow-sm'}`}
+                            className={`w-10 h-10 rounded-xl border-2 transition-all ${card.cover_type === 'COLOR' && card.cover_value === c ? 'border-primary ring-4 ring-primary/10 scale-110' : 'border-transparent hover:scale-110 shadow-sm'}`}
                             style={{ backgroundColor: c }}
                           />
                         ))}
                         <button
                           onClick={() => updateField({ cover_type: 'NONE', cover_value: null })}
-                          className="w-10 h-10 rounded-xl bg-white border-2 border-dashed border-border-light flex items-center justify-center text-text-tertiary hover:text-text-primary hover:border-brand-primary transition-all"
+                          className="w-10 h-10 rounded-xl bg-white border-2 border-dashed border-border-light flex items-center justify-center text-text-tertiary hover:text-foreground hover:border-primary transition-all"
                         >
                           <X size={16} />
                         </button>
@@ -1080,14 +1162,14 @@ const CardDetailsModal = () => {
                           <button
                             key={url}
                             onClick={() => updateField({ cover_type: 'IMAGE', cover_value: url })}
-                            className={`aspect-video rounded-xl bg-bg-secondary overflow-hidden border-2 transition-all ${card.cover_type === 'IMAGE' && card.cover_value === url ? 'border-brand-primary ring-4 ring-brand-primary/10 scale-105' : 'border-transparent hover:scale-105 shadow-sm'}`}
+                            className={`aspect-video rounded-xl bg-bg-secondary overflow-hidden border-2 transition-all ${card.cover_type === 'IMAGE' && card.cover_value === url ? 'border-primary ring-4 ring-primary/10 scale-105' : 'border-transparent hover:scale-105 shadow-sm'}`}
                           >
                             <img src={url} alt={`Material Cover ${idx + 1}`} className="w-full h-full object-cover" />
                           </button>
                         ))}
                         <button
                           onClick={() => coverImageUploadRef.current?.click()}
-                          className="aspect-video rounded-xl bg-bg-secondary border-2 border-dashed border-border-light flex flex-col items-center justify-center gap-1 text-text-tertiary hover:text-brand-primary hover:border-brand-primary transition-all group"
+                          className="aspect-video rounded-xl bg-bg-secondary border-2 border-dashed border-border-light flex flex-col items-center justify-center gap-1 text-text-tertiary hover:text-primary hover:border-primary transition-all group"
                         >
                           <CloudUpload size={18} className="group-hover:scale-110 transition-transform" />
                           <span className="text-[8px] font-black uppercase tracking-tighter">Upload</span>
@@ -1112,7 +1194,7 @@ const CardDetailsModal = () => {
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden py-4 border-b border-gray-100">
                   <div className="flex items-center justify-between mb-3 px-1">
                     <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Assign Board Members</p>
-                    <button onClick={() => setShowMemberPanel(false)} className="text-text-tertiary hover:text-text-primary"><X size={14} /></button>
+                    <button onClick={() => setShowMemberPanel(false)} className="text-text-tertiary hover:text-foreground"><X size={14} /></button>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {members?.map(m => {
@@ -1120,8 +1202,8 @@ const CardDetailsModal = () => {
                       const name = m.profiles?.full_name || m.profiles?.email || 'User';
                       return (
                         <button key={m.user_id} onClick={() => toggleAssignee(m)}
-                          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all border ${assigned ? 'bg-brand-primary/5 border-brand-primary/20 text-brand-primary font-bold shadow-sm' : 'bg-white border-gray-100 hover:border-gray-300 text-gray-700 shadow-sm'}`}>
-                          <div className="w-6 h-6 rounded-full bg-brand-primary flex items-center justify-center text-white text-[10px] font-black shrink-0">
+                          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm transition-all border ${assigned ? 'bg-primary/5 border-primary/20 text-primary font-bold shadow-sm' : 'bg-white border-gray-100 hover:border-gray-300 text-gray-700 shadow-sm'}`}>
+                          <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-white text-[10px] font-black shrink-0">
                             {name[0].toUpperCase()}
                           </div>
                           <span className="text-xs">{name}</span>
@@ -1171,7 +1253,7 @@ const CardDetailsModal = () => {
                 <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden py-4 border-b border-gray-100 max-w-2xl">
                   <div className="flex items-center justify-between mb-3 px-1">
                     <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Scheduling & Priority</p>
-                    <button onClick={() => setShowDatePanel(false)} className="text-text-tertiary hover:text-text-primary"><X size={14} /></button>
+                    <button onClick={() => setShowDatePanel(false)} className="text-text-tertiary hover:text-foreground"><X size={14} /></button>
                   </div>
                   <div className="flex flex-wrap gap-6 px-1">
                     <div className="space-y-2 flex-1 min-w-[200px]">
@@ -1180,10 +1262,10 @@ const CardDetailsModal = () => {
                         type="datetime-local"
                         defaultValue={card.due_date ? card.due_date.slice(0, 16) : ''}
                         onChange={e => updateField({ due_date: e.target.value ? new Date(e.target.value).toISOString() : null })}
-                        className="w-full text-xs bg-white border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-4 focus:ring-brand-primary/5 focus:border-brand-primary/40 transition-all font-bold text-gray-700 shadow-sm"
+                        className="w-full text-xs bg-white border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/40 transition-all font-bold text-gray-700 shadow-sm"
                       />
                     </div>
-                    <div className="space-y-2 flex-[2] min-w-[300px]">
+                    <div className="space-y-2 flex-1 min-w-[200px]">
                       <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Priority Level</p>
                       <div className="flex flex-wrap gap-2">
                         {Object.entries(PRIORITY_CONFIG).map(([key, cfg]) => (
@@ -1195,6 +1277,91 @@ const CardDetailsModal = () => {
                           </button>
                         ))}
                       </div>
+                    </div>
+
+                    {/* Recurrence Selection */}
+                    <div className="space-y-2 flex-1 min-w-[200px]">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Recurrence Schedule</p>
+                      <div className="flex flex-wrap gap-2 text-[10px] font-black uppercase tracking-wider">
+                        {[
+                          { id: 'NONE', label: 'Manual', icon: X },
+                          { id: 'DAILY', label: 'Daily', icon: Repeat },
+                          { id: 'WEEKLY', label: 'Weekly', icon: Repeat },
+                          { id: 'MONTHLY', label: 'Monthly', icon: Repeat }
+                        ].map(rule => (
+                          <button 
+                            key={rule.id} 
+                            onClick={() => updateField({ 
+                              recurrence_rule: rule.id === 'NONE' ? null : { type: rule.id, interval: 1 },
+                              next_recurrence_at: rule.id === 'NONE' ? null : new Date(Date.now() + 86400000).toISOString() 
+                            })}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all border ${card.recurrence_rule?.type === rule.id || (!card.recurrence_rule && rule.id === 'NONE') ? 'bg-primary/10 border-primary text-primary shadow-sm' : 'bg-white border-gray-100 hover:border-gray-200 text-gray-400'}`}
+                          >
+                            <rule.icon size={12} />
+                            {rule.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="w-full h-px bg-gray-100 my-2" />
+
+                    {/* Agentic Intelligence Inputs */}
+                    <div className="space-y-2 flex-1 min-w-[200px]">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600 ml-1 flex items-center gap-1.5">
+                        <Sparkles size={10} />
+                        Energy Level
+                      </p>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map(level => (
+                          <button
+                            key={level}
+                            onClick={() => updateField({ energy_level: level })}
+                            className={`w-9 h-9 rounded-xl text-xs font-black transition-all border flex items-center justify-center
+                              ${card.energy_level === level ? 'bg-indigo-600 text-white border-indigo-600 shadow-lg shadow-indigo-100 scale-110' : 'bg-white border-gray-100 text-gray-400 hover:border-gray-300'}`}
+                          >
+                            {level}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 flex-1 min-w-[200px]">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-600 ml-1 flex items-center gap-1.5">
+                        <Brain size={10} />
+                        Focus Score
+                      </p>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map(score => {
+                          const normalized = score / 5;
+                          return (
+                            <button
+                              key={score}
+                              onClick={() => updateField({ focus_score: normalized })}
+                              className={`w-9 h-9 rounded-xl text-xs font-black transition-all border flex items-center justify-center
+                                ${Math.round(card.focus_score * 5) === score ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-100 scale-110' : 'bg-white border-gray-100 text-gray-400 hover:border-gray-300'}`}
+                            >
+                              {score}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2 flex-1 min-w-[200px]">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-amber-600 ml-1 flex items-center gap-1.5">
+                        <Clock size={10} />
+                        Est. Minutes
+                      </p>
+                      <input
+                        type="number"
+                        step="15"
+                        min="15"
+                        max="240"
+                        value={card.estimated_minutes || 30}
+                        onChange={e => updateField({ estimated_minutes: parseInt(e.target.value) })}
+                        className="w-full text-xs bg-white border border-gray-200 rounded-xl px-4 py-2.5 outline-none focus:ring-4 focus:ring-amber-500/5 focus:border-amber-500/40 transition-all font-bold text-gray-700 shadow-sm"
+                      />
                     </div>
                   </div>
                 </motion.div>
@@ -1216,25 +1383,43 @@ const CardDetailsModal = () => {
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className={`text-3xl font-black tabular-nums tracking-tight ${timer.running ? 'text-brand-primary' : 'text-gray-800'}`}>
+                      <div className={`text-3xl font-black tabular-nums tracking-tight ${timer.running ? 'text-primary' : 'text-gray-800'}`}>
                         {timer.fmt(timer.elapsed)}
                       </div>
-                      {totalTracked > 0 && (
-                        <div className="text-xs text-gray-400 mt-0.5">Total logged: {fmtSecs(totalTracked)}</div>
+                      <div className="text-xs text-gray-400 mt-0.5 whitespace-nowrap">Total logged: {fmtSecs(totalTrackedIncludingLive)}</div>
+                      {card.estimated_hours > 0 && (
+                        <div className="text-[10px] font-bold text-text-tertiary mt-1 uppercase tracking-widest whitespace-nowrap">
+                          {Math.round((totalTrackedIncludingLive / (card.estimated_hours * 3600)) * 100)}% of {card.estimated_hours}h estimate
+                        </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-2">
-                      {timer.running ? (
-                        <button onClick={timer.stop} className="flex items-center gap-2 px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold text-sm transition-colors shadow-lg shadow-red-200">
-                          <Square size={14} className="fill-white" />
-                          Stop
-                        </button>
-                      ) : (
-                        <button onClick={timer.start} className="flex items-center gap-2 px-5 py-2.5 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-xl font-bold text-sm transition-colors shadow-lg shadow-brand-primary/20">
-                          <Play size={14} className="fill-white" />
-                          Start Timer
-                        </button>
-                      )}
+                    <div className="flex flex-col items-end gap-2">
+                      <div className="flex items-center gap-2">
+                        <div className="relative group/est">
+                          <input
+                            type="number"
+                            placeholder="Est. Hours"
+                            value={card.estimated_hours || ''}
+                            onChange={e => updateField({ estimated_hours: e.target.value ? parseFloat(e.target.value) : null })}
+                            className="w-20 bg-white border border-gray-200 rounded-lg px-2 py-1 text-xs font-bold focus:ring-2 focus:ring-primary/20 outline-none transition-all"
+                          />
+                          <div className="absolute -top-6 right-0 bg-gray-900 text-white text-[9px] font-black px-2 py-1 rounded opacity-0 group-hover/est:opacity-100 transition-opacity whitespace-nowrap pointer-events-none uppercase tracking-tighter">
+                            Estimated Hours
+                          </div>
+                        </div>
+    
+                        {timer.running ? (
+                          <button onClick={timer.stop} className="flex items-center gap-2 px-5 py-2.5 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold text-sm transition-colors shadow-lg shadow-red-200">
+                            <Square size={14} className="fill-white" />
+                            Stop
+                          </button>
+                        ) : (
+                          <button onClick={timer.start} className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-xl font-bold text-sm transition-colors shadow-lg shadow-primary/20">
+                            <Play size={14} className="fill-white" />
+                            Start Timer
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                   {timer.running && (
@@ -1254,6 +1439,39 @@ const CardDetailsModal = () => {
                       ))}
                     </div>
                   )}
+
+                  {/* Burn-up Bar */}
+                  {card.estimated_hours > 0 && (
+                    <div className="mt-6 pt-4 border-t border-gray-100">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Burn-up Progress</span>
+                        <span className={`text-[10px] font-black uppercase tracking-widest ${totalTrackedIncludingLive > (card.estimated_hours * 3600) ? 'text-red-500 animate-pulse' : 'text-primary'}`}>
+                          {fmtSecs(totalTrackedIncludingLive)} / {card.estimated_hours}h
+                        </span>
+                      </div>
+                      <div className="h-2.5 w-full bg-bg-tertiary rounded-full overflow-hidden border border-border-light relative shadow-inner">
+                        <motion.div
+                          className={`h-full rounded-full transition-colors duration-500 ${totalTrackedIncludingLive > (card.estimated_hours * 3600) ? 'bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.4)]' : 'bg-primary shadow-[0_0_12px_rgba(var(--primary-rgb),0.3)]'}`}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${Math.min((totalTrackedIncludingLive / (card.estimated_hours * 3600)) * 100, 100)}%` }}
+                          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                        />
+                        {totalTrackedIncludingLive > (card.estimated_hours * 3600) && (
+                          <motion.div 
+                            className="absolute inset-y-0 right-0 bg-white/30 backdrop-blur-[1px]"
+                            initial={{ width: 0 }}
+                            animate={{ width: `${Math.min(((totalTrackedIncludingLive - (card.estimated_hours * 3600)) / (card.estimated_hours * 3600)) * 100, 100)}%` }}
+                          />
+                        )}
+                      </div>
+                      {totalTrackedIncludingLive > (card.estimated_hours * 3600) && (
+                        <p className="text-[9px] font-bold text-red-500 uppercase tracking-tighter mt-2 flex items-center gap-1">
+                          <AlertCircle size={10} />
+                          Over estimate by {fmtSecs(totalTrackedIncludingLive - (card.estimated_hours * 3600))}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </section>
 
@@ -1266,7 +1484,7 @@ const CardDetailsModal = () => {
                     <button
                       onClick={draftWithAI}
                       disabled={isGeneratingSubtasks}
-                      className="ml-auto flex items-center gap-1.5 px-3 py-1 bg-brand-primary/10 text-brand-primary rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-brand-primary/20 transition-all group disabled:opacity-50"
+                      className="ml-auto flex items-center gap-1.5 px-3 py-1 bg-primary/10 text-primary rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-primary/20 transition-all group disabled:opacity-50"
                     >
                       {isGeneratingSubtasks ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} className="group-hover:rotate-12 transition-transform" />}
                       Draft with AI
@@ -1291,7 +1509,7 @@ const CardDetailsModal = () => {
                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.location.address)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[10px] font-black uppercase tracking-widest text-brand-primary hover:underline flex items-center gap-1"
+                        className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline flex items-center gap-1"
                       >
                         Open in Maps <ExternalLink size={10} />
                       </a>
@@ -1335,7 +1553,7 @@ const CardDetailsModal = () => {
 
                       <div className="relative z-10 flex flex-col gap-4">
                         <div>
-                          <p className="text-xs font-black text-text-primary mb-1 uppercase tracking-wider">{card.location.name}</p>
+                          <p className="text-xs font-black text-foreground mb-1 uppercase tracking-wider">{card.location.name}</p>
                           <p className="text-[11px] font-medium text-text-tertiary leading-relaxed max-w-[80%]">{card.location.address}</p>
                         </div>
 
@@ -1343,7 +1561,7 @@ const CardDetailsModal = () => {
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.location.address)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-brand-primary text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-brand-primary/90 transition-all w-fit shadow-lg shadow-brand-primary/20"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-primary/90 transition-all w-fit shadow-lg shadow-primary/20"
                         >
                           <ExternalLink size={12} />
                           View on Google Maps
@@ -1368,9 +1586,9 @@ const CardDetailsModal = () => {
                         {field.type === 'CHECKBOX' ? (
                           <button
                             onClick={() => updateCustomField(field.id, field.type, !customFieldValues[field.id])}
-                            className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 transition-all ${customFieldValues[field.id] ? 'border-brand-primary bg-brand-primary/5 text-brand-primary' : 'border-bg-secondary text-text-tertiary'}`}
+                            className={`flex items-center gap-2 px-3 py-2 rounded-xl border-2 transition-all ${customFieldValues[field.id] ? 'border-primary bg-primary/5 text-primary' : 'border-bg-secondary text-text-tertiary'}`}
                           >
-                            <div className={`w-4 h-4 rounded flex items-center justify-center border-2 ${customFieldValues[field.id] ? 'bg-brand-primary border-brand-primary' : 'border-current'}`}>
+                            <div className={`w-4 h-4 rounded flex items-center justify-center border-2 ${customFieldValues[field.id] ? 'bg-primary border-primary' : 'border-current'}`}>
                               {customFieldValues[field.id] && <Check size={10} className="text-white" strokeWidth={4} />}
                             </div>
                             <span className="text-xs font-bold uppercase tracking-tight">{customFieldValues[field.id] ? 'Enabled' : 'Disabled'}</span>
@@ -1378,7 +1596,7 @@ const CardDetailsModal = () => {
                         ) : field.type === 'DATE' ? (
                           <input
                             type="date"
-                            className="w-full h-10 bg-bg-secondary border-none rounded-xl px-4 text-xs font-bold text-text-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/5 transition-all outline-none"
+                            className="w-full h-10 bg-bg-secondary border-none rounded-xl px-4 text-xs font-bold text-foreground focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
                             value={customFieldValues[field.id]?.slice(0, 10) || ''}
                             onChange={(e) => updateCustomField(field.id, field.type, e.target.value)}
                           />
@@ -1386,7 +1604,7 @@ const CardDetailsModal = () => {
                           <input
                             type={field.type === 'NUMBER' ? 'number' : 'text'}
                             placeholder={`Enter ${field.name.toLowerCase()}...`}
-                            className="w-full h-10 bg-bg-secondary border-none rounded-xl px-4 text-xs font-bold text-text-primary focus:bg-white focus:ring-4 focus:ring-brand-primary/5 transition-all outline-none"
+                            className="w-full h-10 bg-bg-secondary border-none rounded-xl px-4 text-xs font-bold text-foreground focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
                             value={customFieldValues[field.id] || ''}
                             onChange={(e) => updateCustomField(field.id, field.type, e.target.value)}
                           />
@@ -1399,7 +1617,7 @@ const CardDetailsModal = () => {
                       <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">No custom fields defined for this board.</p>
                       <button
                         onClick={() => dispatch(toggleModal({ modalName: 'boardSettings', isOpen: true }))}
-                        className="text-[10px] text-brand-primary font-bold hover:underline mt-1"
+                        className="text-[10px] text-primary font-bold hover:underline mt-1"
                       >
                         Configure Fields
                       </button>
@@ -1415,7 +1633,7 @@ const CardDetailsModal = () => {
                     <Network size={16} className="text-gray-500" />
                     <h3 className="text-sm font-bold text-gray-700">Subtasks</h3>
                   </div>
-                  <button onClick={addSubtask} className="text-xs font-bold text-brand-primary flex items-center gap-1 hover:underline">
+                  <button onClick={addSubtask} className="text-xs font-bold text-primary flex items-center gap-1 hover:underline">
                     <Plus size={14} />
                     Add
                   </button>
@@ -1427,7 +1645,7 @@ const CardDetailsModal = () => {
                         {sub.is_completed && <Check size={10} strokeWidth={4} />}
                       </div>
                       <div className="flex-1">
-                        <span className={`text-[13px] font-bold ${sub.is_completed ? 'line-through text-text-tertiary' : 'text-text-primary'}`}>{sub.title}</span>
+                        <span className={`text-[13px] font-bold ${sub.is_completed ? 'line-through text-text-tertiary' : 'text-foreground'}`}>{sub.title}</span>
                       </div>
                       <ArrowRight size={14} className="text-text-tertiary opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
@@ -1449,7 +1667,7 @@ const CardDetailsModal = () => {
                   <div className="relative">
                     <button
                       onClick={() => { setDepPanelType('blocker'); setShowDependencyPanel(p => !p); }}
-                      className="text-xs font-bold text-brand-primary flex items-center gap-1 hover:underline"
+                      className="text-xs font-bold text-primary flex items-center gap-1 hover:underline"
                     >
                       <Plus size={14} />
                       Add Blocker
@@ -1473,7 +1691,7 @@ const CardDetailsModal = () => {
                         <div key={dep.blocking_card_id} className="group flex items-center justify-between p-3 bg-danger/5 rounded-2xl border border-danger/10 hover:bg-danger/10 transition-all">
                           <div className="flex items-center gap-3">
                             <AlertCircle size={14} className="text-danger" />
-                            <span className="text-[13px] font-bold text-text-primary">{dep.cards?.title || 'Unknown Card'}</span>
+                            <span className="text-[13px] font-bold text-foreground">{dep.cards?.title || 'Unknown Card'}</span>
                           </div>
                           <button
                             onClick={() => removeDependencyAction(dep.blocking_card_id, dep.blocked_card_id)}
@@ -1492,7 +1710,7 @@ const CardDetailsModal = () => {
                         <div key={dep.blocked_card_id} className="group flex items-center justify-between p-3 bg-success/5 rounded-2xl border border-success/10 hover:bg-success/10 transition-all">
                           <div className="flex items-center gap-3">
                             <CheckCircle2 size={14} className="text-success" />
-                            <span className="text-[13px] font-bold text-text-primary">{dep.cards_blocked?.title || 'Another Card'}</span>
+                            <span className="text-[13px] font-bold text-foreground">{dep.cards_blocked?.title || 'Another Card'}</span>
                           </div>
                           <button
                             onClick={() => removeDependencyAction(dep.blocking_card_id, dep.blocked_card_id)}
@@ -1527,7 +1745,7 @@ const CardDetailsModal = () => {
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isUploading || isCompressing}
-                    className="text-xs font-bold text-brand-primary flex items-center gap-1.5 hover:underline disabled:opacity-50 transition-all"
+                    className="text-xs font-bold text-primary flex items-center gap-1.5 hover:underline disabled:opacity-50 transition-all"
                   >
                     {isCompressing ? (
                       <>
@@ -1567,7 +1785,7 @@ const CardDetailsModal = () => {
                         </div>
                       )}
                       <div className="flex-1 min-w-0 py-1">
-                        <p className="font-bold text-sm text-text-primary truncate">{att.name}</p>
+                        <p className="font-bold text-sm text-foreground truncate">{att.name}</p>
                         <div className="flex items-center gap-3 mt-1 text-[10px] font-bold text-text-tertiary uppercase tracking-widest">
                           <span>Added {att.created_at && !isNaN(new Date(att.created_at).getTime()) ? formatDistanceToNow(new Date(att.created_at), { addSuffix: true }) : 'recently'}</span>
                           <span>•</span>
@@ -1578,7 +1796,7 @@ const CardDetailsModal = () => {
                             href={att.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[10px] font-black uppercase tracking-widest text-brand-primary hover:underline flex items-center gap-1"
+                            className="text-[10px] font-black uppercase tracking-widest text-primary hover:underline flex items-center gap-1"
                           >
                             <ExternalLink size={10} />
                             Open
@@ -1597,10 +1815,10 @@ const CardDetailsModal = () => {
                   {attachments.length === 0 && !isUploading && (
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="p-8 border-2 border-dashed border-border-light rounded-[32px] text-center cursor-pointer hover:border-brand-primary/40 hover:bg-brand-primary/5 transition-all group"
+                      className="p-8 border-2 border-dashed border-border-light rounded-[32px] text-center cursor-pointer hover:border-primary/40 hover:bg-primary/5 transition-all group"
                     >
-                      <Paperclip size={24} className="mx-auto mb-2 text-text-tertiary group-hover:text-brand-primary transition-colors" />
-                      <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary group-hover:text-brand-primary transition-colors">Attach cloud assets or files</p>
+                      <Paperclip size={24} className="mx-auto mb-2 text-text-tertiary group-hover:text-primary transition-colors" />
+                      <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary group-hover:text-primary transition-colors">Attach cloud assets or files</p>
                     </div>
                   )}
                 </div>
@@ -1617,12 +1835,12 @@ const CardDetailsModal = () => {
                     <button
                       disabled={isGeneratingSubtasks}
                       onClick={handleGenerateSubtasks}
-                      className="flex items-center gap-1.5 px-2.5 py-1 bg-brand-primary/10 text-brand-primary rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-brand-primary/20 transition-all disabled:opacity-50"
+                      className="flex items-center gap-1.5 px-2.5 py-1 bg-primary/10 text-primary rounded-lg text-[10px] font-black uppercase tracking-wider hover:bg-primary/20 transition-all disabled:opacity-50"
                     >
                       {isGeneratingSubtasks ? <Loader2 size={10} className="animate-spin" /> : <Sparkles size={10} />}
                       AI Suggest
                     </button>
-                    <button onClick={() => setAddingChecklist(true)} className="text-xs font-semibold text-brand-primary hover:underline">
+                    <button onClick={() => setAddingChecklist(true)} className="text-xs font-semibold text-primary hover:underline">
                       + Add
                     </button>
                   </div>
@@ -1639,7 +1857,7 @@ const CardDetailsModal = () => {
                           <div key={item.id} className="flex items-center gap-3 py-1 px-2 rounded-lg hover:bg-gray-50 group transition-colors">
                             <button
                               onClick={() => toggleChecklistItem(cl.id, item.id, item.is_completed)}
-                              className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all ${item.is_completed ? 'bg-brand-primary border-brand-primary' : 'border-gray-300 hover:border-brand-primary'}`}
+                              className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-all ${item.is_completed ? 'bg-primary border-primary' : 'border-gray-300 hover:border-primary'}`}
                             >
                               {item.is_completed && <Check size={10} className="text-white" strokeWidth={3} />}
                             </button>
@@ -1654,9 +1872,9 @@ const CardDetailsModal = () => {
                             value={newItemText[cl.id] || ''}
                             onChange={e => setNewItemText(p => ({ ...p, [cl.id]: e.target.value }))}
                             onKeyDown={e => e.key === 'Enter' && addChecklistItem(cl.id)}
-                            className="flex-1 text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary/60 transition-all placeholder:text-gray-400"
+                            className="flex-1 text-sm bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/60 transition-all placeholder:text-gray-400"
                           />
-                          <button onClick={() => addChecklistItem(cl.id)} className="px-3 py-1.5 bg-brand-primary text-white rounded-lg text-xs font-bold hover:bg-brand-primary-hover transition-colors">
+                          <button onClick={() => addChecklistItem(cl.id)} className="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold hover:bg-primary-hover transition-colors">
                             Add
                           </button>
                         </div>
@@ -1672,9 +1890,9 @@ const CardDetailsModal = () => {
                         value={newChecklistName}
                         onChange={e => setNewChecklistName(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') addChecklist(); if (e.key === 'Escape') setAddingChecklist(false); }}
-                        className="flex-1 text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-brand-primary/20"
+                        className="flex-1 text-sm bg-white border border-gray-200 rounded-lg px-3 py-1.5 outline-none focus:ring-2 focus:ring-primary/20"
                       />
-                      <button onClick={addChecklist} className="px-3 py-1.5 bg-brand-primary text-white rounded-lg text-xs font-bold">Create</button>
+                      <button onClick={addChecklist} className="px-3 py-1.5 bg-primary text-white rounded-lg text-xs font-bold">Create</button>
                       <button onClick={() => setAddingChecklist(false)} className="p-1.5 text-gray-400 hover:text-gray-600">
                         <X size={14} />
                       </button>
@@ -1682,7 +1900,7 @@ const CardDetailsModal = () => {
                   )}
 
                   {checklists.length === 0 && !addingChecklist && (
-                    <button onClick={() => setAddingChecklist(true)} className="w-full p-4 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-brand-primary/40 hover:text-brand-primary transition-all font-semibold">
+                    <button onClick={() => setAddingChecklist(true)} className="w-full p-4 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-primary/40 hover:text-primary transition-all font-semibold">
                       + Create Checklist
                     </button>
                   )}
@@ -1696,18 +1914,29 @@ const CardDetailsModal = () => {
               <div className="p-6 border-b border-gray-100 bg-white/50">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
-                    <Sparkles size={18} className="text-brand-primary" />
-                    <h3 className="text-sm font-black uppercase tracking-widest text-gray-800">Timeline</h3>
+                    <Sparkles size={18} className="text-primary" />
+                    <h3 className="text-sm font-black uppercase tracking-widest text-gray-800">Card Data</h3>
                   </div>
-                  <button className="p-2 text-gray-400 hover:bg-gray-100 rounded-xl transition-all">
-                    <MoreHorizontal size={18} />
-                  </button>
+                  <div className="flex bg-gray-100 p-1 rounded-xl">
+                    <button 
+                      onClick={() => setSideNavTab('timeline')}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${sideNavTab === 'timeline' ? 'bg-white text-primary shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                    >
+                      Timeline
+                    </button>
+                    <button 
+                      onClick={() => setSideNavTab('history')}
+                      className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${sideNavTab === 'history' ? 'bg-white text-primary shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                    >
+                      History
+                    </button>
+                  </div>
                 </div>
 
                 {/* Comment composer moved here */}
                 <div className="space-y-4">
                   <div className="flex gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-brand-primary flex items-center justify-center text-white font-black text-[10px] shrink-0 shadow-lg shadow-brand-primary/20">
+                    <div className="w-8 h-8 rounded-xl bg-primary flex items-center justify-center text-white font-black text-[10px] shrink-0 shadow-lg shadow-primary/20">
                       {(user?.email || 'U')[0].toUpperCase()}
                     </div>
                     <div className="flex-1">
@@ -1718,21 +1947,21 @@ const CardDetailsModal = () => {
                           onChange={e => setCommentText(e.target.value)}
                           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); postComment(); } }}
                           placeholder="Add to timeline..."
-                          className="w-full text-[13px] bg-white border border-gray-100 rounded-2xl px-4 py-3 outline-none focus:ring-4 focus:ring-brand-primary/5 focus:border-brand-primary/40 transition-all resize-none placeholder:text-text-tertiary font-bold shadow-sm"
+                          className="w-full text-[13px] bg-white border border-gray-100 rounded-2xl px-4 py-3 outline-none focus:ring-4 focus:ring-primary/5 focus:border-primary/40 transition-all resize-none placeholder:text-text-tertiary font-bold shadow-sm"
                         />
                         <div className="absolute right-2 bottom-2 flex gap-2 opacity-0 group-focus-within:opacity-100 transition-opacity">
-                          <button onClick={postComment} className="p-2 bg-brand-primary text-white rounded-xl shadow-lg shadow-brand-primary/20 hover:scale-110 transition-all">
+                          <button onClick={postComment} className="p-2 bg-primary text-white rounded-xl shadow-lg shadow-primary/20 hover:scale-110 transition-all">
                             <Plus size={14} strokeWidth={3} />
                           </button>
                         </div>
                         {typers.length > 0 && (
                           <div className="absolute left-2 -bottom-5 flex items-center gap-1.5">
                             <div className="flex gap-0.5">
-                              <span className="w-1 h-1 bg-brand-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
-                              <span className="w-1 h-1 bg-brand-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
-                              <span className="w-1 h-1 bg-brand-primary rounded-full animate-bounce" />
+                              <span className="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
+                              <span className="w-1 h-1 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
+                              <span className="w-1 h-1 bg-primary rounded-full animate-bounce" />
                             </div>
-                            <span className="text-[9px] font-black text-brand-primary uppercase tracking-widest">
+                            <span className="text-[9px] font-black text-primary uppercase tracking-widest">
                               {typers[0].user.full_name.split(' ')[0]} typing...
                             </span>
                           </div>
@@ -1744,7 +1973,11 @@ const CardDetailsModal = () => {
               </div>
 
               <div className="flex-1 overflow-y-auto px-6 py-6 scrollbar-thin">
-                <CardActivityList cardId={card.id} />
+                {sideNavTab === 'timeline' ? (
+                  <CardActivityList cardId={card.id} />
+                ) : (
+                  <CardAuditHistory cardId={card.id} />
+                )}
               </div>
             </div>
           </div>

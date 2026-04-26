@@ -84,8 +84,8 @@ const OnboardingPage = () => {
   return (
     <div className="min-h-screen bg-bg-primary flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Background Decorative Elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-brand-primary/5 blur-[120px] rounded-full"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-brand-secondary/5 blur-[120px] rounded-full"></div>
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] rounded-full"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/5 blur-[120px] rounded-full"></div>
 
       <div className="w-full max-w-2xl relative">
         {/* Step Indicator */}
@@ -93,7 +93,7 @@ const OnboardingPage = () => {
           {[1, 2].map((i) => (
             <div 
               key={i} 
-              className={`h-1.5 rounded-full transition-all duration-500 ${step === i ? 'w-12 bg-brand-primary' : 'w-3 bg-border-medium'}`}
+              className={`h-1.5 rounded-full transition-all duration-500 ${step === i ? 'w-12 bg-primary' : 'w-3 bg-border-medium'}`}
             ></div>
           ))}
         </div>
@@ -104,10 +104,10 @@ const OnboardingPage = () => {
           {step === 1 && (
             <div className="space-y-10 animate-in slide-in-from-right-10 duration-500">
               <div className="space-y-4">
-                <div className="inline-flex p-4 bg-brand-primary/10 rounded-2xl text-brand-primary mb-2">
+                <div className="inline-flex p-4 bg-primary/10 rounded-2xl text-primary mb-2">
                   <User size={32} />
                 </div>
-                <h1 className="text-4xl font-black text-text-primary tracking-tighter">Welcome to FlowBoard</h1>
+                <h1 className="text-4xl font-black text-foreground tracking-tighter">Welcome to FlowBoard</h1>
                 <p className="text-text-secondary text-lg">First, how should we call you?</p>
               </div>
 
@@ -117,7 +117,7 @@ const OnboardingPage = () => {
                   <input 
                     autoFocus
                     placeholder="e.g. Alex Rivera"
-                    className="w-full h-16 bg-bg-secondary border-none rounded-2xl px-8 text-xl font-bold focus:bg-white focus:ring-4 focus:ring-brand-primary/5 transition-all outline-none"
+                    className="w-full h-16 bg-bg-secondary border-none rounded-2xl px-8 text-xl font-bold focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleNextStep()}
@@ -127,7 +127,7 @@ const OnboardingPage = () => {
                 <button 
                   onClick={handleNextStep}
                   disabled={!fullName}
-                  className="w-full h-16 bg-brand-primary text-white rounded-2xl font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 shadow-xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100"
+                  className="w-full h-16 bg-primary text-white rounded-2xl font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100"
                 >
                   <span>Continue</span>
                   <ArrowRight size={18} />
@@ -139,10 +139,10 @@ const OnboardingPage = () => {
           {step === 2 && (
             <div className="space-y-10 animate-in slide-in-from-right-10 duration-500">
               <div className="space-y-4">
-                <div className="inline-flex p-4 bg-brand-secondary/10 rounded-2xl text-brand-secondary mb-2">
+                <div className="inline-flex p-4 bg-primary/10 rounded-2xl text-primary mb-2">
                   <Box size={32} />
                 </div>
-                <h1 className="text-4xl font-black text-text-primary tracking-tighter">Set up your workspace</h1>
+                <h1 className="text-4xl font-black text-foreground tracking-tighter">Set up your workspace</h1>
                 <p className="text-text-secondary text-lg">A workspace is where your team and boards live.</p>
               </div>
 
@@ -152,7 +152,7 @@ const OnboardingPage = () => {
                   <input 
                     autoFocus
                     placeholder="e.g. Product Team"
-                    className="w-full h-16 bg-bg-secondary border-none rounded-2xl px-8 text-xl font-bold focus:bg-white focus:ring-4 focus:ring-brand-primary/5 transition-all outline-none"
+                    className="w-full h-16 bg-bg-secondary border-none rounded-2xl px-8 text-xl font-bold focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none"
                     value={workspaceName}
                     onChange={(e) => setWorkspaceName(e.target.value)}
                   />
@@ -162,7 +162,7 @@ const OnboardingPage = () => {
                   <label className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary ml-1">What does this team do? (Optional)</label>
                   <textarea 
                     placeholder="e.g. We design and build flowboards."
-                    className="w-full h-32 bg-bg-secondary border-none rounded-2xl p-8 text-lg font-medium focus:bg-white focus:ring-4 focus:ring-brand-primary/5 transition-all outline-none resize-none"
+                    className="w-full h-32 bg-bg-secondary border-none rounded-2xl p-8 text-lg font-medium focus:bg-white focus:ring-4 focus:ring-primary/5 transition-all outline-none resize-none"
                     value={workspaceDescription}
                     onChange={(e) => setWorkspaceDescription(e.target.value)}
                   />
@@ -182,14 +182,14 @@ const OnboardingPage = () => {
                 <div className="flex gap-4 pt-4">
                   <button 
                     onClick={() => setStep(1)}
-                    className="flex-1 h-16 bg-bg-secondary text-text-primary rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-bg-tertiary transition-all"
+                    className="flex-1 h-16 bg-bg-secondary text-foreground rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-bg-tertiary transition-all"
                   >
                     Back
                   </button>
                   <button 
                     onClick={handleComplete}
                     disabled={!workspaceName || loading}
-                    className="flex-[2] h-16 bg-brand-primary text-white rounded-2xl font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 shadow-xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100"
+                    className="flex-[2] h-16 bg-primary text-white rounded-2xl font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100"
                   >
                     {loading ? 'Setting up...' : (
                       <>

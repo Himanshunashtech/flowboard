@@ -36,7 +36,7 @@ const PATTERNS = [
 ];
 
 
-const BoardSettingsDrawer = ({ board, onClose }) => {
+const BoardSettingsDrawer = ({ board, onClose, isWsAdmin }) => {
   const dispatch = useDispatch();
   const { user } = useSelector(state => state.auth);
   const [loading, setLoading] = useState(false);
@@ -44,19 +44,39 @@ const BoardSettingsDrawer = ({ board, onClose }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const fileInputRef = React.useRef(null);
 
-  const updateSettings = async (updates) => {
-    setLoading(true);
-    const { data, error } = await supabase
-      .from('boards')
-      .update(updates)
-      .eq('id', board.id)
-      .select()
-      .single();
+  const { members } = useSelector(state => state.board);
+  const userMember = members.find(m => m.user_id === user?.id);
+  const canUpdate = userMember?.role === 'ADMIN' || board.created_by === user?.id || isWsAdmin;
 
-    if (data) {
-      dispatch(updateBoard(data));
+  const updateSettings = async (updates) => {
+    if (!canUpdate) {
+      alert('You do not have permission to modify board settings.');
+      return;
     }
-    setLoading(false);
+
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('boards')
+        .update(updates)
+        .eq('id', board.id)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      
+      if (data) {
+        dispatch(updateBoard(data));
+      } else {
+        // Fallback for RLS blocking despite frontend check
+        alert('Permission denied by security policy.');
+      }
+    } catch (err) {
+      console.error('Update failed:', err);
+      alert(err.message || 'Failed to update board settings.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleArchive = async () => {
@@ -133,10 +153,10 @@ const BoardSettingsDrawer = ({ board, onClose }) => {
     >
       <div className="p-6 border-b border-border-light flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-bg-secondary rounded-xl text-text-primary">
+          <div className="p-2 bg-bg-secondary rounded-xl text-foreground">
             <Settings size={18} />
           </div>
-          <h2 className="text-sm font-black uppercase tracking-widest text-text-primary">Board Settings</h2>
+          <h2 className="text-sm font-black uppercase tracking-widest text-foreground">Board Settings</h2>
         </div>
         <button onClick={onClose} className="p-2 hover:bg-bg-secondary rounded-lg transition-colors">
           <X size={18} />
@@ -157,7 +177,7 @@ const BoardSettingsDrawer = ({ board, onClose }) => {
               <button
                 key={g.name}
                 onClick={() => updateSettings({ background_type: 'GRADIENT', background_value: g.value })}
-                className="aspect-video rounded-lg relative overflow-hidden group border-2 border-transparent hover:border-brand-primary transition-all"
+                className="aspect-video rounded-lg relative overflow-hidden group border-2 border-transparent hover:border-primary transition-all"
                 style={{ background: g.value }}
               >
                 {board.background_value === g.value && (
@@ -175,12 +195,12 @@ const BoardSettingsDrawer = ({ board, onClose }) => {
               <button
                 key={c.name}
                 onClick={() => updateSettings({ background_type: 'COLOR', background_value: c.value })}
-                className="aspect-video rounded-lg relative border-2 border-transparent hover:border-brand-primary transition-all shadow-sm"
+                className="aspect-video rounded-lg relative border-2 border-transparent hover:border-primary transition-all shadow-sm"
                 style={{ backgroundColor: c.value }}
               >
                 {board.background_value === c.value && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <Check size={16} className={c.value === '#F4F5F7' ? 'text-text-primary' : 'text-white'} strokeWidth={3} />
+                    <Check size={16} className={c.value === '#F4F5F7' ? 'text-foreground' : 'text-white'} strokeWidth={3} />
                   </div>
                 )}
               </button>
@@ -192,13 +212,13 @@ const BoardSettingsDrawer = ({ board, onClose }) => {
             {PATTERNS.map((p) => (
               <button
                 key={p.name}
-                onClick={() => updateSettings({ background_type: 'IMAGE', background_value: p.value })}
-                className={`aspect-video rounded-lg relative border-2 transition-all bg-bg-secondary ${board.background_value === p.value ? 'border-brand-primary shadow-lg scale-[1.05]' : 'border-transparent hover:border-border-light'}`}
-                style={{ backgroundImage: p.value }}
+                onClick={() => updateSettings({ background_type: 'PATTERN', background_value: p.value })}
+                className={`aspect-video rounded-lg relative border-2 transition-all bg-bg-secondary ${board.background_value === p.value ? 'border-primary shadow-lg scale-[1.05]' : 'border-transparent hover:border-border-light'}`}
+                style={{ backgroundImage: p.value, backgroundSize: 'auto', backgroundRepeat: 'repeat' }}
               >
                 {board.background_value === p.value && (
                   <div className="absolute inset-0 flex items-center justify-center bg-white/10">
-                    <Check size={16} className="text-text-primary" strokeWidth={3} />
+                    <Check size={16} className="text-foreground" strokeWidth={3} />
                   </div>
                 )}
               </button>
@@ -217,32 +237,35 @@ const BoardSettingsDrawer = ({ board, onClose }) => {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={loading || isCompressing}
-              className={`w-full aspect-video rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-2 group overflow-hidden
+              className={`w-full aspect-video rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center gap-2 group overflow-hidden relative
                 ${board.background_type === 'IMAGE' && !PATTERNS.some(p => p.value === board.background_value) 
-                  ? 'border-brand-primary bg-brand-primary/10' 
-                  : 'border-border-medium hover:border-brand-primary hover:bg-bg-secondary'}`}
-              style={board.background_type === 'IMAGE' && !PATTERNS.some(p => p.value === board.background_value) ? { 
-                backgroundImage: board.background_value,
+                  ? 'border-primary shadow-xl ring-2 ring-primary/20' 
+                  : 'border-border-medium hover:border-primary hover:bg-bg-secondary'}`}
+              style={{ 
+                backgroundImage: board.background_type === 'IMAGE' ? (board.background_value.startsWith('url') ? board.background_value : `url("${board.background_value}")`) : 'none',
                 backgroundSize: 'cover',
                 backgroundPosition: 'center'
-              } : {}}
+              }}
             >
               {(isCompressing || loading) ? (
-                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center gap-2">
+                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center gap-2 z-20">
                   {isCompressing ? (
                     <>
                       <Sparkles size={20} className="text-yellow-500 animate-pulse" />
-                      <span className="text-[10px] font-black uppercase tracking-widest text-brand-primary animate-pulse">Optimizing...</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest text-primary animate-pulse">Optimizing...</span>
                     </>
                   ) : (
-                    <Loader2 size={24} className="text-brand-primary animate-spin" />
+                    <Loader2 size={24} className="text-primary animate-spin" />
                   )}
                 </div>
               ) : (
-                <div className={`flex flex-col items-center justify-center gap-2 ${board.background_type === 'IMAGE' && !PATTERNS.some(p => p.value === board.background_value) ? 'bg-white/80 p-4 rounded-xl shadow-lg backdrop-blur-sm mx-4' : ''}`}>
-                  <Plus size={20} className={board.background_type === 'IMAGE' && !PATTERNS.some(p => p.value === board.background_value) ? 'text-brand-primary' : 'text-text-tertiary group-hover:text-brand-primary'} />
-                  <span className={`text-[10px] font-black uppercase tracking-widest text-center ${board.background_type === 'IMAGE' && !PATTERNS.some(p => p.value === board.background_value) ? 'text-brand-primary' : 'text-text-tertiary group-hover:text-brand-primary'}`}>
-                    {board.background_type === 'IMAGE' && !PATTERNS.some(p => p.value === board.background_value) ? 'Change Background' : 'Upload Custom Image'}
+                <div className={`flex flex-col items-center justify-center gap-2 transition-all duration-300 z-10 
+                  ${board.background_type === 'IMAGE' && !PATTERNS.some(p => p.value === board.background_value) 
+                    ? 'bg-white/90 px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-md' 
+                    : ''}`}>
+                  <Plus size={20} className={board.background_type === 'IMAGE' && !PATTERNS.some(p => p.value === board.background_value) ? 'text-primary' : 'text-text-tertiary group-hover:text-primary'} />
+                  <span className={`text-[10px] font-black uppercase tracking-widest text-center ${board.background_type === 'IMAGE' && !PATTERNS.some(p => p.value === board.background_value) ? 'text-primary' : 'text-text-tertiary group-hover:text-primary'}`}>
+                    {board.background_type === 'IMAGE' && !PATTERNS.some(p => p.value === board.background_value) ? 'Change Image' : 'Upload Custom Image'}
                   </span>
                 </div>
               )}
@@ -272,18 +295,18 @@ const BoardSettingsDrawer = ({ board, onClose }) => {
                 onClick={() => updateSettings({ visibility: v.id })}
                 className={`w-full flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left ${
                   board.visibility === v.id 
-                  ? 'border-brand-primary bg-brand-primary/5' 
+                  ? 'border-primary bg-primary/5' 
                   : 'border-bg-secondary hover:border-border-light'
                 }`}
               >
-                <div className={`p-2 rounded-xl ${board.visibility === v.id ? 'bg-brand-primary text-white' : 'bg-white text-text-tertiary shadow-sm'}`}>
+                <div className={`p-2 rounded-xl ${board.visibility === v.id ? 'bg-primary text-white' : 'bg-white text-text-tertiary shadow-sm'}`}>
                   <v.icon size={16} />
                 </div>
                 <div className="flex-1">
-                  <p className={`text-xs font-bold leading-none mb-1 ${board.visibility === v.id ? 'text-brand-primary' : 'text-text-primary'}`}>{v.label}</p>
+                  <p className={`text-xs font-bold leading-none mb-1 ${board.visibility === v.id ? 'text-primary' : 'text-foreground'}`}>{v.label}</p>
                   <p className="text-[10px] text-text-tertiary font-medium">{v.desc}</p>
                 </div>
-                {board.visibility === v.id && <Check size={14} className="text-brand-primary" strokeWidth={3} />}
+                {board.visibility === v.id && <Check size={14} className="text-primary" strokeWidth={3} />}
               </button>
             ))}
           </div>
@@ -302,7 +325,7 @@ const BoardSettingsDrawer = ({ board, onClose }) => {
           >
             <div className="flex items-center gap-3">
               <Archive size={18} className="text-text-tertiary group-hover:text-text-secondary" />
-              <span className="text-xs font-bold text-text-secondary group-hover:text-text-primary">
+              <span className="text-xs font-bold text-text-secondary group-hover:text-foreground">
                 {board.is_archived ? 'Restore Board' : 'Archive Board'}
               </span>
             </div>
@@ -334,7 +357,7 @@ const BoardSettingsDrawer = ({ board, onClose }) => {
                <div className="flex gap-2">
                  <button 
                    onClick={() => setShowDeleteConfirm(false)}
-                   className="flex-1 py-2 text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:text-text-primary"
+                   className="flex-1 py-2 text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:text-foreground"
                  >
                    Cancel
                  </button>

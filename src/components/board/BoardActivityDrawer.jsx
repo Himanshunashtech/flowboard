@@ -58,12 +58,12 @@ const BoardActivityDrawer = ({ boardId, onClose }) => {
     >
       <div className="p-6 border-b border-border-light flex items-center justify-between bg-bg-secondary/30">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-brand-primary/10 text-brand-primary rounded-xl">
+          <div className="p-2 bg-primary/10 text-primary rounded-xl">
             <History size={18} />
           </div>
-          <h2 className="text-sm font-black uppercase tracking-widest text-text-primary">Board Activity</h2>
+          <h2 className="text-sm font-black uppercase tracking-widest text-foreground">Board Activity</h2>
         </div>
-        <button onClick={onClose} className="p-2 hover:bg-bg-secondary rounded-lg transition-colors text-text-tertiary hover:text-text-primary">
+        <button onClick={onClose} className="p-2 hover:bg-bg-secondary rounded-lg transition-colors text-text-tertiary hover:text-foreground">
           <X size={18} />
         </button>
       </div>
@@ -71,7 +71,7 @@ const BoardActivityDrawer = ({ boardId, onClose }) => {
       <div className="flex-1 overflow-y-auto p-6 space-y-8 relative before:absolute before:left-[39px] before:top-8 before:bottom-8 before:w-[2px] before:bg-bg-secondary">
         {loading && logs.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full gap-4 opacity-50">
-            <Loader2 size={24} className="animate-spin text-brand-primary" />
+            <Loader2 size={24} className="animate-spin text-primary" />
             <span className="text-xs font-bold uppercase tracking-widest">Fetching history...</span>
           </div>
         ) : logs.length === 0 ? (
@@ -79,7 +79,7 @@ const BoardActivityDrawer = ({ boardId, onClose }) => {
             <div className="w-16 h-16 bg-bg-secondary rounded-full flex items-center justify-center mx-auto mb-6">
               <History size={24} className="text-text-tertiary" />
             </div>
-            <p className="text-sm font-bold text-text-primary mb-2">No activity yet</p>
+            <p className="text-sm font-bold text-foreground mb-2">No activity yet</p>
             <p className="text-xs text-text-tertiary leading-relaxed">Actions taken on this board will appear here automatically.</p>
           </div>
         ) : (
@@ -93,7 +93,7 @@ const BoardActivityDrawer = ({ boardId, onClose }) => {
         <button 
           onClick={fetchLogs}
           disabled={loading}
-          className="w-full py-3 flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest text-text-tertiary hover:text-brand-primary transition-colors disabled:opacity-50"
+          className="w-full py-3 flex items-center justify-center gap-2 text-xs font-black uppercase tracking-widest text-text-tertiary hover:text-primary transition-colors disabled:opacity-50"
         >
           <RefreshCcw size={14} className={loading ? 'animate-spin' : ''} />
           <span>Refresh History</span>

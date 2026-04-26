@@ -32,10 +32,13 @@ import {
   fetchExternalEvents, 
   fetchTimeBlocks, 
   fetchDailyPriorities, 
-  setViewMode 
+  setViewMode,
+  bulkInsertTimeBlocks
 } from '../store/slices/plannerSlice';
-import { setActiveCardId } from '../store/slices/uiSlice';
+import { setActiveCardId, addNotification } from '../store/slices/uiSlice';
+import { aiService } from '../services/aiService';
 import AppLayout from '../components/layout/AppLayout';
+import { Sparkles, Zap, Wand2, PartyPopper } from 'lucide-react';
 
 const PlannerPage = () => {
   const dispatch = useDispatch();
@@ -51,6 +54,43 @@ const PlannerPage = () => {
   } = useSelector((state) => state.planner);
   const [searchQuery, setSearchQuery] = React.useState('');
   const [currentDate, setCurrentDate] = React.useState(new Date());
+  const [isOrchestrating, setIsOrchestrating] = React.useState(false);
+
+  const handleAIOrchestrate = async () => {
+    if (!user || isOrchestrating) return;
+    
+    setIsOrchestrating(true);
+    try {
+      // 1. Generate plan via AI
+      const suggestedBlocks = await aiService.generateDailyPlan(cards, externalEvents);
+      
+      if (suggestedBlocks.length > 0) {
+        // 2. Insert into database
+        await dispatch(bulkInsertTimeBlocks({ 
+          userId: user.id, 
+          blocks: suggestedBlocks 
+        })).unwrap();
+        
+        dispatch(addNotification({ 
+          message: `AI Orchestration complete! ${suggestedBlocks.length} focus blocks created.`, 
+          type: 'success' 
+        }));
+      } else {
+        dispatch(addNotification({ 
+          message: "AI couldn't find a better way to organize your day. You're already optimized!", 
+          type: 'info' 
+        }));
+      }
+    } catch (error) {
+      console.error('Orchestration failed:', error);
+      dispatch(addNotification({ 
+        message: 'Master planning failed. AI Agent is offline.', 
+        type: 'error' 
+      }));
+    } finally {
+      setIsOrchestrating(false);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -126,7 +166,7 @@ const PlannerPage = () => {
                 </div>
                 {viewMode === 'MONTH' ? (
                   <div className="flex items-center gap-8">
-                    <h1 className="text-4xl font-black text-text-primary tracking-tighter w-64">
+                    <h1 className="text-4xl font-black text-foreground tracking-tighter w-64">
                       {format(currentDate, 'MMMM yyyy')}
                     </h1>
                     <div className="flex items-center gap-2 bg-bg-secondary p-1 rounded-xl border border-border-light">
@@ -151,7 +191,7 @@ const PlannerPage = () => {
                     </div>
                   </div>
                 ) : (
-                  <h1 className="text-4xl font-black text-text-primary tracking-tighter">My Planner</h1>
+                  <h1 className="text-4xl font-black text-foreground tracking-tighter">My Planner</h1>
                 )}
               </div>
             </div>
@@ -163,6 +203,21 @@ const PlannerPage = () => {
           </div>
 
           <div className="flex items-center gap-4">
+             <button
+                onClick={handleAIOrchestrate}
+                disabled={isOrchestrating}
+                className="flex items-center gap-3 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all shadow-xl shadow-indigo-200 group"
+             >
+                {isOrchestrating ? (
+                  <Sparkles size={16} className="animate-spin" />
+                ) : (
+                  <Wand2 size={16} className="group-hover:rotate-12 transition-transform" />
+                )}
+                <span>{isOrchestrating ? 'Thinking...' : 'AI Orchestrate'}</span>
+             </button>
+
+             <div className="h-8 w-px bg-border-light mx-2"></div>
+
              <div className="relative group">
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-indigo-600 transition-colors" size={18} />
                 <input 
@@ -176,13 +231,13 @@ const PlannerPage = () => {
              <div className="flex bg-bg-secondary p-1 rounded-2xl border border-border-light">
                 <button 
                   onClick={() => dispatch(setViewMode('WEEK'))}
-                  className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${viewMode === 'WEEK' ? 'bg-white text-indigo-600 shadow-sm' : 'text-text-tertiary hover:text-text-primary'}`}
+                  className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${viewMode === 'WEEK' ? 'bg-white text-indigo-600 shadow-sm' : 'text-text-tertiary hover:text-foreground'}`}
                 >
                   Daily Focus
                 </button>
                 <button 
                   onClick={() => dispatch(setViewMode('MONTH'))}
-                  className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${viewMode === 'MONTH' ? 'bg-white text-indigo-600 shadow-sm' : 'text-text-tertiary hover:text-text-primary'}`}
+                  className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all ${viewMode === 'MONTH' ? 'bg-white text-indigo-600 shadow-sm' : 'text-text-tertiary hover:text-foreground'}`}
                 >
                   Full Calendar
                 </button>
@@ -233,7 +288,7 @@ const PlannerPage = () => {
                                {idx + 1}
                             </div>
                             <div className="flex-1 space-y-1">
-                               <h4 className="text-xl font-black text-text-primary tracking-tight">{prio.cards?.title}</h4>
+                               <h4 className="text-xl font-black text-foreground tracking-tight">{prio.cards?.title}</h4>
                                <div className="flex items-center gap-3 text-[10px] font-bold text-text-tertiary">
                                   <span className="flex items-center gap-1.5 uppercase tracking-widest text-indigo-600">
                                     <Target size={12} />
@@ -268,7 +323,7 @@ const PlannerPage = () => {
                               </div>
                               <span className="text-[9px] font-black text-text-tertiary uppercase tracking-widest opacity-40 group-hover:opacity-100 transition-opacity">{boardTitle}</span>
                             </div>
-                            <h4 className="text-2xl font-black text-text-primary tracking-tight line-clamp-2 leading-tight">
+                            <h4 className="text-2xl font-black text-foreground tracking-tight line-clamp-2 leading-tight">
                               {card.title}
                             </h4>
                           </div>
@@ -321,7 +376,7 @@ const PlannerPage = () => {
                           <div className="flex items-center justify-between mb-4">
                             <span className={`text-sm font-black flex items-center justify-center w-8 h-8 rounded-full transition-all ${
                               isTd ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 scale-110' : 
-                              isCurrMonth ? 'text-text-primary group-hover:text-indigo-600' : 'text-text-tertiary'
+                              isCurrMonth ? 'text-foreground group-hover:text-indigo-600' : 'text-text-tertiary'
                             }`}>
                               {format(day, 'd')}
                             </span>
@@ -372,16 +427,16 @@ const PlannerPage = () => {
                            <div className="w-32 h-2 bg-bg-secondary rounded-full overflow-hidden">
                               <div className="w-3/4 h-full bg-indigo-600 rounded-full" />
                            </div>
-                           <span className="text-sm font-black text-text-primary">75%</span>
+                           <span className="text-sm font-black text-foreground">75%</span>
                         </div>
                      </div>
                      <div className="h-10 w-[1px] bg-border-light" />
                      <div className="space-y-1">
                         <p className="text-[10px] font-black text-text-tertiary uppercase tracking-widest">Active Boards</p>
-                        <p className="text-sm font-black text-text-primary">{Object.keys(groupedCards).length} Projects Aligned</p>
+                        <p className="text-sm font-black text-foreground">{Object.keys(groupedCards).length} Projects Aligned</p>
                      </div>
                   </div>
-                  <button className="flex items-center gap-2 px-6 py-3 bg-text-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-100">
+                  <button className="flex items-center gap-2 px-6 py-3 bg-foreground text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-lg shadow-indigo-100">
                     <Target size={14} />
                     Optimize View
                   </button>
@@ -419,7 +474,7 @@ const PlannerPage = () => {
                                 {card.priority || 'No Priority'}
                               </div>
                             </div>
-                            <h4 className="text-2xl font-black text-text-primary tracking-tight line-clamp-2 leading-tight">
+                            <h4 className="text-2xl font-black text-foreground tracking-tight line-clamp-2 leading-tight">
                               {card.title}
                             </h4>
                           </div>

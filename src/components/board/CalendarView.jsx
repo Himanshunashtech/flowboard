@@ -120,36 +120,36 @@ const CalendarView = () => {
 
 
   return (
-    <div className="absolute inset-0 bg-gray-50 flex flex-col overflow-hidden selection:bg-brand-primary/10">
+    <div className="absolute inset-0 bg-gray-50 flex flex-col overflow-hidden selection:bg-primary/10">
       {/* Professional Minimalist Header */}
       <header className="shrink-0 p-8 flex items-center justify-between relative z-20 bg-white border-b border-gray-200 shadow-sm">
         <div className="flex gap-6 items-center">
-          <div className="w-14 h-14 bg-gray-50 border border-gray-200 rounded-2xl flex items-center justify-center text-text-primary shadow-sm">
+          <div className="w-14 h-14 bg-gray-50 border border-gray-200 rounded-2xl flex items-center justify-center text-foreground shadow-sm">
             <CalendarIcon size={24} />
           </div>
           <div>
-            <h2 className="text-4xl font-black text-text-primary tracking-tighter leading-none">
+            <h2 className="text-4xl font-black text-foreground tracking-tighter leading-none">
               {format(currentDate, 'MMMM')} <span className="opacity-30">{format(currentDate, 'yyyy')}</span>
             </h2>
             <div className="flex items-center gap-3 mt-1">
               <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Mission Timeline</span>
               <div className="w-1 h-1 bg-text-tertiary/20 rounded-full" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-brand-primary">{cards.filter(c => c.due_date).length} Active Deadlines</span>
+              <span className="text-[10px] font-black uppercase tracking-widest text-primary">{cards.filter(c => c.due_date).length} Active Deadlines</span>
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-2xl border border-gray-200">
-          <button onClick={prevMonth} className="p-2.5 hover:bg-white hover:shadow-sm rounded-xl transition-all text-text-tertiary hover:text-text-primary">
+          <button onClick={prevMonth} className="p-2.5 hover:bg-white hover:shadow-sm rounded-xl transition-all text-text-tertiary hover:text-foreground">
             <ChevronLeft size={18} />
           </button>
           <button
             onClick={() => setCurrentDate(new Date())}
-            className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-text-primary hover:bg-white hover:shadow-sm rounded-xl transition-all"
+            className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-foreground hover:bg-white hover:shadow-sm rounded-xl transition-all"
           >
             Today
           </button>
-          <button onClick={nextMonth} className="p-2.5 hover:bg-white hover:shadow-sm rounded-xl transition-all text-text-tertiary hover:text-text-primary">
+          <button onClick={nextMonth} className="p-2.5 hover:bg-white hover:shadow-sm rounded-xl transition-all text-text-tertiary hover:text-foreground">
             <ChevronRight size={18} />
           </button>
         </div>
@@ -190,13 +190,13 @@ const CalendarView = () => {
                   >
                     <div className="flex items-center justify-between relative z-10">
                       <span className={`text-xs font-black w-8 h-8 flex items-center justify-center rounded-xl transition-all
-                        ${isDayToday ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/10' : 'text-text-primary group-hover:bg-gray-100'}`}>
+                        ${isDayToday ? 'bg-primary text-white shadow-lg shadow-primary/10' : 'text-foreground group-hover:bg-gray-100'}`}>
                         {format(day, 'd')}
                       </span>
                       <button
                         onClick={() => handleQuickAdd(day)}
                         disabled={isCreating}
-                        className="p-2.5 hover:bg-white rounded-xl text-text-tertiary hover:text-brand-primary opacity-0 group-hover:opacity-100 transition-all active:scale-95 shadow-sm"
+                        className="p-2.5 hover:bg-white rounded-xl text-text-tertiary hover:text-primary opacity-0 group-hover:opacity-100 transition-all active:scale-95 shadow-sm"
                       >
                         {isActionable ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
                       </button>
@@ -222,8 +222,8 @@ const CalendarView = () => {
                           >
                             <button
                               onClick={() => dispatch(setActiveCardId(card.id))}
-                              className={`w-full text-left px-3 py-1.5 rounded-xl text-[10px] font-bold border border-gray-100 hover:border-brand-primary hover:shadow-md transition-all relative overflow-hidden flex items-center gap-2
-                                ${card.is_completed ? 'bg-gray-50 text-text-tertiary line-through opacity-60' : 'bg-white text-text-primary shadow-sm'}`}
+                              className={`w-full text-left px-3 py-1.5 rounded-xl text-[10px] font-bold border border-gray-100 hover:border-primary hover:shadow-md transition-all relative overflow-hidden flex items-center gap-2
+                                ${card.is_completed ? 'bg-gray-50 text-text-tertiary line-through opacity-60' : 'bg-white text-foreground shadow-sm'}`}
                             >
                               {!card.is_completed && card.priority && (
                                 <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${priorityColors[card.priority]}`} />
@@ -232,7 +232,7 @@ const CalendarView = () => {
 
                               {!card.is_completed && (
                                 <div className="ml-auto opacity-0 group-hover/card-container:opacity-100 transition-opacity">
-                                  <ArrowRight size={10} className="text-brand-primary" />
+                                  <ArrowRight size={10} className="text-primary" />
                                 </div>
                               )}
                             </button>
@@ -242,7 +242,7 @@ const CalendarView = () => {
                     </div>
 
                     {isDayToday && (
-                      <div className="absolute inset-0 bg-brand-primary/[0.03] pointer-events-none" />
+                      <div className="absolute inset-0 bg-primary/[0.03] pointer-events-none" />
                     )}
                   </div>
                 );

@@ -73,14 +73,14 @@ const BoardAnalytics = ({ boardId }) => {
   ];
 
   const statCards = [
-    { label: 'Total Tasks', value: stats.total_cards, icon: BarChart3, color: 'text-brand-primary', bg: 'bg-brand-primary/10' },
+    { label: 'Total Tasks', value: stats.total_cards, icon: BarChart3, color: 'text-primary', bg: 'bg-primary/10' },
     { label: 'Completed', value: stats.completed_cards, icon: CheckCircle2, color: 'text-success', bg: 'bg-success/10' },
     { label: 'Overdue', value: stats.overdue_cards, icon: AlertCircle, color: 'text-danger', bg: 'bg-danger/10' },
     { label: 'Due Today', value: stats.due_today, icon: Clock, color: 'text-warning', bg: 'bg-warning/10' },
   ];
 
   return (
-    <div className="space-y-10 selection:bg-brand-primary/10">
+    <div className="space-y-10 selection:bg-primary/10">
       {/* Top Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((card, idx) => (
@@ -89,13 +89,13 @@ const BoardAnalytics = ({ boardId }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.1 }}
             key={card.label} 
-            className="p-8 bg-white rounded-[32px] border border-border-light shadow-sm hover:shadow-xl hover:border-brand-primary/20 transition-all group overflow-hidden relative"
+            className="p-8 bg-white rounded-[32px] border border-border-light shadow-sm hover:shadow-xl hover:border-primary/20 transition-all group overflow-hidden relative"
           >
             <div className="flex items-center justify-between mb-4 relative z-10">
               <div className={`p-4 rounded-2xl ${card.bg} ${card.color} group-hover:scale-110 transition-transform`}>
                  <card.icon size={28} />
               </div>
-              <span className="text-3xl font-black text-text-primary tracking-tight">{card.value}</span>
+              <span className="text-3xl font-black text-foreground tracking-tight">{card.value}</span>
             </div>
             <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary relative z-10">{card.label}</p>
             <div className={`absolute -right-4 -bottom-4 w-24 h-24 rounded-full ${card.bg} opacity-0 group-hover:opacity-40 transition-opacity blur-2xl`} />
@@ -112,7 +112,7 @@ const BoardAnalytics = ({ boardId }) => {
         >
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary flex items-center gap-3">
-              <LucidePieChart size={18} className="text-brand-primary" />
+              <LucidePieChart size={18} className="text-primary" />
               Priority Distribution
             </h3>
           </div>
@@ -146,9 +146,9 @@ const BoardAnalytics = ({ boardId }) => {
                 <div key={item.name} className="flex items-center justify-between group">
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.fill }} />
-                    <span className="text-xs font-bold text-text-secondary group-hover:text-text-primary transition-colors uppercase tracking-widest">{item.name}</span>
+                    <span className="text-xs font-bold text-text-secondary group-hover:text-foreground transition-colors uppercase tracking-widest">{item.name}</span>
                   </div>
-                  <span className="text-sm font-black text-text-primary">{item.value} tasks</span>
+                  <span className="text-sm font-black text-foreground">{item.value} tasks</span>
                 </div>
               ))}
             </div>
@@ -163,11 +163,11 @@ const BoardAnalytics = ({ boardId }) => {
         >
            <div className="flex items-center justify-between mb-8">
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary flex items-center gap-3">
-              <Activity size={18} className="text-brand-primary" />
+              <Activity size={18} className="text-primary" />
               Velocity Trend
             </h3>
             <div className="flex items-center gap-2">
-               <span className="w-3 h-3 rounded-full bg-brand-primary" />
+               <span className="w-3 h-3 rounded-full bg-primary" />
                <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Completed</span>
             </div>
           </div>
@@ -207,7 +207,7 @@ const BoardAnalytics = ({ boardId }) => {
           </div>
 
           <div className="mt-8 p-6 bg-bg-secondary/50 rounded-3xl border border-border-light/50">
-             <div className="flex items-center gap-3 text-brand-primary mb-2">
+             <div className="flex items-center gap-3 text-primary mb-2">
                 <TrendingUp size={16} />
                 <span className="text-xs font-black uppercase tracking-widest">Efficiency Forecast</span>
              </div>
@@ -225,10 +225,10 @@ const BoardAnalytics = ({ boardId }) => {
       <div className="pt-12 border-t border-border-light">
         <div className="flex items-center justify-between mb-10">
           <div>
-            <h2 className="text-3xl font-black text-text-primary tracking-tight">Time & Effort Analysis</h2>
+            <h2 className="text-3xl font-black text-foreground tracking-tight">Time & Effort Analysis</h2>
             <p className="text-sm text-text-secondary mt-1">Deep dive into resource allocation and billable efficiency.</p>
           </div>
-          <button className="btn btn-secondary !h-12 !px-6 !text-xs !font-black uppercase tracking-widest hover:!bg-brand-primary hover:!text-white transition-all shadow-sm">
+          <button className="btn btn-secondary !h-12 !px-6 !text-xs !font-black uppercase tracking-widest hover:!bg-primary hover:!text-white transition-all shadow-sm">
              Export Data
           </button>
         </div>

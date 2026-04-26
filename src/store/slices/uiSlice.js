@@ -5,16 +5,19 @@ const initialState = {
     createBoard: false,
     createWorkspace: false,
     cardDetails: false,
-    workspaceSettings: false,
+
     boardSettings: false,
     memberInvite: false,
     prismRules: false,
     activityDrawer: false,
     createBoardFromRepo: false,
+    automations: false,
+    focusMode: false,
   },
   modalData: {},
   activeCardId: null,
   sidebarOpen: true,
+  sidebarHidden: false,
   notifications: [],
   theme: 'light',
 };
@@ -37,6 +40,14 @@ const uiSlice = createSlice({
     toggleSidebar: (state, action) => {
       state.sidebarOpen = action.payload !== undefined ? action.payload : !state.sidebarOpen;
     },
+    toggleSidebarHidden: (state, action) => {
+      state.sidebarHidden = action.payload !== undefined ? action.payload : !state.sidebarHidden;
+      if (state.sidebarHidden) {
+        state.sidebarOpen = false;
+      } else {
+        state.sidebarOpen = true;
+      }
+    },
     addNotification: (state, action) => {
       state.notifications.push({
         id: Date.now(),
@@ -58,6 +69,7 @@ export const {
   toggleModal,
   setActiveCardId,
   toggleSidebar,
+  toggleSidebarHidden,
   addNotification,
   removeNotification,
   setTheme

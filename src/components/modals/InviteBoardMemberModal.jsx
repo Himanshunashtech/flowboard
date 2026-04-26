@@ -90,31 +90,31 @@ const InviteBoardMemberModal = ({ boardId, onClose }) => {
         {/* Panoramic Wing 1: Board Identity & Security Status */}
         <div className="w-[35%] bg-bg-secondary/40 border-r border-border-light p-14 flex flex-col justify-between relative overflow-hidden">
            {/* Abstract Identity */}
-           <div className="absolute top-[-5%] left-[-5%] opacity-[0.03] text-brand-primary pointer-events-none">
+           <div className="absolute top-[-5%] left-[-5%] opacity-[0.03] text-primary pointer-events-none">
               <Users2 size={320} />
            </div>
 
            <div className="relative z-10 space-y-12">
               <header className="space-y-4">
-                 <div className="w-14 h-14 bg-brand-primary rounded-[22px] shadow-xl shadow-brand-primary/20 flex items-center justify-center text-white mb-8">
+                 <div className="w-14 h-14 bg-primary rounded-[22px] shadow-xl shadow-primary/20 flex items-center justify-center text-white mb-8">
                     <Users size={28} />
                  </div>
-                 <h2 className="text-4xl font-black text-text-primary tracking-tighter leading-none mb-2 underline decoration-brand-primary/20 decoration-4 underline-offset-8">
+                 <h2 className="text-4xl font-black text-foreground tracking-tighter leading-none mb-2 underline decoration-primary/20 decoration-4 underline-offset-8">
                    Board Members
                  </h2>
                  <p className="text-text-tertiary text-lg font-medium tracking-tight">
-                    Synchronize access for the <span className="text-brand-primary font-black">"{activeBoard?.title}"</span> project environment.
+                    Synchronize access for the <span className="text-primary font-black">"{activeBoard?.title}"</span> project environment.
                  </p>
               </header>
 
               <div className="space-y-6">
-                 <div className="p-6 bg-white rounded-[32px] shadow-sm border border-border-light flex items-center gap-5 group hover:border-brand-primary/30 transition-all">
-                    <div className="w-10 h-10 bg-brand-primary/5 rounded-xl flex items-center justify-center text-brand-primary font-black text-xs">
+                 <div className="p-6 bg-white rounded-[32px] shadow-sm border border-border-light flex items-center gap-5 group hover:border-primary/30 transition-all">
+                    <div className="w-10 h-10 bg-primary/5 rounded-xl flex items-center justify-center text-primary font-black text-xs">
                        {boardMembers?.length}
                     </div>
                     <div className="text-left leading-none">
                        <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary mb-1">Active Personnel</p>
-                       <p className="text-xs font-black text-text-primary">Enlisted Operators</p>
+                       <p className="text-xs font-black text-foreground">Enlisted Operators</p>
                     </div>
                  </div>
 
@@ -124,7 +124,7 @@ const InviteBoardMemberModal = ({ boardId, onClose }) => {
                     </div>
                     <div className="text-left leading-none">
                        <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary mb-1">Security Level</p>
-                       <p className="text-xs font-black text-text-primary">Multi-Admin Protocol</p>
+                       <p className="text-xs font-black text-foreground">Multi-Admin Protocol</p>
                     </div>
                  </div>
               </div>
@@ -146,13 +146,13 @@ const InviteBoardMemberModal = ({ boardId, onClose }) => {
            <div className="p-14 h-full flex flex-col space-y-10">
               {/* Search Control Bar */}
               <div className="relative group">
-                 <Search size={24} className="absolute left-7 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand-primary transition-colors" />
+                 <Search size={24} className="absolute left-7 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-primary transition-colors" />
                  <input
                     autoFocus
                     placeholder="Search personnel by name or email hash..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
-                    className="w-full h-20 pl-20 pr-8 bg-bg-secondary border-none rounded-[32px] text-lg font-black text-text-primary focus:bg-white focus:ring-8 focus:ring-brand-primary/5 transition-all outline-none shadow-inner placeholder:text-text-tertiary/40"
+                    className="w-full h-20 pl-20 pr-8 bg-bg-secondary border-none rounded-[32px] text-lg font-black text-foreground focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all outline-none shadow-inner placeholder:text-text-tertiary/40"
                  />
               </div>
 
@@ -161,16 +161,16 @@ const InviteBoardMemberModal = ({ boardId, onClose }) => {
                  <section className="space-y-4">
                     <div className="flex items-center justify-between px-2">
                        <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-text-tertiary">Current Roster</h3>
-                       <span className="text-[9px] font-bold text-brand-primary uppercase">Encrypted</span>
+                       <span className="text-[9px] font-bold text-primary uppercase">Encrypted</span>
                     </div>
                     <div className="grid grid-cols-1 gap-3">
                        {boardMembers?.map(bm => (
                           <div key={bm.user_id} className="flex items-center gap-5 p-4 bg-bg-secondary/30 border border-transparent hover:border-border-light hover:bg-white rounded-[28px] transition-all group">
-                             <div className="w-12 h-12 rounded-[18px] bg-brand-primary flex items-center justify-center text-white font-black text-sm shadow-lg">
+                             <div className="w-12 h-12 rounded-[18px] bg-primary flex items-center justify-center text-white font-black text-sm shadow-lg">
                                 {getInitials(bm.profiles)}
                              </div>
                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-black text-text-primary truncate tracking-tight">{bm.profiles?.full_name || 'Anonymous Operative'}</p>
+                                <p className="text-sm font-black text-foreground truncate tracking-tight">{bm.profiles?.full_name || 'Anonymous Operative'}</p>
                                 <p className="text-[10px] text-text-tertiary font-bold truncate opacity-60 uppercase">{bm.profiles?.email}</p>
                              </div>
                              <div className="flex items-center gap-3">
@@ -178,7 +178,7 @@ const InviteBoardMemberModal = ({ boardId, onClose }) => {
                                    <select
                                       defaultValue={bm.role}
                                       onChange={e => updateRole(bm.user_id, e.target.value)}
-                                      className="bg-white border border-border-light rounded-xl px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-text-secondary outline-none focus:ring-4 focus:ring-brand-primary/5 transition-all appearance-none cursor-pointer pr-10"
+                                      className="bg-white border border-border-light rounded-xl px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-text-secondary outline-none focus:ring-4 focus:ring-primary/5 transition-all appearance-none cursor-pointer pr-10"
                                       disabled={bm.user_id === user?.id}
                                    >
                                       <option value="ADMIN">Command</option>
@@ -217,7 +217,7 @@ const InviteBoardMemberModal = ({ boardId, onClose }) => {
                                       {getInitials(wm.profiles)}
                                    </div>
                                    <div className="flex-1 min-w-0">
-                                      <p className="text-xs font-black text-text-primary truncate tracking-tight">{wm.profiles?.full_name || 'Team Agent'}</p>
+                                      <p className="text-xs font-black text-foreground truncate tracking-tight">{wm.profiles?.full_name || 'Team Agent'}</p>
                                       <p className="text-[9px] text-text-tertiary font-bold truncate opacity-50 uppercase tracking-tighter">{wm.profiles?.email}</p>
                                    </div>
                                    {isOnBoard ? (
@@ -244,7 +244,7 @@ const InviteBoardMemberModal = ({ boardId, onClose }) => {
 
                  {fetchingMembers && (
                     <div className="py-20 flex flex-col items-center justify-center opacity-40">
-                       <div className="w-8 h-8 border-4 border-brand-primary border-t-transparent rounded-full animate-spin mb-4" />
+                       <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
                        <span className="text-[10px] font-black uppercase tracking-widest">Authenticating Directory...</span>
                     </div>
                  )}

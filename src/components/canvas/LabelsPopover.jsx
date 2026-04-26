@@ -36,7 +36,7 @@ const LabelsPopover = ({
             placeholder="Search labels..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none transition-all font-medium"
+            className="w-full pl-9 pr-4 py-2 bg-gray-50 border border-gray-100 rounded-xl text-xs focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all font-medium"
             autoFocus
           />
         </div>
@@ -53,7 +53,7 @@ const LabelsPopover = ({
               <button 
                 onClick={() => onToggleLabel(label.id)}
                 className={`w-5 h-5 rounded border transition-all flex items-center justify-center shrink-0
-                  ${isActive ? 'bg-brand-primary border-brand-primary text-white' : 'bg-white border-gray-200 hover:border-gray-300'}`}
+                  ${isActive ? 'bg-primary border-primary text-white' : 'bg-white border-gray-200 hover:border-gray-300'}`}
               >
                 {isActive && <Check size={12} strokeWidth={4} />}
               </button>

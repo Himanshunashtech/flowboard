@@ -55,7 +55,7 @@ const AcceptInvitationPage = () => {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-white">
         <div className="flex flex-col items-center gap-6">
-          <Loader2 className="w-12 h-12 text-brand-primary animate-spin" />
+          <Loader2 className="w-12 h-12 text-primary animate-spin" />
           <p className="text-sm font-black uppercase tracking-[0.3em] text-text-tertiary">Accessing Nexus...</p>
         </div>
       </div>
@@ -63,15 +63,15 @@ const AcceptInvitationPage = () => {
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#f8fafc] flex flex-col items-center justify-center p-6 selection:bg-brand-primary/10">
+    <div className="min-h-screen w-full bg-[#f8fafc] flex flex-col items-center justify-center p-6 selection:bg-primary/10">
       <div className="max-w-xl w-full">
         {/* Logo/Brand */}
         <div className="flex justify-center mb-12">
             <Link to="/" className="flex items-center gap-3">
-               <div className="w-12 h-12 bg-white flex items-center justify-center text-brand-primary rounded-2xl shadow-xl border border-border-light">
+               <div className="w-12 h-12 bg-white flex items-center justify-center text-primary rounded-2xl shadow-xl border border-border-light">
                   <Sparkles size={24} />
                </div>
-               <span className="text-2xl font-black text-text-primary tracking-tighter">FlowBoard</span>
+               <span className="text-2xl font-black text-foreground tracking-tighter">FlowBoard</span>
             </Link>
         </div>
 
@@ -88,8 +88,8 @@ const AcceptInvitationPage = () => {
                 <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 rounded-full text-[10px] font-black uppercase tracking-widest text-indigo-600 border border-indigo-100">
                   <Shield size={12} /> Authorization Pending
                 </div>
-                <h1 className="text-4xl font-black text-text-primary tracking-tighter leading-none">
-                  Collaborate on <br /> <span className="text-brand-primary italic">{invitation?.workspaces?.name}</span>
+                <h1 className="text-4xl font-black text-foreground tracking-tighter leading-none">
+                  Collaborate on <br /> <span className="text-primary italic">{invitation?.workspaces?.name}</span>
                 </h1>
                 <p className="text-text-secondary font-medium leading-relaxed italic">
                   <strong>{invitation?.profiles?.full_name || 'A teammate'}</strong> has invited you to join their project nexus. Collaborate in real-time with kinetic boards and protocol-driven workflows.
@@ -100,7 +100,7 @@ const AcceptInvitationPage = () => {
                 <button 
                   onClick={handleAccept}
                   disabled={accepting}
-                  className="w-full h-16 bg-text-primary text-white rounded-[28px] text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4 group disabled:opacity-50"
+                  className="w-full h-16 bg-foreground text-white rounded-[28px] text-[11px] font-black uppercase tracking-[0.2em] shadow-2xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4 group disabled:opacity-50"
                 >
                   {accepting ? 'Synchronizing...' : (
                     <>
@@ -134,7 +134,7 @@ const AcceptInvitationPage = () => {
                 <CheckCircle2 size={48} strokeWidth={3} />
               </div>
               <div className="space-y-4">
-                <h2 className="text-4xl font-black text-text-primary tracking-tighter">Connection Established.</h2>
+                <h2 className="text-4xl font-black text-foreground tracking-tighter">Connection Established.</h2>
                 <p className="text-text-secondary font-bold italic">Redirecting to project dashboard...</p>
               </div>
             </motion.div>
@@ -151,14 +151,14 @@ const AcceptInvitationPage = () => {
                 <AlertCircle size={40} />
               </div>
               <div className="space-y-4">
-                <h2 className="text-3xl font-black text-text-primary tracking-tighter">Invalid Protocol.</h2>
+                <h2 className="text-3xl font-black text-foreground tracking-tighter">Invalid Protocol.</h2>
                 <p className="text-text-secondary font-medium italic">
                   {status === 'EXPIRED' 
                     ? 'This invitation has expired for security reasons. Please ask your admin to re-issue the token.' 
                     : 'The provided link is invalid or has already been consumed.'}
                 </p>
               </div>
-              <Link to="/" className="inline-block pt-6 text-brand-primary font-black uppercase tracking-widest text-xs hover:underline decoration-2 underline-offset-8">Return to FlowBoard</Link>
+              <Link to="/" className="inline-block pt-6 text-primary font-black uppercase tracking-widest text-xs hover:underline decoration-2 underline-offset-8">Return to FlowBoard</Link>
             </motion.div>
           )}
         </AnimatePresence>

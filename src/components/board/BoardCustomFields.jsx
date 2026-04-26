@@ -95,7 +95,7 @@ const BoardCustomFields = ({ boardId }) => {
         </div>
         <button 
           onClick={() => setShowAdd(true)}
-          className="p-1.5 bg-brand-primary text-white rounded-lg hover:scale-105 transition-all shadow-lg shadow-brand-primary/20"
+          className="p-1.5 bg-primary text-white rounded-lg hover:scale-105 transition-all shadow-lg shadow-primary/20"
         >
           <Plus size={14} strokeWidth={3} />
         </button>
@@ -108,11 +108,11 @@ const BoardCustomFields = ({ boardId }) => {
           return (
             <div key={field.id} className="flex items-center justify-between p-4 bg-bg-secondary/50 rounded-2xl border border-transparent hover:border-border-light transition-all group">
               <div className="flex items-center gap-4">
-                <div className="p-2 bg-white rounded-xl text-text-tertiary shadow-sm group-hover:text-brand-primary transition-colors">
+                <div className="p-2 bg-white rounded-xl text-text-tertiary shadow-sm group-hover:text-primary transition-colors">
                   <Icon size={16} />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-text-primary">{field.name}</p>
+                  <p className="text-xs font-bold text-foreground">{field.name}</p>
                   <p className="text-[10px] text-text-tertiary font-medium uppercase tracking-widest">{field.type}</p>
                 </div>
               </div>
@@ -142,8 +142,8 @@ const BoardCustomFields = ({ boardId }) => {
           >
             <div className="p-8 space-y-8">
               <div className="flex items-center justify-between">
-                <h3 className="text-xl font-black text-text-primary tracking-tight">Create Field</h3>
-                <button onClick={() => setShowAdd(false)} className="text-text-tertiary hover:text-text-primary"><X size={20} /></button>
+                <h3 className="text-xl font-black text-foreground tracking-tight">Create Field</h3>
+                <button onClick={() => setShowAdd(false)} className="text-text-tertiary hover:text-foreground"><X size={20} /></button>
               </div>
 
               <div className="space-y-6">
@@ -152,7 +152,7 @@ const BoardCustomFields = ({ boardId }) => {
                   <input 
                     autoFocus
                     placeholder="e.g. Budget, Priority Score..."
-                    className="w-full h-14 bg-bg-secondary border-none rounded-2xl px-6 font-bold text-text-primary transition-all outline-none focus:bg-white focus:ring-4 focus:ring-brand-primary/5"
+                    className="w-full h-14 bg-bg-secondary border-none rounded-2xl px-6 font-bold text-foreground transition-all outline-none focus:bg-white focus:ring-4 focus:ring-primary/5"
                     value={newFieldName}
                     onChange={e => setNewFieldName(e.target.value)}
                   />
@@ -166,11 +166,11 @@ const BoardCustomFields = ({ boardId }) => {
                         key={t.id}
                         onClick={() => setNewFieldType(t.id)}
                         className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all text-left ${
-                          newFieldType === t.id ? 'border-brand-primary bg-brand-primary/5' : 'border-bg-secondary hover:border-border-light'
+                          newFieldType === t.id ? 'border-primary bg-primary/5' : 'border-bg-secondary hover:border-border-light'
                         }`}
                       >
-                        <t.icon size={16} className={newFieldType === t.id ? 'text-brand-primary' : 'text-text-tertiary'} />
-                        <span className={`text-[11px] font-bold ${newFieldType === t.id ? 'text-brand-primary' : 'text-text-primary'}`}>{t.label}</span>
+                        <t.icon size={16} className={newFieldType === t.id ? 'text-primary' : 'text-text-tertiary'} />
+                        <span className={`text-[11px] font-bold ${newFieldType === t.id ? 'text-primary' : 'text-foreground'}`}>{t.label}</span>
                       </button>
                     ))}
                   </div>
@@ -185,7 +185,7 @@ const BoardCustomFields = ({ boardId }) => {
                       <textarea 
                         value={newFormula}
                         onChange={e => setNewFormula(e.target.value)}
-                        className="w-full bg-transparent border-none outline-none font-mono text-[11px] text-brand-primary placeholder:text-text-tertiary"
+                        className="w-full bg-transparent border-none outline-none font-mono text-[11px] text-primary placeholder:text-text-tertiary"
                         rows={2}
                         placeholder="e.g. {{days_left}} + 1"
                       />
@@ -194,7 +194,7 @@ const BoardCustomFields = ({ boardId }) => {
                           <button 
                             key={token}
                             onClick={() => setNewFormula(prev => prev + ' ' + token)}
-                            className="px-2 py-1 bg-white border border-border-light rounded-lg text-[8px] font-black text-text-tertiary hover:border-brand-primary hover:text-brand-primary transition-all"
+                            className="px-2 py-1 bg-white border border-border-light rounded-lg text-[8px] font-black text-text-tertiary hover:border-primary hover:text-primary transition-all"
                           >
                             {token}
                           </button>
@@ -207,7 +207,7 @@ const BoardCustomFields = ({ boardId }) => {
 
               <button 
                 onClick={handleAddField}
-                className="w-full h-14 bg-brand-primary text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
+                className="w-full h-14 bg-primary text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all"
               >
                 Add Field
               </button>

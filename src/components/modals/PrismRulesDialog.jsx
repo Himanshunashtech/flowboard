@@ -77,7 +77,7 @@ const PrismRulesDialog = ({ isOpen, onClose, board }) => {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="absolute inset-0 bg-text-primary/20 backdrop-blur-sm"
+        className="absolute inset-0 bg-foreground/20 backdrop-blur-sm"
       />
       
       <motion.div 
@@ -88,11 +88,11 @@ const PrismRulesDialog = ({ isOpen, onClose, board }) => {
       >
         <div className="p-8 border-b border-border-light flex items-center justify-between bg-bg-secondary/30 backdrop-blur-md">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-brand-primary rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand-primary/20">
+            <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
                <Zap size={24} />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-text-primary tracking-tighter">The Prism Engine</h2>
+              <h2 className="text-2xl font-black text-foreground tracking-tighter">The Prism Engine</h2>
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">Conditional Formatting Protocols</p>
             </div>
           </div>
@@ -107,7 +107,7 @@ const PrismRulesDialog = ({ isOpen, onClose, board }) => {
                <div className="w-20 h-20 bg-bg-secondary rounded-[32px] flex items-center justify-center text-text-tertiary mb-6 opacity-20">
                   <Palette size={40} />
                </div>
-               <h3 className="text-lg font-black text-text-primary tracking-tight">No Active Protocols</h3>
+               <h3 className="text-lg font-black text-foreground tracking-tight">No Active Protocols</h3>
                <p className="text-sm text-text-tertiary mt-2 max-w-xs leading-relaxed">Illuminate your data by adding formatting rules based on priorities, lists, or task titles.</p>
             </div>
           ) : (
@@ -120,14 +120,14 @@ const PrismRulesDialog = ({ isOpen, onClose, board }) => {
               >
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-full bg-white flex items-center justify-center text-[10px] font-black text-brand-primary shadow-sm border border-border-light">
+                    <span className="w-6 h-6 rounded-full bg-white flex items-center justify-center text-[10px] font-black text-primary shadow-sm border border-border-light">
                       {index + 1}
                     </span>
                     <input 
                       type="text"
                       value={rule.name}
                       onChange={e => handleUpdateRule(rule.id, { name: e.target.value })}
-                      className="bg-transparent border-none outline-none text-sm font-black text-text-primary placeholder:text-text-tertiary"
+                      className="bg-transparent border-none outline-none text-sm font-black text-foreground placeholder:text-text-tertiary"
                       placeholder="Protocol Name..."
                     />
                   </div>
@@ -180,7 +180,7 @@ const PrismRulesDialog = ({ isOpen, onClose, board }) => {
                         <button
                           key={preset.id}
                           onClick={() => handleUpdateRule(rule.id, { style: preset })}
-                          className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${rule.style.id === preset.id ? 'border-brand-primary ring-2 ring-brand-primary/20 scale-105' : 'border-border-light hover:border-brand-primary/40'}`}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all ${rule.style.id === preset.id ? 'border-primary ring-2 ring-primary/20 scale-105' : 'border-border-light hover:border-primary/40'}`}
                           style={{ backgroundColor: preset.bg }}
                         >
                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: preset.text }} />
@@ -198,9 +198,9 @@ const PrismRulesDialog = ({ isOpen, onClose, board }) => {
           
           <button 
             onClick={handleAddRule}
-            className="w-full pb-6 pt-4 border-2 border-dashed border-border-light rounded-[32px] text-text-tertiary hover:border-brand-primary hover:text-brand-primary transition-all flex flex-col items-center gap-2 group"
+            className="w-full pb-6 pt-4 border-2 border-dashed border-border-light rounded-[32px] text-text-tertiary hover:border-primary hover:text-primary transition-all flex flex-col items-center gap-2 group"
           >
-            <div className="w-10 h-10 bg-bg-secondary rounded-xl flex items-center justify-center group-hover:bg-brand-primary group-hover:text-white transition-all">
+            <div className="w-10 h-10 bg-bg-secondary rounded-xl flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
                <Plus size={20} />
             </div>
             <span className="text-[10px] font-black uppercase tracking-[0.2em]">Add Formatting Protocol</span>
@@ -209,7 +209,7 @@ const PrismRulesDialog = ({ isOpen, onClose, board }) => {
 
         <div className="p-8 bg-bg-secondary/30 border-t border-border-light flex items-center justify-between">
            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-white border border-border-light rounded-xl flex items-center justify-center text-brand-primary">
+              <div className="w-10 h-10 bg-white border border-border-light rounded-xl flex items-center justify-center text-primary">
                  <AlertCircle size={20} />
               </div>
               <p className="text-[11px] text-text-secondary leading-relaxed font-bold max-w-[240px]">
@@ -220,7 +220,7 @@ const PrismRulesDialog = ({ isOpen, onClose, board }) => {
            <button 
             disabled={isSaving}
             onClick={handleSave}
-            className="h-14 px-8 bg-brand-primary text-white rounded-[20px] font-black uppercase tracking-widest text-[11px] shadow-xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
+            className="h-14 px-8 bg-primary text-white rounded-[20px] font-black uppercase tracking-widest text-[11px] shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all disabled:opacity-50"
            >
              {isSaving ? 'Encrypting...' : 'Save Protocols'}
            </button>

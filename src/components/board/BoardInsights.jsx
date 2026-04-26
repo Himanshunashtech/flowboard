@@ -62,11 +62,11 @@ const BoardInsights = ({ isOpen, onClose, lists, cards, members }) => {
         {/* Header */}
         <div className="px-10 py-8 border-b border-border-light flex items-center justify-between shrink-0">
           <div className="flex items-center gap-4">
-             <div className="p-3 bg-brand-primary text-white rounded-2xl shadow-lg shadow-brand-primary/20">
+             <div className="p-3 bg-primary text-white rounded-2xl shadow-lg shadow-primary/20">
                 <BarChart3 size={24} />
              </div>
              <div>
-                <h2 className="text-2xl font-black text-text-primary tracking-tight">Board Pulse</h2>
+                <h2 className="text-2xl font-black text-foreground tracking-tight">Board Pulse</h2>
                 <p className="text-sm text-text-tertiary">Real-time performance and workload distribution analytics.</p>
              </div>
           </div>
@@ -91,7 +91,7 @@ const BoardInsights = ({ isOpen, onClose, lists, cards, members }) => {
              {/* List Distribution */}
              <div className="bg-bg-secondary/30 rounded-[32px] p-8 border border-border-light">
                 <h3 className="text-sm font-black uppercase tracking-widest text-text-secondary mb-8 flex items-center gap-2">
-                   <PieIcon size={16} className="text-brand-primary" />
+                   <PieIcon size={16} className="text-primary" />
                    Card Distribution
                 </h3>
                 <div className="h-[300px]">
@@ -104,7 +104,7 @@ const BoardInsights = ({ isOpen, onClose, lists, cards, members }) => {
                            contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 25px rgba(0,0,0,0.1)' }}
                            cursor={{ fill: 'rgba(0,82,204,0.05)' }}
                          />
-                         <Bar dataKey="count" fill="var(--brand-primary)" radius={[8, 8, 0, 0]} barSize={40} />
+                         <Bar dataKey="count" fill="var(--primary)" radius={[8, 8, 0, 0]} barSize={40} />
                       </BarChart>
                    </ResponsiveContainer>
                 </div>
@@ -150,7 +150,7 @@ const StatCard = ({ label, value, icon: Icon, color, subValue }) => (
      <div>
         <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">{label}</p>
         <div className="flex items-baseline gap-2">
-           <span className="text-2xl font-black text-text-primary tracking-tight">{value}</span>
+           <span className="text-2xl font-black text-foreground tracking-tight">{value}</span>
            {subValue && <span className="text-[10px] font-bold text-text-tertiary">{subValue}</span>}
         </div>
      </div>

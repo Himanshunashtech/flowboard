@@ -76,7 +76,7 @@ const AnalyticsDashboard = ({ boardId }) => {
   if (loading) return (
     <div className="h-full flex flex-col items-center justify-center space-y-4">
       <div className="w-12 h-12 rounded-2xl bg-bg-secondary flex items-center justify-center animate-pulse">
-        <TrendingUp className="text-brand-primary" />
+        <TrendingUp className="text-primary" />
       </div>
       <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Calculating Insights...</p>
     </div>
@@ -90,7 +90,7 @@ const AnalyticsDashboard = ({ boardId }) => {
           { label: 'Avg Lead Time', value: `${stats.avgLeadTime}h`, icon: Clock, color: 'text-indigo-500', bg: 'bg-indigo-50' },
           { label: 'Cards Completed', value: stats.totalCompleted, icon: CheckCircle2, color: 'text-success', bg: 'bg-success/5' },
           { label: 'Active Tasks', value: stats.activeTasks, icon: Activity, color: 'text-blue-500', bg: 'bg-blue-50' },
-          { label: 'Success Rate', value: `${stats.completionRate}%`, icon: TrendingUp, color: 'text-brand-primary', bg: 'bg-brand-primary/5' },
+          { label: 'Success Rate', value: `${stats.completionRate}%`, icon: TrendingUp, color: 'text-primary', bg: 'bg-primary/5' },
         ].map((stat, i) => (
           <motion.div 
             key={stat.label}
@@ -105,7 +105,7 @@ const AnalyticsDashboard = ({ boardId }) => {
             <div>
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary mb-1">{stat.label}</p>
               <div className="flex items-end gap-2">
-                <h3 className="text-2xl font-black text-text-primary tabular-nums">{stat.value}</h3>
+                <h3 className="text-2xl font-black text-foreground tabular-nums">{stat.value}</h3>
               </div>
             </div>
           </motion.div>
@@ -117,11 +117,11 @@ const AnalyticsDashboard = ({ boardId }) => {
         <div className="md:col-span-2 p-8 rounded-[40px] bg-white shadow-2xl shadow-black/5 border border-border-light">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-brand-primary/10 text-brand-primary flex items-center justify-center">
+              <div className="w-10 h-10 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
                 <TrendingUp size={20} />
               </div>
               <div>
-                <h3 className="text-sm font-black uppercase tracking-widest text-text-primary">Team Velocity</h3>
+                <h3 className="text-sm font-black uppercase tracking-widest text-foreground">Team Velocity</h3>
                 <p className="text-[10px] font-bold text-text-tertiary uppercase">Cards completed per day</p>
               </div>
             </div>
@@ -164,7 +164,7 @@ const AnalyticsDashboard = ({ boardId }) => {
               <Clock size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-black uppercase tracking-widest text-text-primary">Complexity</h3>
+              <h3 className="text-sm font-black uppercase tracking-widest text-foreground">Complexity</h3>
               <p className="text-[10px] font-bold text-text-tertiary uppercase">Time to finish work</p>
             </div>
           </div>
@@ -173,7 +173,7 @@ const AnalyticsDashboard = ({ boardId }) => {
             {leadTimeData.slice(0, 5).map((item, i) => (
               <div key={item.card_id} className="space-y-2">
                 <div className="flex justify-between items-end">
-                  <span className="text-[10px] font-bold text-text-primary truncate max-w-[140px]">{item.title}</span>
+                  <span className="text-[10px] font-bold text-foreground truncate max-w-[140px]">{item.title}</span>
                   <span className="text-[9px] font-black text-text-tertiary tabular-nums uppercase">{item.lead_time_hours.toFixed(1)}h</span>
                 </div>
                 <div className="h-1.5 w-full bg-bg-secondary rounded-full overflow-hidden">
@@ -202,7 +202,7 @@ const AnalyticsDashboard = ({ boardId }) => {
                 <AlertCircle size={20} />
               </div>
               <div>
-                <h3 className="text-sm font-black uppercase tracking-widest text-text-primary">Bottlenecks</h3>
+                <h3 className="text-sm font-black uppercase tracking-widest text-foreground">Bottlenecks</h3>
                 <p className="text-[10px] font-bold text-text-tertiary uppercase">Oldest active tasks</p>
               </div>
             </div>
@@ -210,7 +210,7 @@ const AnalyticsDashboard = ({ boardId }) => {
                {/* Logic to find oldest active tasks based on activity/created_at */}
                {stats.activeTasks > 0 ? (
                  <p className="text-[11px] font-medium text-text-secondary leading-relaxed">
-                   Currently focusing on <span className="font-black text-text-primary underline decoration-brand-primary/30 decoration-2 underline-offset-2">{stats.activeTasks} items</span>. 
+                   Currently focusing on <span className="font-black text-foreground underline decoration-primary/30 decoration-2 underline-offset-2">{stats.activeTasks} items</span>. 
                    Team velocity suggests you are completing <strong>{(velocityData.reduce((acc, c) => acc + c.cards_completed, 0) / (velocityData.length || 1)).toFixed(1)} tasks</strong> per active day.
                  </p>
                ) : (
@@ -220,7 +220,7 @@ const AnalyticsDashboard = ({ boardId }) => {
          </div>
 
          {/* Distribution Summary */}
-         <div className="p-8 rounded-[40px] bg-gradient-to-br from-brand-primary to-indigo-600 text-white shadow-2xl">
+         <div className="p-8 rounded-[40px] bg-gradient-to-br from-primary to-indigo-600 text-white shadow-2xl">
             <h3 className="text-sm font-black uppercase tracking-[0.2em] mb-2 opacity-80">Health Score</h3>
             <div className="flex items-baseline gap-2">
                <h2 className="text-6xl font-black tabular-nums tracking-tighter">84</h2>

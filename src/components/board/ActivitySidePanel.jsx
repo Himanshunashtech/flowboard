@@ -9,7 +9,7 @@ const ACTIVITY_ICONS = {
   'card.moved': { icon: History, color: 'text-purple-500', bg: 'bg-purple-50' },
   'card.completed': { icon: CheckCircle2, color: 'text-green-500', bg: 'bg-green-50' },
   'list.created': { icon: List, color: 'text-orange-500', bg: 'bg-orange-50' },
-  'comment.added': { icon: MessageCircle, color: 'text-brand-primary', bg: 'bg-brand-primary/5' },
+  'comment.added': { icon: MessageCircle, color: 'text-primary', bg: 'bg-primary/5' },
 };
 
 const ActivitySidePanel = ({ isOpen, onClose, boardId }) => {
@@ -52,11 +52,11 @@ const ActivitySidePanel = ({ isOpen, onClose, boardId }) => {
           >
             <div className="p-6 border-b border-border-light flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-bg-secondary flex items-center justify-center text-text-primary shadow-inner">
+                <div className="w-10 h-10 rounded-2xl bg-bg-secondary flex items-center justify-center text-foreground shadow-inner">
                   <History size={20} />
                 </div>
                 <div>
-                  <h2 className="text-sm font-black uppercase tracking-widest text-text-primary">Board Menu</h2>
+                  <h2 className="text-sm font-black uppercase tracking-widest text-foreground">Board Menu</h2>
                   <p className="text-[10px] font-bold text-text-tertiary">All activities and history</p>
                 </div>
               </div>
@@ -95,8 +95,8 @@ const ActivitySidePanel = ({ isOpen, onClose, boardId }) => {
                             <Icon size={14} />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs text-text-primary leading-relaxed">
-                              <span className="font-bold underline decoration-brand-primary/20">{activity.user}</span>
+                            <p className="text-xs text-foreground leading-relaxed">
+                              <span className="font-bold underline decoration-primary/20">{activity.user}</span>
                               {' '}{activity.action.split('.')[1]} card{' '}
                               <span className="font-bold">{activity.title}</span>
                             </p>
@@ -118,7 +118,7 @@ const ActivitySidePanel = ({ isOpen, onClose, boardId }) => {
                   <span>Board Configuration</span>
                 </div>
                 <button className="w-full p-4 rounded-2xl bg-bg-secondary hover:bg-bg-tertiary transition-all text-left flex items-center justify-between group">
-                  <span className="text-xs font-bold text-text-primary">Change Board Background</span>
+                  <span className="text-xs font-bold text-foreground">Change Board Background</span>
                   <ArrowRight size={14} className="text-text-tertiary group-hover:translate-x-1 transition-transform" />
                 </button>
               </section>

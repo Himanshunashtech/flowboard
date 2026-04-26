@@ -1,7 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Droppable } from '@hello-pangea/dnd';
-import { MoreHorizontal, Plus, X, UserPlus, Check } from 'lucide-react';
+import { 
+  MoreHorizontal, 
+  Plus, 
+  X, 
+  UserPlus, 
+  Check, 
+  Minimize2, 
+  Maximize2 
+} from 'lucide-react';
 import CardItem from './CardItem';
 import { supabase } from '../../lib/supabase';
 import { Ordering } from '../../lib/ordering';
@@ -36,6 +44,14 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
   const [listTitle, setListTitle] = useState(list.title);
   const [assigningUser, setAssigningUser] = useState(null);
   const [isUpdatingColor, setIsUpdatingColor] = useState(false);
+  
+  // Individual Collapse State
+  const [isLocalCollapsed, setIsLocalCollapsed] = useState(isCollapsed);
+
+  // Sync with global collapse prop
+  useEffect(() => {
+    setIsLocalCollapsed(isCollapsed);
+  }, [isCollapsed]);
 
   const handleUpdateColor = async (color) => {
     // Optimistic Update
@@ -141,37 +157,46 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
     if (list.color) return ""; // User color overrides presets
     switch (listStyle) {
       case 'glass':
-        return "bg-white/40 backdrop-blur-xl border-white/20 shadow-2xl shadow-black/[0.03]";
+        return "bg-card/40 backdrop-blur-xl border-border/20 shadow-2xl shadow-black/[0.03]";
       case 'minimal':
         return "bg-transparent border-none shadow-none p-0";
       case 'solid':
       default:
-        return "bg-[#f1f2f4] border-border-light shadow-sm";
+        return "bg-secondary border-border shadow-sm";
     }
   };
 
   const isLight = list.color ? isLightColor(list.color) : true;
-  const listContrastText = isLight ? 'text-text-primary' : 'text-white';
-  const listContrastSecondary = isLight ? 'text-text-secondary' : 'text-white/80';
-  const listContrastIcon = isLight ? 'text-text-primary' : 'text-white';
+  const listContrastText = isLight ? 'text-foreground' : 'text-white';
+  const listContrastSecondary = isLight ? 'text-muted-foreground' : 'text-white/80';
+  const listContrastIcon = isLight ? 'text-foreground' : 'text-white';
 
   return (
     <div 
-      className={`list-container ${isCollapsed ? 'w-16 h-[280px]' : 'w-[380px] max-h-full h-fit'} shrink-0 ${getListStyleClasses()} rounded-2xl flex flex-col snap-center border relative transition-all duration-500 overflow-hidden shadow-2xl shadow-black/5`}
+      className={`list-container ${isLocalCollapsed ? 'w-16 h-[280px]' : 'w-[380px] max-h-full h-fit'} shrink-0 ${getListStyleClasses()} rounded-2xl flex flex-col snap-center border relative transition-all duration-500 overflow-hidden shadow-2xl shadow-black/5`}
       style={{ 
         backgroundColor: list.color || '#ffffff',
         borderTop: list.color ? `10px solid ${hexToRgba(list.color, 0.2)}` : '1px solid transparent',
         borderColor: list.color ? hexToRgba(list.color, 0.3) : 'rgba(0,0,0,0.08)'
       }}
     >
-      {isCollapsed ? (
-        <div className="flex flex-col items-center py-10 h-full">
-           <div className="flex-1 flex items-center justify-center">
-             <h3 className="whitespace-nowrap text-[9px] font-black uppercase tracking-[0.3em] text-text-primary origin-center -rotate-90 transform-gpu py-2 hover:text-brand-primary transition-colors cursor-default">
+      {isLocalCollapsed ? (
+        <div className="flex flex-col items-center py-6 h-full relative">
+           <button 
+             onClick={() => setIsLocalCollapsed(false)}
+             className={`absolute top-4 p-1.5 rounded-lg ${listContrastSecondary} hover:bg-black/5 transition-all mb-4`}
+           >
+             <Maximize2 size={14} />
+           </button>
+           <div className="flex-1 flex items-center justify-center pt-8">
+             <h3 
+               onClick={() => setIsLocalCollapsed(false)}
+               className="whitespace-nowrap text-[9px] font-black uppercase tracking-[0.3em] text-foreground origin-center -rotate-90 transform-gpu py-2 hover:text-primary transition-colors cursor-pointer"
+             >
                {list.title}
              </h3>
            </div>
-           <div className="mt-auto mb-2 px-2 py-1 bg-white/50 rounded-full text-[8px] font-black text-text-tertiary">
+           <div className="mt-auto mb-2 px-2 py-1 bg-card/50 rounded-full text-[8px] font-black text-muted-foreground">
              {cards.length}
            </div>
         </div>
@@ -183,7 +208,7 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
               {isEditingTitle ? (
                 <input
                   autoFocus
-                  className={`flex-1 text-[11px] font-black uppercase tracking-[0.1em] ${listContrastText} bg-black/10 px-3 py-1 rounded-xl outline-none ring-2 ring-brand-primary/20`}
+                  className={`flex-1 text-[13px] font-black uppercase tracking-[0.1em] ${listContrastText} bg-black/10 px-3 py-1 rounded-xl outline-none ring-2 ring-primary/20`}
                   value={listTitle}
                   onChange={e => setListTitle(e.target.value)}
                   onBlur={handleUpdateTitle}
@@ -192,32 +217,50 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
               ) : (
                 <h3 
                   onClick={() => setIsEditingTitle(true)}
-                  className={`text-[11px] font-black uppercase tracking-[0.15em] ${listContrastText} px-1 truncate cursor-pointer hover:bg-black/5 rounded-lg transition-colors`}
+                  className={`text-[13px] font-black uppercase tracking-[0.15em] ${listContrastText} px-1 truncate cursor-pointer hover:bg-black/5 rounded-lg transition-colors`}
                 >
                   {list.title}
                 </h3>
               )}
-              <div className="ml-auto flex items-center gap-3">
-                 <span className={`text-[10px] font-black ${listContrastSecondary} opacity-80`}>
-                   {cards.length}
-                 </span>
-                 {!isReadOnly && (
-                   <div className="flex items-center gap-1 transition-opacity">
+            </div>
+
+            <div className="flex items-center gap-1 ml-auto">
+               <div className="flex flex-col items-end mr-2">
+                 <div className={`text-[11px] font-black ${listContrastText} opacity-90 whitespace-nowrap`}>
+                   {cards.length} <span className="text-[9px] opacity-60">Cards</span>
+                 </div>
+                 {cards.reduce((acc, c) => acc + (c.story_points || 0), 0) > 0 && (
+                   <div className={`text-[11px] font-black ${listContrastText} opacity-70 whitespace-nowrap`}>
+                     {cards.reduce((acc, c) => acc + (c.story_points || 0), 0)} <span className="text-[9px] opacity-60">PTS</span>
+                   </div>
+                 )}
+               </div>
+
+               <div className="flex items-center gap-1">
+                  <button 
+                    onClick={() => setIsLocalCollapsed(true)}
+                    className={`p-1.5 rounded-lg transition-all ${listContrastIcon} hover:bg-black/5`}
+                    title="Collapse List"
+                  >
+                    <Minimize2 size={16} />
+                  </button>
+                  {!isReadOnly && (
+                    <div className="flex items-center gap-1">
                       <button
                         onClick={() => setShowPeoplePanel(p => !p)}
-                        className={`p-1.5 rounded-lg transition-all ${showPeoplePanel ? 'bg-brand-primary/10 text-brand-primary' : `${listContrastIcon} hover:bg-black/5`}`}
+                        className={`p-1.5 rounded-lg transition-all ${showPeoplePanel ? 'bg-primary/10 text-primary' : `${listContrastIcon} hover:bg-black/5`}`}
                       >
-                        <UserPlus size={14} />
+                        <UserPlus size={16} />
                       </button>
                       <button 
                         onClick={() => setShowMenu(p => !p)}
-                        className={`p-1.5 rounded-lg transition-all ${showMenu ? 'bg-black/10 text-brand-primary' : `${listContrastIcon} hover:bg-black/5`}`}
+                        className={`p-1.5 rounded-lg transition-all ${showMenu ? 'bg-black/10 text-primary' : `${listContrastIcon} hover:bg-black/5`}`}
                       >
                         <MoreHorizontal size={16} />
                       </button>
-                   </div>
-                 )}
-              </div>
+                    </div>
+                  )}
+               </div>
             </div>
           </div>
 
@@ -229,10 +272,10 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="mx-3 mb-2 bg-white border border-border-light rounded-xl shadow-lg overflow-hidden relative z-50"
+                className="mx-3 mb-2 bg-card border border-border rounded-xl shadow-lg overflow-hidden relative z-50"
               >
                 <div className="p-3">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary mb-2.5">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2.5">
                     Assign member to list
                   </p>
                   {members?.length > 0 ? (
@@ -245,23 +288,23 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
                             key={m.user_id}
                             onClick={() => assignMemberToList(m)}
                             disabled={isLoading}
-                            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-bg-secondary transition-colors text-left"
+                            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-secondary transition-colors text-left"
                           >
-                            <div className="w-6 h-6 rounded-full bg-brand-primary flex items-center justify-center text-white text-[10px] font-bold shrink-0">
+                            <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-primary-foreground text-[10px] font-bold shrink-0">
                               {name[0].toUpperCase()}
                             </div>
-                            <span className="text-xs font-semibold text-text-secondary flex-1 truncate">{name}</span>
+                              <span className="text-xs font-semibold text-muted-foreground flex-1 truncate">{name}</span>
                             {isLoading ? (
-                              <div className="w-3 h-3 border-2 border-brand-primary border-t-transparent rounded-full animate-spin" />
+                              <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                             ) : (
-                              <Plus size={12} className="text-text-tertiary" />
+                              <Plus size={12} className="text-muted-foreground" />
                             )}
                           </button>
                         );
                       })}
                     </div>
                   ) : (
-                    <p className="text-xs text-text-tertiary italic text-center py-2">No board members yet</p>
+                    <p className="text-xs text-muted-foreground italic text-center py-2">No board members yet</p>
                   )}
                 </div>
               </motion.div>
@@ -273,14 +316,14 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
                 initial={{ opacity: 0, scale: 0.95, y: -10 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                className="mx-3 mb-2 bg-white border border-border-light rounded-2xl shadow-2xl overflow-hidden relative z-50"
+                className="mx-3 mb-2 bg-card border border-border rounded-2xl shadow-2xl overflow-hidden relative z-50"
               >
                 <div className="p-5">
                   <div className="flex items-center justify-between mb-4">
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
                       Change list color
                     </p>
-                    <button onClick={() => setShowMenu(false)} className="text-text-tertiary hover:text-text-primary">
+                    <button onClick={() => setShowMenu(false)} className="text-muted-foreground hover:text-foreground">
                       <X size={14} />
                     </button>
                   </div>
@@ -305,23 +348,23 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
 
                   <button
                     onClick={() => handleUpdateColor(null)}
-                    className="w-full flex items-center justify-center gap-2 py-3 bg-bg-secondary hover:bg-bg-tertiary rounded-xl text-[10px] font-black uppercase tracking-widest text-text-secondary transition-all"
+                    className="w-full flex items-center justify-center gap-2 py-3 bg-secondary hover:bg-muted rounded-xl text-[10px] font-black uppercase tracking-widest text-muted-foreground transition-all"
                   >
                     <X size={14} />
                     Remove color
                   </button>
                 </div>
 
-                <div className="border-t border-border-light p-3 bg-bg-secondary/30">
+                <div className="border-t border-border p-3 bg-secondary/30">
                    <button 
                     onClick={archiveAllCards}
-                    className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:text-danger hover:bg-danger/5 rounded-lg transition-all"
+                    className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-destructive hover:bg-destructive/5 rounded-lg transition-all"
                    >
                      Archive all cards
                    </button>
                    <button 
                     onClick={deleteListHandler}
-                    className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:text-danger hover:bg-danger/5 rounded-lg transition-all"
+                    className="w-full text-left px-3 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-destructive hover:bg-destructive/5 rounded-lg transition-all"
                    >
                      Delete list
                    </button>
@@ -336,7 +379,7 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
               <div
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className={`flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-3 min-h-0 transition-colors ${snapshot.isDraggingOver ? 'bg-brand-primary/5 rounded-2xl' : ''}`}
+                className={`flex-1 overflow-y-auto px-3 py-2 flex flex-col gap-3 min-h-0 transition-colors ${snapshot.isDraggingOver ? 'bg-primary/5 rounded-2xl' : ''}`}
               >
                 {cards.map((card, index) => (
                   <CardItem 
@@ -361,7 +404,7 @@ const ListView = ({ list, cards, onCardClick, selectedIds, listStyle = 'solid', 
                   <textarea
                     autoFocus
                     placeholder="What needs to be done?"
-                    className="w-full p-3 bg-white/90 backdrop-blur-sm border border-border-medium rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-brand-primary/10 outline-none resize-none"
+                    className="w-full p-3 bg-card/90 backdrop-blur-sm border border-border rounded-xl text-sm shadow-sm focus:ring-2 focus:ring-primary/10 outline-none resize-none"
                     rows={3}
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}

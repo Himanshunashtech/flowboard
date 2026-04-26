@@ -5,10 +5,10 @@ import { X, CheckCircle2, AlertCircle, Info, Bell } from 'lucide-react';
 import { removeNotification } from '../../store/slices/uiSlice';
 
 const ICON_MAP = {
-  success: { icon: CheckCircle2, color: 'text-green-500', bg: 'bg-green-50' },
-  error: { icon: AlertCircle, color: 'text-red-500', bg: 'bg-red-50' },
-  info: { icon: Info, color: 'text-blue-500', bg: 'bg-blue-50' },
-  warning: { icon: Bell, color: 'text-orange-500', bg: 'bg-orange-50' },
+  success: { icon: CheckCircle2, color: 'text-green-500', bg: 'bg-green-500/10' },
+  error: { icon: AlertCircle, color: 'text-destructive', bg: 'bg-destructive/10' },
+  info: { icon: Info, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+  warning: { icon: Bell, color: 'text-orange-500', bg: 'bg-orange-500/10' },
 };
 
 const ToastContainer = () => {
@@ -28,22 +28,22 @@ const ToastContainer = () => {
               initial={{ opacity: 0, x: 20, scale: 0.95 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: 20, scale: 0.95 }}
-              className="pointer-events-auto bg-white border border-border-light shadow-2xl rounded-2xl p-4 flex items-start gap-4 min-w-[320px] max-w-md overflow-hidden relative group"
+              className="pointer-events-auto bg-card border border-border shadow-2xl rounded-2xl p-4 flex items-start gap-4 min-w-[320px] max-w-md overflow-hidden relative group"
             >
               <div className={`p-2 rounded-xl ${config.bg} ${config.color}`}>
                 <Icon size={18} />
               </div>
               <div className="flex-1 min-w-0 pr-6">
-                <p className="text-sm font-bold text-text-primary leading-tight lowercase first-letter:uppercase tracking-tight">
+                <p className="text-sm font-bold text-foreground leading-tight lowercase first-letter:uppercase tracking-tight">
                   {n.message}
                 </p>
-                <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary mt-1 opacity-60">
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1 opacity-60">
                   Just now
                 </p>
               </div>
-              <button
+               <button
                 onClick={() => dispatch(removeNotification(n.id))}
-                className="absolute top-4 right-4 text-text-tertiary hover:text-text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-4 right-4 text-muted-foreground hover:text-foreground opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <X size={14} />
               </button>

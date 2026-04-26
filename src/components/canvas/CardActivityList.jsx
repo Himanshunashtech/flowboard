@@ -68,7 +68,7 @@ const CardActivityList = ({ cardId }) => {
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-black uppercase tracking-[0.2em] text-text-tertiary flex items-center gap-2">
-          <History size={16} className="text-brand-primary" />
+          <History size={16} className="text-primary" />
           Timeline
         </h3>
       </div>

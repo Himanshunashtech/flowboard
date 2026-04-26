@@ -71,7 +71,7 @@ const DeveloperSettings = ({ user }) => {
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-black text-text-primary tracking-tight">Developer Ecosystem</h2>
+        <h2 className="text-xl font-black text-foreground tracking-tight">Developer Ecosystem</h2>
         <p className="text-sm text-text-tertiary">Build custom tools and integrations using the FlowBoard API.</p>
       </div>
 
@@ -81,8 +81,8 @@ const DeveloperSettings = ({ user }) => {
            <Terminal size={120} />
         </div>
         
-        <h3 className="text-sm font-bold text-text-primary mb-4 flex items-center gap-2">
-          <Key size={16} className="text-brand-primary" />
+        <h3 className="text-sm font-bold text-foreground mb-4 flex items-center gap-2">
+          <Key size={16} className="text-primary" />
           Create New API Key
         </h3>
         
@@ -92,12 +92,12 @@ const DeveloperSettings = ({ user }) => {
             placeholder="Key Name (e.g. My Website Tracker)"
             value={newKeyName}
             onChange={(e) => setNewKeyName(e.target.value)}
-            className="flex-1 bg-white border border-border-light rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-4 focus:ring-brand-primary/10 focus:border-brand-primary transition-all"
+            className="flex-1 bg-white border border-border-light rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
           />
           <button 
             onClick={generateKey}
             disabled={generating || !newKeyName.trim()}
-            className="px-6 py-2.5 bg-brand-primary text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-brand-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+            className="px-6 py-2.5 bg-primary text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
           >
             {generating ? 'Generating...' : 'Generate Key'}
           </button>
@@ -154,7 +154,7 @@ const DeveloperSettings = ({ user }) => {
                     <Terminal size={18} />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-text-primary">{key.name}</p>
+                    <p className="text-sm font-bold text-foreground">{key.name}</p>
                     <p className="text-[10px] font-mono text-text-tertiary mt-1">Prefix: {key.key_prefix}••••••••••••</p>
                   </div>
                 </div>
@@ -177,17 +177,17 @@ const DeveloperSettings = ({ user }) => {
       </div>
       
       {/* API Docs Link */}
-      <div className="p-6 bg-brand-primary/5 border border-brand-primary/10 rounded-3xl flex items-center justify-between">
+      <div className="p-6 bg-primary/5 border border-primary/10 rounded-3xl flex items-center justify-between">
         <div className="flex items-center gap-4">
-           <div className="w-10 h-10 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary">
+           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
               <Plus size={20} />
            </div>
            <div>
-              <p className="text-sm font-bold text-text-primary">Want to extend FlowBoard?</p>
+              <p className="text-sm font-bold text-foreground">Want to extend FlowBoard?</p>
               <p className="text-xs text-text-tertiary">Check out our developer documentation and SDKs.</p>
            </div>
         </div>
-        <button className="text-xs font-black uppercase tracking-widest text-brand-primary hover:underline">
+        <button className="text-xs font-black uppercase tracking-widest text-primary hover:underline">
            View Documentation
         </button>
       </div>

@@ -71,8 +71,8 @@ const TimeReports = ({ boardId }) => {
         className="p-8 bg-white/60 backdrop-blur-xl rounded-[40px] border border-border-light shadow-sm"
       >
         <div className="flex items-center justify-between mb-8">
-          <h3 className="text-sm font-black uppercase tracking-widest text-text-primary flex items-center gap-3">
-            <Users size={18} className="text-brand-primary" />
+          <h3 className="text-sm font-black uppercase tracking-widest text-foreground flex items-center gap-3">
+            <Users size={18} className="text-primary" />
             Hours by Member
           </h3>
         </div>
@@ -82,13 +82,13 @@ const TimeReports = ({ boardId }) => {
             <div key={member.name} className="space-y-2">
               <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
                 <span className="text-text-secondary">{member.name}</span>
-                <span className="text-text-primary">{member.hours.toFixed(1)} hrs</span>
+                <span className="text-foreground">{member.hours.toFixed(1)} hrs</span>
               </div>
               <div className="h-2 bg-bg-secondary rounded-full overflow-hidden">
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: `${(member.hours / maxMemberHours) * 100}%` }}
-                  className="h-full bg-brand-primary rounded-full shadow-[0_0_10px_rgba(38,132,255,0.3)]"
+                  className="h-full bg-primary rounded-full shadow-[0_0_10px_rgba(38,132,255,0.3)]"
                 />
               </div>
             </div>
@@ -105,7 +105,7 @@ const TimeReports = ({ boardId }) => {
         className="p-8 bg-white/60 backdrop-blur-xl rounded-[40px] border border-border-light shadow-sm"
       >
         <div className="flex items-center justify-between mb-8">
-          <h3 className="text-sm font-black uppercase tracking-widest text-text-primary flex items-center gap-3">
+          <h3 className="text-sm font-black uppercase tracking-widest text-foreground flex items-center gap-3">
             <Layout size={18} className="text-indigo-500" />
             Effort by Stage
           </h3>
@@ -116,7 +116,7 @@ const TimeReports = ({ boardId }) => {
             <div key={stage.name} className="space-y-2">
               <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
                 <span className="text-text-secondary">{stage.name}</span>
-                <span className="text-text-primary">{stage.hours.toFixed(1)} hrs</span>
+                <span className="text-foreground">{stage.hours.toFixed(1)} hrs</span>
               </div>
               <div className="h-2 bg-bg-secondary rounded-full overflow-hidden">
                 <motion.div 

@@ -166,15 +166,15 @@ const TimelineView = () => {
   };
 
   return (
-    <div className="absolute inset-0 bg-gray-50 flex flex-col overflow-hidden selection:bg-brand-primary/10">
+    <div className="absolute inset-0 bg-gray-50 flex flex-col overflow-hidden selection:bg-primary/10">
       {/* Professional Minimalist Header */}
       <header className="shrink-0 p-8 flex items-center justify-between relative z-20 bg-white border-b border-gray-200 shadow-sm">
         <div className="flex gap-6 items-center">
-          <div className="w-14 h-14 bg-gray-50 border border-gray-200 rounded-2xl flex items-center justify-center text-text-primary shadow-sm">
+          <div className="w-14 h-14 bg-gray-50 border border-gray-200 rounded-2xl flex items-center justify-center text-foreground shadow-sm">
             <Clock size={24} />
           </div>
           <div>
-            <h2 className="text-4xl font-black text-text-primary tracking-tighter leading-none">
+            <h2 className="text-4xl font-black text-foreground tracking-tighter leading-none">
               Roadmap <span className="opacity-30">Timeline</span>
             </h2>
             <div className="flex items-center gap-3 mt-1">
@@ -195,7 +195,7 @@ const TimelineView = () => {
               <button
                 key={v}
                 onClick={() => setZoomLevel(v)}
-                className={`px-4 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${zoomLevel === v ? 'bg-white text-brand-primary shadow-sm active:scale-95' : 'text-text-tertiary hover:text-text-primary'}`}
+                className={`px-4 py-1.5 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${zoomLevel === v ? 'bg-white text-primary shadow-sm active:scale-95' : 'text-text-tertiary hover:text-foreground'}`}
               >
                 {v}
               </button>
@@ -203,10 +203,10 @@ const TimelineView = () => {
           </div>
 
           <div className="flex items-center gap-2 bg-gray-50 p-1.5 rounded-2xl border border-gray-200">
-            <button onClick={prevMonth} className="p-2.5 hover:bg-white hover:shadow-sm rounded-xl transition-all text-text-tertiary hover:text-text-primary">
+            <button onClick={prevMonth} className="p-2.5 hover:bg-white hover:shadow-sm rounded-xl transition-all text-text-tertiary hover:text-foreground">
               <ChevronLeft size={18} />
             </button>
-            <button onClick={nextMonth} className="p-2.5 hover:bg-white hover:shadow-sm rounded-xl transition-all text-text-tertiary hover:text-text-primary">
+            <button onClick={nextMonth} className="p-2.5 hover:bg-white hover:shadow-sm rounded-xl transition-all text-text-tertiary hover:text-foreground">
               <ChevronRight size={18} />
             </button>
           </div>
@@ -226,13 +226,13 @@ const TimelineView = () => {
             {days.map(day => (
               <div 
                 key={day.toString()} 
-                className={`shrink-0 h-16 flex flex-col items-center justify-center border-r border-gray-100/40 transition-all ${isSameDay(day, new Date()) ? 'bg-brand-primary/5' : ''}`}
+                className={`shrink-0 h-16 flex flex-col items-center justify-center border-r border-gray-100/40 transition-all ${isSameDay(day, new Date()) ? 'bg-primary/5' : ''}`}
                 style={{ width: CELL_WIDTH }}
               >
-                <span className={`text-[8px] font-black uppercase tracking-tighter ${isSameDay(day, new Date()) ? 'text-brand-primary' : 'text-text-tertiary opacity-40'}`}>
+                <span className={`text-[8px] font-black uppercase tracking-tighter ${isSameDay(day, new Date()) ? 'text-primary' : 'text-text-tertiary opacity-40'}`}>
                    {format(day, 'EEE')}
                 </span>
-                <span className={`text-sm font-black ${isSameDay(day, new Date()) ? 'text-brand-primary' : 'text-text-primary'}`}>
+                <span className={`text-sm font-black ${isSameDay(day, new Date()) ? 'text-primary' : 'text-foreground'}`}>
                    {format(day, 'd')}
                 </span>
               </div>
@@ -245,7 +245,7 @@ const TimelineView = () => {
             {days.map(day => (
               <div 
                 key={day.toString()} 
-                className={`shrink-0 border-r border-gray-100/10 ${isSameDay(day, new Date()) ? 'bg-brand-primary/[0.01]' : ''}`}
+                className={`shrink-0 border-r border-gray-100/10 ${isSameDay(day, new Date()) ? 'bg-primary/[0.01]' : ''}`}
                 style={{ width: CELL_WIDTH }}
               />
             ))}
@@ -261,7 +261,7 @@ const TimelineView = () => {
                     <div className="w-[280px] shrink-0 p-6 flex flex-col justify-center border-r border-gray-100 bg-white sticky left-0 z-20">
                       <div className="flex items-center gap-3">
                         <div className="w-1 h-4 rounded-full" style={{ backgroundColor: list.color || '#3B82F6' }} />
-                        <h3 className="text-[11px] font-black text-text-primary uppercase tracking-tight truncate pr-4">{list.title}</h3>
+                        <h3 className="text-[11px] font-black text-foreground uppercase tracking-tight truncate pr-4">{list.title}</h3>
                       </div>
                       <span className="text-[8px] font-bold tracking-widest text-text-tertiary mt-1 uppercase opacity-40">
                         {list.cards.length} Active Tracks
@@ -277,7 +277,7 @@ const TimelineView = () => {
                           MEDIUM: 'from-blue-500 to-blue-600 shadow-blue-200',
                           LOW: 'from-gray-400 to-gray-500 shadow-gray-100'
                         };
-                        const pColor = priorityColors[card.priority] || 'from-brand-primary to-brand-secondary shadow-brand-light';
+                        const pColor = priorityColors[card.priority] || 'from-primary to-primary shadow-brand-light';
                         
                         return (
                           <motion.div 

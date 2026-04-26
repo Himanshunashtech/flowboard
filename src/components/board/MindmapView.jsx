@@ -25,28 +25,28 @@ import { setActiveCardId } from '../../store/slices/uiSlice';
 // --- Custom Node Components ---
 
 const BoardNode = ({ data }) => (
-  <div className="px-8 py-5 rounded-[40px] bg-brand-primary text-white border-4 border-white shadow-2xl min-w-[240px] flex flex-col items-center justify-center gap-2 relative group overflow-hidden">
+  <div className="px-8 py-5 rounded-[40px] bg-primary text-white border-4 border-white shadow-2xl min-w-[240px] flex flex-col items-center justify-center gap-2 relative group overflow-hidden">
     <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
     <Layers size={24} className="mb-1" />
     <h3 className="text-lg font-black uppercase tracking-widest text-center leading-tight">
       {data.label}
     </h3>
     <div className="text-[10px] font-bold opacity-60 uppercase tracking-tighter">Project Root</div>
-    <Handle type="source" position={Position.Right} className="!bg-white !w-3 !h-3 !border-brand-primary border-2" />
+    <Handle type="source" position={Position.Right} className="!bg-white !w-3 !h-3 !border-primary border-2" />
   </div>
 );
 
 const ListNode = ({ data }) => (
-  <div className="px-6 py-4 rounded-[28px] bg-white border-2 border-slate-200 shadow-xl min-w-[200px] flex flex-col gap-1 relative hover:border-brand-primary transition-all group">
+  <div className="px-6 py-4 rounded-[28px] bg-white border-2 border-slate-200 shadow-xl min-w-[200px] flex flex-col gap-1 relative hover:border-primary transition-all group">
     <Handle type="target" position={Position.Left} className="!bg-slate-300 !w-2 !h-2" />
     <div className="flex items-center gap-2 mb-1">
-      <Box size={14} className="text-brand-primary" />
+      <Box size={14} className="text-primary" />
       <span className="text-[8px] font-black uppercase tracking-[0.2em] text-text-tertiary">Group</span>
     </div>
-    <h4 className="text-sm font-black text-text-primary capitalize">
+    <h4 className="text-sm font-black text-foreground capitalize">
       {data.label}
     </h4>
-    <Handle type="source" position={Position.Right} className="!bg-brand-primary !w-2 !h-2" />
+    <Handle type="source" position={Position.Right} className="!bg-primary !w-2 !h-2" />
   </div>
 );
 
@@ -63,7 +63,7 @@ const TaskNode = ({ data }) => {
   };
 
   return (
-    <div className={`p-4 rounded-3xl bg-white border-2 transition-all hover:shadow-2xl min-w-[220px] shadow-sm relative overflow-hidden group ${isCompleted ? 'border-green-500/30' : 'border-slate-100 hover:border-brand-primary'}`}>
+    <div className={`p-4 rounded-3xl bg-white border-2 transition-all hover:shadow-2xl min-w-[220px] shadow-sm relative overflow-hidden group ${isCompleted ? 'border-green-500/30' : 'border-slate-100 hover:border-primary'}`}>
       <Handle type="target" position={Position.Left} className="!bg-slate-300 !w-2 !h-2" />
       
       <div className={`absolute top-0 left-0 w-1.5 h-full ${isCompleted ? 'bg-green-500' : priorityColors[priority]}`} />
@@ -75,7 +75,7 @@ const TaskNode = ({ data }) => {
         {isCompleted ? <CheckCircle2 size={12} className="text-green-500" /> : <Clock size={12} className="text-text-tertiary" />}
       </div>
       
-      <h4 className="text-xs font-bold text-text-primary leading-tight line-clamp-2 mb-2 pr-4">
+      <h4 className="text-xs font-bold text-foreground leading-tight line-clamp-2 mb-2 pr-4">
         {data.card.title}
       </h4>
 
@@ -84,8 +84,8 @@ const TaskNode = ({ data }) => {
           {priority}
         </div>
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-           <span className="text-[9px] font-black uppercase text-brand-primary tracking-tighter">Details</span>
-           <Maximize2 size={10} className="text-brand-primary" />
+           <span className="text-[9px] font-black uppercase text-primary tracking-tighter">Details</span>
+           <Maximize2 size={10} className="text-primary" />
         </div>
       </div>
     </div>
@@ -191,14 +191,14 @@ const MindmapView = () => {
             <div className="px-6 py-4 bg-white/80 backdrop-blur-md border border-white/40 shadow-xl rounded-[32px] flex flex-col gap-1">
               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">Mindmap Logic</span>
               <div className="flex items-end gap-2">
-                <span className="text-3xl font-black text-text-primary">Breakdown</span>
-                <Sparkles className="text-brand-primary mb-1 animate-pulse" size={18} />
+                <span className="text-3xl font-black text-foreground">Breakdown</span>
+                <Sparkles className="text-primary mb-1 animate-pulse" size={18} />
               </div>
             </div>
           </div>
 
           <div className="pointer-events-auto flex items-center gap-3 bg-white/50 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/20 text-text-tertiary text-xs font-bold uppercase tracking-widest">
-             <Layout size={14} className="text-brand-primary" />
+             <Layout size={14} className="text-primary" />
              Hierarchical Project Flow
           </div>
        </div>

@@ -261,14 +261,14 @@ const TeamPage = () => {
 
   return (
     <AppLayout>
-      <div className="p-10 max-w-7xl mx-auto border-x border-border-light min-h-screen bg-white/30 backdrop-blur-sm">
+      <div className="p-10 max-w-7xl mx-auto min-h-screen bg-white/30 backdrop-blur-sm">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-3 bg-brand-primary/10 text-brand-primary rounded-2xl">
+              <div className="p-3 bg-primary/10 text-primary rounded-2xl">
                 <Users size={24} />
               </div>
-              <h1 className="text-4xl font-black text-text-primary tracking-tighter">
+              <h1 className="text-4xl font-black text-foreground tracking-tighter">
                 {workspace?.name} Team
               </h1>
             </div>
@@ -279,18 +279,18 @@ const TeamPage = () => {
 
           <div className="flex items-center gap-3">
             <div className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand-primary transition-colors" size={18} />
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-primary transition-colors" size={18} />
               <input 
                 type="text"
                 placeholder="Search team..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="pl-12 pr-6 h-14 bg-white border border-border-light rounded-2xl text-sm font-bold focus:ring-4 focus:ring-brand-primary/5 focus:border-brand-primary/20 transition-all outline-none w-64"
+                className="pl-12 pr-6 h-14 bg-white border border-border-light rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/5 focus:border-primary/20 transition-all outline-none w-64"
               />
             </div>
             <button 
               onClick={() => dispatch(toggleModal({ modalName: 'memberInvite', isOpen: true }))}
-              className="h-14 px-8 bg-brand-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2"
+              className="h-14 px-8 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2"
             >
               <UserPlus size={16} />
               Invite
@@ -300,7 +300,7 @@ const TeamPage = () => {
 
         <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredMembers.map((member) => (
-            <div key={member.user_id} className="bg-white border border-border-light rounded-[40px] p-8 hover:shadow-2xl hover:shadow-brand-primary/5 transition-all group relative overflow-hidden">
+            <div key={member.user_id} className="bg-white border border-border-light rounded-[40px] p-8 hover:shadow-2xl hover:shadow-primary/5 transition-all group relative overflow-hidden">
               <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-100 transition-all flex flex-col gap-2">
                  <button 
                    onClick={() => handleRemoveMember(member.user_id)}
@@ -312,13 +312,13 @@ const TeamPage = () => {
               </div>
 
               <div className="flex flex-col items-center text-center">
-                <div className="w-24 h-24 rounded-[32px] bg-gradient-to-br from-brand-primary to-brand-secondary p-1 mb-6 shadow-xl shadow-brand-primary/20">
-                  <div className="w-full h-full rounded-[28px] bg-white flex items-center justify-center text-3xl font-black text-brand-primary">
+                <div className="w-24 h-24 rounded-[32px] bg-gradient-to-br from-primary to-primary p-1 mb-6 shadow-xl shadow-primary/20">
+                  <div className="w-full h-full rounded-[28px] bg-white flex items-center justify-center text-3xl font-black text-primary">
                     {(member.profiles?.full_name || member.profiles?.email || 'U')[0].toUpperCase()}
                   </div>
                 </div>
 
-                <h3 className="text-xl font-black text-text-primary mb-1 truncate w-full px-4">
+                <h3 className="text-xl font-black text-foreground mb-1 truncate w-full px-4">
                   {member.profiles?.full_name || 'Anonymous'}
                 </h3>
                 <p className="text-sm font-medium text-text-tertiary mb-6 truncate w-full px-4">
@@ -332,7 +332,7 @@ const TeamPage = () => {
                       value={member.role}
                       onChange={(e) => handleUpdateRole(member.user_id, e.target.value)}
                       disabled={member.user_id === user?.id}
-                      className="bg-transparent text-[10px] font-black uppercase tracking-widest text-brand-primary outline-none cursor-pointer hover:bg-brand-primary/5 px-2 py-1 rounded-lg"
+                      className="bg-transparent text-[10px] font-black uppercase tracking-widest text-primary outline-none cursor-pointer hover:bg-primary/5 px-2 py-1 rounded-lg"
                     >
                       <option value="OWNER">Owner</option>
                       <option value="ADMIN">Admin</option>
@@ -345,7 +345,7 @@ const TeamPage = () => {
                     className="w-full h-12 flex items-center justify-between px-4 bg-bg-secondary hover:bg-bg-tertiary rounded-2xl transition-all group/btn"
                   >
                     <div className="flex items-center gap-2">
-                      <Layout size={14} className="text-text-tertiary group-hover/btn:text-brand-primary" />
+                      <Layout size={14} className="text-text-tertiary group-hover/btn:text-primary" />
                       <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary">Boards</span>
                     </div>
                     <ChevronRight size={14} className="text-text-tertiary" />
@@ -356,7 +356,7 @@ const TeamPage = () => {
                     className="w-full h-12 flex items-center justify-between px-4 bg-bg-secondary hover:bg-bg-tertiary rounded-2xl transition-all group/btn"
                   >
                     <div className="flex items-center gap-2">
-                      <CheckCircle2 size={14} className="text-text-tertiary group-hover/btn:text-brand-primary" />
+                      <CheckCircle2 size={14} className="text-text-tertiary group-hover/btn:text-primary" />
                       <span className="text-[10px] font-black uppercase tracking-widest text-text-secondary">Tasks</span>
                     </div>
                     <ChevronRight size={14} className="text-text-tertiary" />
@@ -373,7 +373,7 @@ const TeamPage = () => {
             <div className="w-full max-w-md bg-white rounded-[40px] shadow-2xl overflow-hidden">
               <div className="p-8 border-b border-border-light flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-black text-text-primary">Assign Boards</h3>
+                  <h3 className="text-xl font-black text-foreground">Assign Boards</h3>
                   <p className="text-xs font-bold text-text-tertiary mt-1">
                     Manage project access for {selectedMember?.profiles?.full_name}
                   </p>
@@ -389,11 +389,11 @@ const TeamPage = () => {
                   <div key={board.id} className="flex items-center justify-between p-4 bg-bg-secondary rounded-3xl group">
                     <div className="flex items-center gap-3">
                       <div className="w-8 h-8 rounded-lg" style={{ backgroundColor: board.background_value }} />
-                      <span className="text-sm font-bold text-text-primary">{board.title}</span>
+                      <span className="text-sm font-bold text-foreground">{board.title}</span>
                     </div>
                     <button 
                       onClick={() => toggleBoardAccess(board.id)}
-                      className={`h-10 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${memberBoards.includes(board.id) ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/20' : 'bg-white text-text-tertiary hover:bg-brand-primary/5 hover:text-brand-primary'}`}
+                      className={`h-10 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${memberBoards.includes(board.id) ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-white text-text-tertiary hover:bg-primary/5 hover:text-primary'}`}
                     >
                       {memberBoards.includes(board.id) ? 'Assigned' : 'Assign'}
                     </button>
@@ -410,7 +410,7 @@ const TeamPage = () => {
             <div className="w-full max-w-2xl bg-white rounded-[40px] shadow-2xl overflow-hidden">
               <div className="p-8 border-b border-border-light flex items-center justify-between">
                 <div>
-                  <h3 className="text-xl font-black text-text-primary">Assign Tasks</h3>
+                  <h3 className="text-xl font-black text-foreground">Assign Tasks</h3>
                   <p className="text-xs font-bold text-text-tertiary mt-1">
                     View and manage tasks for {selectedMember?.profiles?.full_name}
                   </p>
@@ -430,7 +430,7 @@ const TeamPage = () => {
                    ) : assignedTasks.map(task => (
                      <div key={task.id} className="flex items-center justify-between p-4 bg-bg-secondary rounded-2xl">
                         <div>
-                           <p className="text-sm font-bold text-text-primary">{task.title}</p>
+                           <p className="text-sm font-bold text-foreground">{task.title}</p>
                            <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">{task.boards?.title}</p>
                         </div>
                         <button 
@@ -448,14 +448,14 @@ const TeamPage = () => {
                    {unassignedTasks.length === 0 ? (
                       <p className="text-center py-6 text-xs text-text-tertiary italic">No available tasks to assign</p>
                    ) : unassignedTasks.map(task => (
-                      <div key={task.id} className="flex items-center justify-between p-4 bg-white border border-border-light rounded-2xl hover:border-brand-primary/20 transition-all">
+                      <div key={task.id} className="flex items-center justify-between p-4 bg-white border border-border-light rounded-2xl hover:border-primary/20 transition-all">
                          <div>
-                            <p className="text-sm font-bold text-text-primary">{task.title}</p>
+                            <p className="text-sm font-bold text-foreground">{task.title}</p>
                             <p className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">{task.boards?.title}</p>
                          </div>
                          <button 
                            onClick={() => assignTask(task.id)}
-                           className="h-10 px-4 bg-bg-secondary hover:bg-brand-primary hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+                           className="h-10 px-4 bg-bg-secondary hover:bg-primary hover:text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
                          >
                             Assign
                          </button>

@@ -78,10 +78,10 @@ const BoardSharePopover = ({
       {/* Header */}
       <div className="px-8 py-6 border-b border-border-light flex items-center justify-between bg-bg-secondary/20">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-brand-primary/10 rounded-xl flex items-center justify-center text-brand-primary">
+          <div className="w-8 h-8 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
             <Globe size={18} />
           </div>
-          <span className="text-sm font-black uppercase tracking-widest text-text-primary">Sharing Protocol</span>
+          <span className="text-sm font-black uppercase tracking-widest text-foreground">Sharing Protocol</span>
         </div>
         <button onClick={onClose} className="p-2 hover:bg-bg-secondary rounded-xl text-text-tertiary transition-colors">
           <X size={20} />
@@ -105,7 +105,7 @@ const BoardSharePopover = ({
                   onClick={() => onUpdateVisibility(type.id)}
                   className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-[24px] border-2 transition-all
                       ${board.visibility === type.id
-                      ? 'border-brand-primary bg-brand-primary/5 text-brand-primary'
+                      ? 'border-primary bg-primary/5 text-primary'
                       : 'border-bg-secondary bg-bg-secondary/30 text-text-tertiary hover:border-border-light'}`}
                 >
                   <type.icon size={20} className={board.visibility === type.id ? 'animate-pulse' : ''} />
@@ -125,10 +125,10 @@ const BoardSharePopover = ({
               <button
                 onClick={handleCopy}
                 className={`flex items-center justify-between px-5 py-3.5 rounded-2xl transition-all border shadow-sm group
-                    ${copied ? 'bg-success border-success text-white' : 'bg-white border-border-light hover:border-brand-primary text-text-primary'}`}
+                    ${copied ? 'bg-success border-success text-white' : 'bg-white border-border-light hover:border-primary text-foreground'}`}
               >
                 <div className="flex items-center gap-3">
-                  {copied ? <Check size={16} /> : <LinkIcon size={16} className="text-brand-primary" />}
+                  {copied ? <Check size={16} /> : <LinkIcon size={16} className="text-primary" />}
                   <span className="text-xs font-bold">{copied ? 'Copied' : 'Copy Link'}</span>
                 </div>
                 <ChevronRight size={14} className="opacity-20 group-hover:opacity-100" />
@@ -137,10 +137,10 @@ const BoardSharePopover = ({
               <button
                 onClick={() => setShowQR(!showQR)}
                 className={`flex items-center justify-between px-5 py-3.5 rounded-2xl transition-all border shadow-sm group
-                    ${showQR ? 'bg-brand-primary border-brand-primary text-white' : 'bg-white border-border-light hover:border-brand-primary text-text-primary'}`}
+                    ${showQR ? 'bg-primary border-primary text-white' : 'bg-white border-border-light hover:border-primary text-foreground'}`}
               >
                 <div className="flex items-center gap-3">
-                  <QrCode size={16} className={showQR ? 'text-white' : 'text-brand-primary'} />
+                  <QrCode size={16} className={showQR ? 'text-white' : 'text-primary'} />
                   <span className="text-xs font-bold">Show QR Code</span>
                 </div>
                 <div className={`w-2 h-2 rounded-full ${showQR ? 'bg-white' : 'bg-border-light'}`} />
@@ -162,7 +162,7 @@ const BoardSharePopover = ({
                 <QRCodeSVG value={shareUrl} size={120} level="H" includeMargin />
               </div>
               <div className="space-y-2">
-                <h4 className="text-xs font-black uppercase tracking-widest text-text-primary">Live Share</h4>
+                <h4 className="text-xs font-black uppercase tracking-widest text-foreground">Live Share</h4>
                 <p className="text-[10px] font-bold text-text-tertiary max-w-[200px] leading-relaxed">Scan this code to instantly open this command board on any mobile device.</p>
               </div>
             </motion.div>
@@ -190,7 +190,7 @@ const BoardSharePopover = ({
             <button onClick={handlePrint} className="flex items-center justify-center gap-3 py-4 bg-bg-secondary/50 hover:bg-gray-50 rounded-[20px] transition-all border border-border-light group">
               <Printer size={18} className="text-gray-600 group-hover:scale-110 transition-transform" />
               <div className="text-left">
-                <p className="text-[10px] font-black uppercase tracking-widest text-text-primary">Hard Copy</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-foreground">Hard Copy</p>
                 <p className="text-[8px] font-bold text-text-tertiary opacity-60">Print View</p>
               </div>
             </button>

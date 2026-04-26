@@ -42,7 +42,7 @@ const IntegrationModal = ({ isOpen, onClose, services, captureEmail }) => {
            <div className="p-10 space-y-8">
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
-                   <h2 className="text-3xl font-black text-text-primary tracking-tighter">Connection Hub</h2>
+                   <h2 className="text-3xl font-black text-foreground tracking-tighter">Connection Hub</h2>
                    <p className="text-sm font-bold text-text-tertiary">Power up your capture workflow.</p>
                 </div>
                 <button onClick={onClose} className="p-3 bg-bg-secondary rounded-2xl hover:bg-bg-tertiary transition-all">
@@ -58,11 +58,11 @@ const IntegrationModal = ({ isOpen, onClose, services, captureEmail }) => {
                            {service.icon}
                         </div>
                         <div className="space-y-1">
-                           <h4 className="text-xl font-black text-text-primary tracking-tight">{service.name}</h4>
+                           <h4 className="text-xl font-black text-foreground tracking-tight">{service.name}</h4>
                            <p className="text-xs font-bold text-text-tertiary">{service.description}</p>
                         </div>
                      </div>
-                     <button className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${service.connected ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-text-primary text-white hover:bg-indigo-600'}`}>
+                     <button className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${service.connected ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' : 'bg-foreground text-white hover:bg-indigo-600'}`}>
                         {service.connected ? (
                           <>
                              <ShieldCheck size={14} />
@@ -279,7 +279,7 @@ const InboxPage = () => {
               <div className="p-2 bg-indigo-50 rounded-xl text-indigo-600">
                 <Inbox size={24} />
               </div>
-              <h1 className="text-3xl font-black text-text-primary tracking-tight">Personal Inbox</h1>
+              <h1 className="text-3xl font-black text-foreground tracking-tight">Personal Inbox</h1>
             </div>
             <p className="text-sm font-medium text-text-tertiary">
               {items.length} untriaged missions waiting for deployment.
@@ -293,7 +293,7 @@ const InboxPage = () => {
                 </div>
                 <div className="space-y-0.5">
                    <p className="text-[9px] font-black uppercase tracking-widest text-text-tertiary">Capture Email</p>
-                   <p className="text-[11px] font-bold text-text-primary lowercase">{profile?.inbound_capture_email || 'generating...'}</p>
+                   <p className="text-[11px] font-bold text-foreground lowercase">{profile?.inbound_capture_email || 'generating...'}</p>
                 </div>
                 <div className="ms-2">
                    {copied ? <Check size={14} className="text-emerald-500" /> : <Copy size={14} className="text-text-tertiary group-hover:text-indigo-600 transition-colors" />}
@@ -350,7 +350,7 @@ const InboxPage = () => {
                     <CheckCircle2 size={40} />
                   </div>
                   <div className="text-center space-y-2">
-                    <h3 className="text-2xl font-black text-text-primary tracking-tight">Inbox Absolute Zero</h3>
+                    <h3 className="text-2xl font-black text-foreground tracking-tight">Inbox Absolute Zero</h3>
                     <p className="font-bold text-sm text-text-tertiary max-w-[300px]">Everything is triaged. Your mental bandwidth is maximized.</p>
                   </div>
                 </div>
@@ -371,7 +371,7 @@ const InboxPage = () => {
                            {getSourceIcon(item.source)}
                         </div>
                         <div className="space-y-1">
-                          <h4 className="text-xl font-black text-text-primary tracking-tight line-clamp-1">{item.title}</h4>
+                          <h4 className="text-xl font-black text-foreground tracking-tight line-clamp-1">{item.title}</h4>
                           <div className="flex items-center gap-4 text-[10px] font-bold text-text-tertiary">
                             <span className="flex items-center gap-1.5 uppercase tracking-widest">
                               <Clock size={12} strokeWidth={3} />
@@ -419,7 +419,7 @@ const InboxPage = () => {
                        {selectedItem.source || 'Manual'}
                     </div>
                   </div>
-                  <h2 className="text-4xl font-black text-text-primary tracking-tighter leading-tight">
+                  <h2 className="text-4xl font-black text-foreground tracking-tighter leading-tight">
                     {selectedItem.title}
                   </h2>
                 </div>
@@ -468,7 +468,7 @@ const InboxPage = () => {
                                    {member.profiles?.full_name?.[0] || member.profiles?.email?.[0]}
                                  </div>
                                )}
-                               <div className={`absolute -bottom-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-text-primary text-white text-[8px] font-black uppercase rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10`}>
+                               <div className={`absolute -bottom-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-foreground text-white text-[8px] font-black uppercase rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10`}>
                                  {member.profiles?.full_name || 'Team Member'}
                                </div>
                              </button>
@@ -491,7 +491,7 @@ const InboxPage = () => {
                         <div className="space-y-3">
                            <div className="flex items-center justify-between py-2 border-b border-border-light/50">
                               <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Objective</span>
-                              <span className="text-[10px] font-black text-text-primary truncate max-w-[180px]">{selectedItem.title}</span>
+                              <span className="text-[10px] font-black text-foreground truncate max-w-[180px]">{selectedItem.title}</span>
                            </div>
                            <div className="flex items-center justify-between py-2 border-b border-border-light/50">
                               <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Source</span>
@@ -502,7 +502,7 @@ const InboxPage = () => {
                            </div>
                            <div className="flex items-center justify-between py-2 border-b border-border-light/50">
                               <span className="text-[10px] font-bold text-text-tertiary uppercase tracking-wider">Environment</span>
-                              <span className="text-[10px] font-black text-text-primary">
+                              <span className="text-[10px] font-black text-foreground">
                                 {workspaces.flatMap(ws => ws.boards || []).find(b => b.id === selectedBoardId)?.title}
                               </span>
                            </div>
@@ -514,7 +514,7 @@ const InboxPage = () => {
                                       ? workspaces.flatMap(ws => ws.workspace_members || []).find(m => m.user_id === selectedAssigneeId)?.profiles?.full_name?.[0] || '?'
                                       : 'UN'}
                                  </div>
-                                 <span className="text-[10px] font-black text-text-primary">
+                                 <span className="text-[10px] font-black text-foreground">
                                    {selectedAssigneeId 
                                      ? workspaces.flatMap(ws => ws.workspace_members || []).find(m => m.user_id === selectedAssigneeId)?.profiles?.full_name || 'MEMBER'
                                      : 'UNASSIGNED'}
@@ -541,7 +541,7 @@ const InboxPage = () => {
                    <MousePointer2 size={44} />
                 </div>
                 <div className="space-y-2">
-                   <p className="text-sm font-black uppercase tracking-[0.3em] text-text-primary">Ready for Triage</p>
+                   <p className="text-sm font-black uppercase tracking-[0.3em] text-foreground">Ready for Triage</p>
                    <p className="text-[11px] font-bold text-text-tertiary max-w-[240px] leading-relaxed">
                       Select a captured objective to designate its target environment and deploy to a board.
                    </p>

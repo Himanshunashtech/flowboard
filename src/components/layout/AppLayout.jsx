@@ -3,6 +3,7 @@ import Sidebar from '../Sidebar';
 import Header from '../Header';
 import UniversalSearch from '../ui/UniversalSearch';
 import ToastContainer from '../ui/ToastContainer';
+import AIFocusMode from '../ai/AIFocusMode';
 import '../../styles/index.css';
 
 const AppLayout = ({ children, scrollable = true }) => {
@@ -29,6 +30,7 @@ const AppLayout = ({ children, scrollable = true }) => {
         </main>
       </div>
       <UniversalSearch isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      <AIFocusMode />
       <ToastContainer />
     </div>
   );

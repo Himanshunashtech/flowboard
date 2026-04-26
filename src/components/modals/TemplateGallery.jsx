@@ -533,10 +533,10 @@ const TemplateGallery = ({ isOpen, onClose, onSelect }) => {
             <div className="p-10 border-b border-border-light flex flex-col md:flex-row md:items-center justify-between gap-6 bg-bg-secondary/30">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="p-2 bg-brand-primary/10 rounded-xl">
-                    <Sparkles className="text-brand-primary" size={24} />
+                  <div className="p-2 bg-primary/10 rounded-xl">
+                    <Sparkles className="text-primary" size={24} />
                   </div>
-                  <h2 className="text-3xl font-black text-text-primary tracking-tight">Forge your workspace</h2>
+                  <h2 className="text-3xl font-black text-foreground tracking-tight">Forge your workspace</h2>
                 </div>
                 <p className="text-sm text-text-tertiary font-medium">Select a blueprint to provision your board in seconds.</p>
               </div>
@@ -544,13 +544,13 @@ const TemplateGallery = ({ isOpen, onClose, onSelect }) => {
               <div className="flex items-center gap-2 p-1.5 bg-white rounded-2xl border border-border-light shadow-sm self-start md:self-center">
                 <button
                   onClick={() => setActiveCategory('basic')}
-                  className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeCategory === 'basic' ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/20' : 'text-text-tertiary hover:bg-bg-secondary'}`}
+                  className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeCategory === 'basic' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-text-tertiary hover:bg-bg-secondary'}`}
                 >
                   Basic Shells
                 </button>
                 <button
                   onClick={() => setActiveCategory('developer')}
-                  className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeCategory === 'developer' ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/20' : 'text-text-tertiary hover:bg-bg-secondary'}`}
+                  className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeCategory === 'developer' ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'text-text-tertiary hover:bg-bg-secondary'}`}
                 >
                   Developer Core
                 </button>
@@ -572,7 +572,7 @@ const TemplateGallery = ({ isOpen, onClose, onSelect }) => {
                     transition={{ duration: 0.2 }}
                     key={template.id}
                     onClick={() => onSelect(template)}
-                    className="group relative rounded-2xl border border-border-light bg-white hover:border-brand-primary/30 hover:shadow-2xl hover:shadow-brand-primary/5 transition-all cursor-pointer overflow-hidden flex flex-col"
+                    className="group relative rounded-2xl border border-border-light bg-white hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5 transition-all cursor-pointer overflow-hidden flex flex-col"
                   >
                     {/* Cover Image Header */}
                     <div className="h-40 overflow-hidden relative">
@@ -614,9 +614,9 @@ const TemplateGallery = ({ isOpen, onClose, onSelect }) => {
                         )}
                       </div>
 
-                      <div className="mt-auto flex items-center justify-between pt-4 border-t border-border-light group-hover:border-brand-primary/20">
+                      <div className="mt-auto flex items-center justify-between pt-4 border-t border-border-light group-hover:border-primary/20">
                         <div className="flex items-center gap-2">
-                          <Info size={12} className="text-brand-primary opacity-40" />
+                          <Info size={12} className="text-primary opacity-40" />
                           <span className="text-[9px] font-black uppercase text-text-tertiary">Premium Guide Incl.</span>
                         </div>
                         <button
@@ -624,7 +624,7 @@ const TemplateGallery = ({ isOpen, onClose, onSelect }) => {
                             e.stopPropagation();
                             onSelect(template);
                           }}
-                          className="flex items-center gap-2 bg-brand-primary text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-brand-primary/20"
+                          className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20"
                         >
                           Use
                           <ArrowRight size={10} />

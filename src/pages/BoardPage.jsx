@@ -50,8 +50,8 @@ import {
   setDependencies,
   setPresence
 } from '../store/slices/boardSlice';
-import { addNotification, toggleModal } from '../store/slices/uiSlice';
-import { throttle, isLightColor } from '../lib/utils';
+import { addNotification, toggleModal, toggleSidebarHidden } from '../store/slices/uiSlice';
+import { throttle, isLightColor, darkenHexColor } from '../lib/utils';
 import { Ordering } from '../lib/ordering';
 import LiveCursors from '../components/board/LiveCursors';
 import AppLayout from '../components/layout/AppLayout';
@@ -71,13 +71,12 @@ import ActivitySidePanel from '../components/board/ActivitySidePanel';
 import TemplateGuideModal from '../components/modals/TemplateGuideModal';
 import { TEMPLATES } from '../components/modals/TemplateGallery';
 
-import ErrorBoundary from '../components/ui/ErrorBoundary';
 
 const BoardPage = () => {
   const { boardId } = useParams();
   const dispatch = useDispatch();
   const { activeBoard, lists, cards, loading, members, presence, starredBoardIds } = useSelector((state) => state.board);
-  const { modals } = useSelector((state) => state.ui);
+  const { modals, sidebarHidden } = useSelector((state) => state.ui);
   const { user, profile, loading: authLoading } = useSelector((state) => state.auth);
   const navigate = useNavigate();
   const channelRef = useRef(null);
@@ -99,6 +98,8 @@ const BoardPage = () => {
   const [isBoardCollapsed, setIsBoardCollapsed] = useState(false);
   const [showGuideModal, setShowGuideModal] = useState(false);
   const [activeTemplate, setActiveTemplate] = useState(null);
+  const [showViewDropdown, setShowViewDropdown] = useState(false);
+  const viewBtnRef = useRef(null);
   const [isWsMember, setIsWsMember] = useState(false);
   const [isWsAdmin, setIsWsAdmin] = useState(false);
 
@@ -396,10 +397,14 @@ const BoardPage = () => {
 
 
   const updateVisibility = async (newVisibility) => {
-    const { data, error } = await supabase.from('boards').update({ visibility: newVisibility }).eq('id', boardId).select().single();
-    if (!error && data) {
+    const { data, error } = await supabase.from('boards').update({ visibility: newVisibility }).eq('id', boardId).select().maybeSingle();
+    if (error) {
+      dispatch(addNotification({ message: 'Failed to update visibility', type: 'error' }));
+    } else if (data) {
       dispatch(setActiveBoard(data));
       dispatch(addNotification({ message: 'Board visibility updated', type: 'success' }));
+    } else {
+      dispatch(addNotification({ message: 'Permission denied for visibility update', type: 'error' }));
     }
   };
 
@@ -412,26 +417,73 @@ const BoardPage = () => {
     switch (activeBoard.background_type) {
       case 'COLOR': return { backgroundColor: val };
       case 'GRADIENT': return { background: val };
-      case 'IMAGE': return { backgroundImage: `url("${val}")`, backgroundSize: 'cover', backgroundPosition: 'center' };
-      default: return {};
+      case 'PATTERN': 
+        return { 
+          backgroundImage: val.startsWith('url') ? val : `url("${val}")`, 
+          backgroundRepeat: 'repeat',
+          backgroundSize: 'auto' 
+        };
+      case 'IMAGE': 
+        return { 
+          backgroundImage: val.startsWith('url') ? val : `url("${val}")`, 
+          backgroundSize: 'cover', 
+          backgroundPosition: 'center',
+          backgroundAttachment: 'fixed'
+        };
+      default: return { backgroundColor: 'var(--background)' };
     }
   };
   
-  const isLight = activeBoard ? isLightColor(activeBoard.background_value) : false;
-  const navTextColor = isLight ? 'text-text-primary' : 'text-white';
-  const navSecondaryColor = isLight ? 'text-text-tertiary' : 'text-white/60';
-  const navBgColor = isLight ? 'bg-black/5' : 'bg-white/10';
-  const headerBg = isLight ? 'bg-white/80' : 'bg-black/10';
-  const borderColor = isLight ? 'border-black/5' : 'border-white/10';
+  const backgroundType = activeBoard?.background_type?.toUpperCase();
+  const isSolidColor = backgroundType === 'COLOR';
+  const isLight = activeBoard ? isLightColor(activeBoard.background_value) : true;
+  
+  const navTextColor = isSolidColor && !isLight ? 'text-white' : 'text-slate-900';
+  const navSecondaryColor = isSolidColor && !isLight ? 'text-white/60' : 'text-slate-500';
+  const navBgColor = isSolidColor && !isLight ? 'bg-white/10' : 'bg-slate-100';
+  const borderColor = isSolidColor && !isLight ? 'border-white/10' : 'border-slate-200';
+
+  const getHeaderStyle = () => {
+    if (isSolidColor) {
+      const bgColor = darkenHexColor(activeBoard.background_value, -10);
+      return { 
+        backgroundColor: bgColor,
+        borderBottom: `1px solid ${isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.1)'}`,
+        boxShadow: 'none',
+        backdropFilter: 'none'
+      };
+    }
+    return { 
+      backgroundColor: 'white',
+      borderBottom: '1px solid rgba(0, 0, 0, 0.08)',
+      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.03)',
+      backdropFilter: 'none'
+    };
+  };
+
+  const headerNavLinkClass = (isActive) => `flex items-center gap-3 px-4 py-2 rounded-xl transition-all text-xs font-black uppercase tracking-widest ${isActive ? 'bg-primary text-white shadow-lg shadow-primary/20 scale-105' : `${isSolidColor && !isLight ? 'text-white/70 hover:bg-white/10 hover:text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-primary'}`}`;
+  const headerIconColor = isSolidColor && !isLight ? "text-white/40 group-hover:text-white transition-colors" : "text-slate-400 group-hover:text-primary transition-colors";
+  const headerTextColor = isSolidColor && !isLight ? "text-white font-black" : "text-slate-900 font-black";
+  const headerSecondaryColor = isSolidColor && !isLight ? "text-white/60" : "text-slate-500";
 
   return (
     <AppLayout scrollable={false}>
       <div className="flex flex-col h-full overflow-hidden transition-all duration-700" style={getBackgroundStyle()} onMouseMove={handleBoardMouseMove}>
         <LiveCursors />
-        <header className={`h-14 border-b ${borderColor} flex items-center justify-between px-6 ${headerBg} backdrop-blur-md shrink-0 z-[50] relative transition-colors duration-500`}>
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3 group/star">
-              <h2 className={`text-2xl font-black ${navTextColor} tracking-tighter`}>{activeBoard?.title}</h2>
+        <header 
+          className="h-18 flex items-center justify-between px-8 shrink-0 z-[50] relative"
+          style={getHeaderStyle()}
+        >
+          <div className="flex items-center gap-8">
+            <div className="flex items-center gap-4 group/star">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2 mb-1">
+                   <div className={`w-2 h-2 rounded-full ${activeBoard?.visibility === 'PUBLIC' ? 'bg-emerald-500' : 'bg-amber-500'} animate-pulse`} />
+                   <span className={`text-[8px] font-black uppercase tracking-[0.2em] ${navSecondaryColor}`}>{activeBoard?.visibility} PROJECT</span>
+                </div>
+                <h2 className={`text-3xl font-black ${navTextColor} tracking-tighter leading-none whitespace-nowrap`}>{activeBoard?.title}</h2>
+              </div>
+              
               <button 
                 onClick={async () => {
                   const isStarred = starredBoardIds.includes(activeBoard.id);
@@ -442,95 +494,193 @@ const BoardPage = () => {
                     await supabase.from('board_stars').insert({ board_id: activeBoard.id, user_id: user.id });
                   }
                 }}
-                className={`p-2 rounded-xl transition-all ${starredBoardIds.includes(activeBoard?.id) ? 'text-yellow-400 bg-yellow-400/10' : `${navTextColor} opacity-40 hover:bg-black/5 opacity-0 group-hover/star:opacity-100`}`}
+                className={`p-2.5 rounded-2xl transition-all ${starredBoardIds.includes(activeBoard?.id) ? 'text-yellow-400 bg-yellow-400/10' : `${navTextColor} opacity-20 hover:opacity-100 hover:bg-white/10`}`}
               >
-                <Star size={20} fill={starredBoardIds.includes(activeBoard?.id) ? 'currentColor' : 'none'} />
+                <Star size={22} fill={starredBoardIds.includes(activeBoard?.id) ? 'currentColor' : 'none'} />
               </button>
             </div>
-            <div className="flex -space-x-2">
-              {members?.slice(0, 4).map(m => (
-                <div key={m.user_id} className={`w-7 h-7 rounded-full border-2 ${isLight ? 'border-brand-primary/20' : 'border-white/20'} bg-brand-primary flex items-center justify-center text-[10px] font-bold text-white shadow-sm`}>
-                  {(m.profiles?.full_name || m.profiles?.email || '?')[0].toUpperCase()}
-                </div>
-              ))}
-            </div>
-            {isReadOnly && (
-              <div className={`flex items-center gap-2 px-3 py-1 ${isLight ? 'bg-brand-primary/10 border-brand-primary/20' : 'bg-yellow-400/20 border-yellow-400/30'} rounded-lg`}>
-                <Shield size={12} className={isLight ? 'text-brand-primary' : 'text-yellow-400'} />
-                <span className={`text-[9px] font-black uppercase ${isLight ? 'text-brand-primary' : 'text-yellow-100'} tracking-widest`}>Read Only Mode</span>
-              </div>
-            )}
 
+            <div className="h-10 w-px bg-border/20 mx-2 hidden lg:block"></div>
+
+            <div className="flex items-center gap-4">
+              <div className="flex -space-x-3">
+                {members?.slice(0, 5).map((m, i) => (
+                  <motion.div 
+                    key={m.user_id} 
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: i * 0.1 }}
+                    className={`w-9 h-9 rounded-2xl border-2 ${isLight ? 'border-primary/20' : 'border-white/20'} bg-primary flex items-center justify-center text-xs font-black text-primary-foreground shadow-xl ring-4 ring-black/5`}
+                  >
+                    {(m.profiles?.full_name || m.profiles?.email || '?')[0].toUpperCase()}
+                  </motion.div>
+                ))}
+              </div>
+              {isReadOnly && (
+                <div className={`flex items-center gap-2 px-4 py-1.5 ${isLight ? 'bg-primary/10 border-primary/20' : 'bg-yellow-400/20 border-yellow-400/30'} rounded-xl border backdrop-blur-md`}>
+                  <Shield size={14} className={isLight ? 'text-primary' : 'text-yellow-400'} />
+                  <span className={`text-[10px] font-black uppercase ${isLight ? 'text-primary' : 'text-yellow-100'} tracking-widest`}>Read Only</span>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
-             <div className="relative">
-                <button 
-                  ref={shareBtnRef}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${showSharePopover ? 'bg-brand-primary text-white shadow-lg' : `${navBgColor} ${navTextColor} hover:${isLight ? 'bg-black/10' : 'bg-white/20'} border ${borderColor}`}`}
-                  onClick={() => setShowSharePopover(!showSharePopover)}
-                >
-                  <Share2 size={14} />
-                  <span>Share</span>
-                </button>
-                <AnimatePresence>
-                  {showSharePopover && (
-                    <div className="absolute right-0 top-12 z-[100]">
-                      <BoardSharePopover 
-                         board={activeBoard} 
-                         onClose={() => setShowSharePopover(false)}
-                         onUpdateVisibility={updateVisibility}
-                         members={members}
-                         lists={lists}
-                         cards={cards}
-                      />
-                    </div>
-                  )}
-                </AnimatePresence>
-             </div>
-            <div className={`flex items-center ${isLight ? 'bg-black/5' : 'bg-black/20'} rounded-xl p-1 shadow-sm border ${borderColor} font-medium overflow-x-auto max-w-[500px] no-scrollbar`}>
-              {[
-                { id: 'kanban', icon: Kanban, label: 'Board' },
-                { id: 'table', icon: Table2, label: 'Table' },
-                { id: 'calendar', icon: Calendar, label: 'Calendar' },
-                { id: 'timeline', icon: Clock, label: 'Timeline' },
-                { id: 'map', icon: Network, label: 'Map' },
-                { id: 'mindmap', icon: GitGraph, label: 'Mindmap' },
-                { id: 'dashboard', icon: BarChart3, label: 'Analytics' }
-              ].map(view => (
-                <button 
-                  key={view.id} 
-                  onClick={() => setCurrentView(view.id)} 
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[10px] font-black tracking-widest transition-all whitespace-nowrap ${currentView === view.id ? (isLight ? 'bg-brand-primary text-white shadow-sm' : 'bg-white/20 text-white shadow-sm') : `${navSecondaryColor} hover:${isLight ? 'bg-black/5' : 'bg-white/10'}`}`}
-                >
-                  <view.icon size={13} />
-                  <span className="uppercase">{view.label}</span>
-                </button>
-              ))}
+          <div className="flex items-center gap-6">
+            {/* View Switcher: Dropdown Style */}
+            <div className="relative">
+              {(() => {
+                const ViewIcon = [
+                  { id: 'kanban', icon: Kanban, label: 'Board' },
+                  { id: 'table', icon: Table2, label: 'Table' },
+                  { id: 'calendar', icon: Calendar, label: 'Calendar' },
+                  { id: 'timeline', icon: Clock, label: 'Timeline' },
+                  { id: 'map', icon: Network, label: 'Map' },
+                  { id: 'mindmap', icon: GitGraph, label: 'Mindmap' },
+                  { id: 'dashboard', icon: BarChart3, label: 'Analytics' }
+                ].find(v => v.id === currentView)?.icon || Kanban;
+
+                return (
+                  <button 
+                    ref={viewBtnRef}
+                    onClick={() => setShowViewDropdown(!showViewDropdown)}
+                    className={`flex items-center gap-3 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border ${borderColor} ${showViewDropdown ? 'bg-primary text-primary-foreground shadow-2xl shadow-primary/20' : `${navBgColor} ${navTextColor} hover:${isLight ? 'bg-white/80' : 'bg-white/20'}`}`}
+                  >
+                    <ViewIcon size={16} />
+                    <span>View: {[
+                      { id: 'kanban', label: 'Board' },
+                      { id: 'table', label: 'Table' },
+                      { id: 'calendar', label: 'Calendar' },
+                      { id: 'timeline', label: 'Timeline' },
+                      { id: 'map', label: 'Map' },
+                      { id: 'mindmap', label: 'Mindmap' },
+                      { id: 'dashboard', label: 'Analytics' }
+                    ].find(v => v.id === currentView)?.label}</span>
+                    <ChevronDown size={14} className={`transition-transform duration-300 ${showViewDropdown ? 'rotate-180' : ''}`} />
+                  </button>
+                );
+              })()}
+
+              <AnimatePresence>
+                {showViewDropdown && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className={`absolute left-0 mt-3 w-64 bg-white/90 shadow-[0_20px_60px_rgba(0,0,0,0.15)] backdrop-blur-2xl rounded-3xl border border-white/20 p-2 z-[100]`}
+                  >
+                    {[
+                      { id: 'kanban', icon: Kanban, label: 'Board', desc: 'Classic Kanban canvas' },
+                      { id: 'table', icon: Table2, label: 'Table', desc: 'Spreadsheet-style grid' },
+                      { id: 'calendar', icon: Calendar, label: 'Calendar', desc: 'Date-based scheduling' },
+                      { id: 'timeline', icon: Clock, label: 'Timeline', desc: 'Gantt & roadmap view' },
+                      { id: 'map', icon: Network, label: 'Map', desc: 'Dependency connections' },
+                      { id: 'mindmap', icon: GitGraph, label: 'Mindmap', desc: 'Visual brainstorming' },
+                      { id: 'dashboard', icon: BarChart3, label: 'Analytics', desc: 'Metrics & insights' }
+                    ].map((view, i) => (
+                      <button 
+                        key={view.id} 
+                        onClick={() => {
+                          setCurrentView(view.id);
+                          setShowViewDropdown(false);
+                        }} 
+                        className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all group ${currentView === view.id ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' : `hover:${isLight ? 'bg-black/5' : 'bg-white/10'}`}`}
+                      >
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${currentView === view.id ? 'bg-white/20' : 'bg-black/5 group-hover:bg-primary/10 group-hover:text-primary'}`}>
+                          <view.icon size={18} />
+                        </div>
+                        <div className="text-left">
+                          <p className={`text-[11px] font-black uppercase tracking-widest ${currentView === view.id ? 'text-white' : 'text-foreground'}`}>{view.label}</p>
+                          <p className={`text-[9px] font-medium ${currentView === view.id ? 'text-white/60' : 'text-muted-foreground'}`}>{view.desc}</p>
+                        </div>
+                        {currentView === view.id && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white shadow-sm" />}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
-            <button 
-              onClick={() => setIsBoardCollapsed(!isBoardCollapsed)}
-              className={`p-2 rounded-xl transition-all shadow-sm border ${isBoardCollapsed ? 'bg-brand-primary text-white border-brand-primary' : `${navBgColor} ${navSecondaryColor} hover:${navTextColor} ${borderColor}`}`}
-              title={isBoardCollapsed ? "Expand All Lists" : "Collapse All Lists"}
-            >
-              {isBoardCollapsed ? <Maximize2 size={18} /> : <Minimize2 size={18} />}
-            </button>
+            <div className="h-8 w-px bg-border/20 mx-1"></div>
 
-            <button 
-              className={`p-2 rounded-xl transition-all ${modals.activityDrawer ? 'bg-brand-primary text-white' : `${navSecondaryColor} hover:${navTextColor} hover:${navBgColor}`}`} 
-              onClick={() => dispatch(toggleModal({ modalName: 'activityDrawer', isOpen: !modals.activityDrawer }))}
-            >
-              <HistoryIcon size={18} />
-            </button>
-            <button 
-              className={`p-2 rounded-xl transition-all ${modals.boardSettings ? 'bg-brand-primary text-white' : `${navSecondaryColor} hover:${navTextColor} hover:${navBgColor}`}`} 
-              onClick={() => dispatch(toggleModal({ modalName: 'boardSettings', isOpen: !modals.boardSettings }))}
-            >
-              <Settings size={18} />
-            </button>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                  <button 
+                    ref={shareBtnRef}
+                    className={`h-12 px-6 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 ${showSharePopover ? 'bg-primary text-primary-foreground shadow-2xl shadow-primary/20 scale-105' : `${navBgColor} ${navTextColor} hover:${isLight ? 'bg-accent border-primary/20' : 'bg-white/20 border-white/40'} border ${borderColor}`}`}
+                    onClick={() => setShowSharePopover(!showSharePopover)}
+                  >
+                    <Share2 size={16} />
+                    <span>Share</span>
+                  </button>
+                  <AnimatePresence>
+                    {showSharePopover && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        className="absolute right-0 top-14 z-[100]"
+                      >
+                        <BoardSharePopover 
+                           board={activeBoard} 
+                           onClose={() => setShowSharePopover(false)}
+                           onUpdateVisibility={updateVisibility}
+                           members={members}
+                           lists={lists}
+                           cards={cards}
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+              </div>
+
+              <button 
+                onClick={() => setIsBoardCollapsed(!isBoardCollapsed)}
+                className={`h-12 w-12 flex items-center justify-center rounded-2xl transition-all shadow-md border ${isBoardCollapsed ? 'bg-primary text-primary-foreground border-primary scale-110 shadow-xl' : `${navBgColor} ${navSecondaryColor} hover:${navTextColor} ${borderColor}`}`}
+                title={isBoardCollapsed ? "Expand All Lists" : "Collapse All Lists"}
+              >
+                {isBoardCollapsed ? <Maximize2 size={20} /> : <Minimize2 size={20} />}
+              </button>
+
+              <button 
+                className={`h-12 w-12 flex items-center justify-center rounded-2xl transition-all border ${modals.activityDrawer ? 'bg-primary text-primary-foreground border-primary' : `${navBgColor} ${navSecondaryColor} hover:${navTextColor} ${borderColor}`}`} 
+                onClick={() => dispatch(toggleModal({ modalName: 'activityDrawer', isOpen: !modals.activityDrawer }))}
+              >
+                <HistoryIcon size={20} />
+              </button>
+
+              <button 
+                className={`h-12 w-12 flex items-center justify-center rounded-2xl transition-all border border-transparent hover:bg-primary/10 hover:border-primary/20 group`} 
+                onClick={() => dispatch(toggleModal({ modalName: 'boardSettings', isOpen: !modals.boardSettings }))}
+              >
+                <Settings size={20} className={`${navSecondaryColor} group-hover:text-primary transition-colors`} />
+              </button>
+            </div>
           </div>
         </header>
+
+        {/* Floating Zen Toggle Overlay - Bottom Middle of Board */}
+        <div 
+          className="absolute bottom-12 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-500"
+        >
+          <button 
+             onClick={() => dispatch(toggleSidebarHidden())}
+             className={`h-12 px-6 rounded-2xl bg-white/90 backdrop-blur-xl border border-primary/20 shadow-2xl shadow-primary/10 flex items-center gap-3 group transition-all hover:scale-105 active:scale-95 ${sidebarHidden ? 'ring-4 ring-primary/5' : ''}`}
+          >
+             <div className="flex flex-col items-center">
+               <div className="flex items-center gap-3">
+                 <Kanban size={18} className="text-primary stroke-[2.5]" />
+                 <span className="text-sm font-black text-primary tracking-tight whitespace-nowrap">{activeBoard?.title || 'Board'}</span>
+               </div>
+               <div className="w-6 h-0.5 bg-primary rounded-full mt-1 animate-in zoom-in duration-300" />
+             </div>
+          </button>
+          
+          {sidebarHidden && (
+            <div className="px-4 py-2 bg-black/80 backdrop-blur-md rounded-xl text-[10px] font-black text-white uppercase tracking-widest border border-white/10 shadow-2xl">
+              Zen Mode Active
+            </div>
+          )}
+        </div>
 
         <div className="flex-1 overflow-hidden relative">
           <AnimatePresence mode="wait">
@@ -552,11 +702,11 @@ const BoardPage = () => {
                       />
                     ))}
 
-                    {/* Add List Button */}
+                     {/* Add List Button */}
                     {!isReadOnly && (
                       <div className={`${isBoardCollapsed ? 'w-16 h-[280px]' : 'w-[380px] h-fit'} shrink-0 transition-all duration-500`}>
                         {isAddingList ? (
-                          <div className={`bg-white/80 backdrop-blur-md rounded-2xl p-4 border border-border-light shadow-2xl ${isBoardCollapsed ? 'w-80 absolute z-[60]' : 'w-full'}`}>
+                          <div className={`bg-card/80 backdrop-blur-md rounded-2xl p-4 border border-border shadow-2xl ${isBoardCollapsed ? 'w-80 absolute z-[60]' : 'w-full'}`}>
                             <input
                               autoFocus
                               type="text"
@@ -567,18 +717,18 @@ const BoardPage = () => {
                                 if (e.key === 'Enter') handleCreateList();
                                 if (e.key === 'Escape') setIsAddingList(false);
                               }}
-                              className="w-full px-4 py-3 bg-white border-2 border-brand-primary/20 rounded-xl font-bold text-sm outline-none focus:border-brand-primary transition-all mb-3"
+                              className="w-full px-4 py-3 bg-card border-2 border-primary/20 rounded-xl font-bold text-sm outline-none focus:border-primary transition-all mb-3"
                             />
                             <div className="flex items-center gap-2">
                               <button 
                                 onClick={handleCreateList}
-                                className="flex-1 h-10 bg-brand-primary text-white text-xs font-black uppercase tracking-widest rounded-lg hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-brand-primary/20"
+                                className="flex-1 h-10 bg-primary text-primary-foreground text-xs font-black uppercase tracking-widest rounded-lg hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-primary/20"
                               >
                                 Add List
                               </button>
                               <button 
                                 onClick={() => setIsAddingList(false)}
-                                className="w-10 h-10 flex items-center justify-center text-text-tertiary hover:bg-bg-secondary rounded-lg transition-all"
+                                className="w-10 h-10 flex items-center justify-center text-muted-foreground hover:bg-secondary rounded-lg transition-all"
                               >
                                 <X size={18} />
                               </button>
@@ -587,9 +737,9 @@ const BoardPage = () => {
                         ) : isBoardCollapsed ? (
                           <button 
                             onClick={() => setIsAddingList(true)}
-                            className={`w-full h-full border-2 border-dashed border-text-tertiary/20 rounded-[28px] flex flex-col items-center py-12 text-text-tertiary hover:border-brand-primary/40 hover:text-brand-primary hover:bg-white/40 transition-all group`}
+                            className={`w-full h-full border-2 border-dashed border-muted-foreground/20 rounded-[28px] flex flex-col items-center py-12 text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-card/40 transition-all group`}
                           >
-                            <div className="p-2 bg-white/50 rounded-lg group-hover:bg-brand-primary group-hover:text-white transition-all shadow-sm mb-6">
+                            <div className="p-2 bg-card/50 rounded-lg group-hover:bg-primary group-hover:text-primary-foreground transition-all shadow-sm mb-6">
                               <Plus size={18} />
                             </div>
                             <div className="flex-1 flex items-center justify-center">
@@ -601,9 +751,9 @@ const BoardPage = () => {
                         ) : (
                           <button 
                             onClick={() => setIsAddingList(true)}
-                            className="w-full h-14 bg-white/40 backdrop-blur-md border border-white/50 rounded-2xl flex items-center gap-3 px-6 text-text-primary/70 font-bold hover:bg-white/60 hover:text-brand-primary transition-all group shadow-sm"
+                            className="w-full h-14 bg-card/40 backdrop-blur-md border border-border/50 rounded-2xl flex items-center gap-3 px-6 text-foreground/70 font-bold hover:bg-card/60 hover:text-primary transition-all group shadow-sm"
                           >
-                            <div className="p-1.5 bg-white/50 rounded-lg group-hover:bg-brand-primary group-hover:text-white transition-all shadow-sm">
+                            <div className="p-1.5 bg-card/50 rounded-lg group-hover:bg-primary group-hover:text-primary-foreground transition-all shadow-sm">
                               <Plus size={16} />
                             </div>
                             <span className="text-sm">Add another list</span>
@@ -616,32 +766,32 @@ const BoardPage = () => {
               </motion.div>
             )}
             {currentView === 'table' && (
-              <motion.div key="table" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute inset-0 bg-white">
+              <motion.div key="table" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute inset-0 bg-background">
                 <TableView />
               </motion.div>
             )}
             {currentView === 'calendar' && (
-              <motion.div key="calendar" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute inset-0 bg-white">
+              <motion.div key="calendar" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="absolute inset-0 bg-background text-foreground">
                 <CalendarView />
               </motion.div>
             )}
             {currentView === 'timeline' && (
-              <motion.div key="timeline" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="absolute inset-0 bg-white">
+              <motion.div key="timeline" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="absolute inset-0 bg-background text-foreground">
                 <TimelineView />
               </motion.div>
             )}
             {currentView === 'map' && (
-              <motion.div key="map" initial={{ opacity: 0, scale: 1.05 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="absolute inset-0 bg-white">
+              <motion.div key="map" initial={{ opacity: 0, scale: 1.05 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="absolute inset-0 bg-background">
                 <DependencyMap />
               </motion.div>
             )}
             {currentView === 'mindmap' && (
-              <motion.div key="mindmap" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.1 }} className="absolute inset-0 bg-white">
+              <motion.div key="mindmap" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.1 }} className="absolute inset-0 bg-background">
                 <MindmapView />
               </motion.div>
             )}
             {currentView === 'dashboard' && (
-              <motion.div key="dashboard" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="absolute inset-0 bg-white">
+              <motion.div key="dashboard" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="absolute inset-0 bg-background">
                 <AnalyticsDashboard boardId={boardId} />
               </motion.div>
             )}
@@ -664,13 +814,12 @@ const BoardPage = () => {
               isOpen={modals.boardSettings} 
               onClose={() => dispatch(toggleModal({ modalName: 'boardSettings', isOpen: false }))} 
               board={activeBoard} 
+              isWsAdmin={isWsAdmin}
             />
           )}
         </AnimatePresence>
 
-        <ErrorBoundary>
-          {modals.cardDetails && <CardDetailsModal />}
-        </ErrorBoundary>
+        {modals.cardDetails && <CardDetailsModal />}
         {modals.prismRules && (
           <PrismRulesDialog 
             isOpen={modals.prismRules} 

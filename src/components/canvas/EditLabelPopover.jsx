@@ -67,7 +67,7 @@ const EditLabelPopover = ({
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-xs font-medium focus:ring-2 focus:ring-brand-primary/20 focus:border-brand-primary outline-none transition-all"
+            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-xs font-medium focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
             placeholder="Type label title..."
           />
         </div>
@@ -81,7 +81,7 @@ const EditLabelPopover = ({
                 key={color}
                 onClick={() => setSelectedColor(color)}
                 className={`h-8 rounded-lg transition-all flex items-center justify-center hover:scale-110 active:scale-95 shadow-sm
-                  ${selectedColor === color ? 'ring-2 ring-brand-primary ring-offset-2 scale-110 z-10' : 'opacity-90 hover:opacity-100'}`}
+                  ${selectedColor === color ? 'ring-2 ring-primary ring-offset-2 scale-110 z-10' : 'opacity-90 hover:opacity-100'}`}
                 style={{ backgroundColor: color }}
               >
                 {selectedColor === color && <Check size={14} className="text-white drop-shadow-md" strokeWidth={4} />}
@@ -104,7 +104,7 @@ const EditLabelPopover = ({
       <div className="p-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between gap-3">
         <button 
           onClick={handleSave}
-          className="flex-1 py-2.5 bg-brand-primary hover:bg-brand-primary-hover text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-brand-primary/20 active:scale-95"
+          className="flex-1 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-primary/20 active:scale-95"
         >
           Save
         </button>

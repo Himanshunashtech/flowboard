@@ -61,7 +61,7 @@ const EditableTextCell = ({ value: initialValue, row, column, updateData }) => {
         onChange={e => setValue(e.target.value)}
         onBlur={onBlur}
         onKeyDown={e => e.key === 'Enter' && onBlur()}
-        className="w-full bg-bg-secondary px-2 py-1 rounded-lg border-2 border-brand-primary outline-none font-bold text-sm"
+        className="w-full bg-bg-secondary px-3 py-2 rounded-lg border-2 border-primary outline-none font-black text-[16px]"
       />
     );
   }
@@ -69,7 +69,7 @@ const EditableTextCell = ({ value: initialValue, row, column, updateData }) => {
   return (
     <div
       onClick={(e) => { e.stopPropagation(); setIsEditing(true); }}
-      className={`text-sm font-bold text-text-primary px-2 py-1 rounded-lg hover:bg-bg-secondary transition-colors cursor-text truncate max-w-[300px] ${row.original.is_completed ? 'line-through opacity-40' : ''}`}
+      className={`text-[16px] font-black text-foreground px-2 py-1.5 rounded-lg hover:bg-bg-secondary transition-colors cursor-text truncate max-w-[300px] ${row.original.is_completed ? 'line-through opacity-40' : ''}`}
     >
       {value}
     </div>
@@ -92,9 +92,9 @@ const PrioritySelectCell = ({ value: priority, row, updateData }) => {
     <div className="relative">
       <button
         onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
-        className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black tracking-tight transition-all hover:scale-105 active:scale-95 ${colors[priority || 'NONE']}`}
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-black tracking-tight transition-all hover:scale-105 active:scale-95 ${colors[priority || 'NONE']}`}
       >
-        <Flag size={10} className="fill-current" />
+        <Flag size={12} className="fill-current" />
         {priority || 'NONE'}
       </button>
 
@@ -163,9 +163,9 @@ const ListSelectCell = ({ value: initialListId, row, lists, updateData }) => {
                     updateData(row.original.id, 'list_id', list.id);
                     setIsOpen(false);
                   }}
-                  className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-[10px] font-bold text-text-secondary hover:bg-bg-secondary hover:text-brand-primary transition-all ${list.id === initialListId ? 'bg-brand-primary/5 text-brand-primary' : ''}`}
+                  className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-[10px] font-bold text-text-secondary hover:bg-bg-secondary hover:text-primary transition-all ${list.id === initialListId ? 'bg-primary/5 text-primary' : ''}`}
                 >
-                  <Layout size={12} className={list.id === initialListId ? 'text-brand-primary' : 'text-text-tertiary'} />
+                  <Layout size={12} className={list.id === initialListId ? 'text-primary' : 'text-text-tertiary'} />
                   {list.title}
                 </button>
               ))}
@@ -250,7 +250,7 @@ const TableView = () => {
               const newStatus = !info.row.original.is_completed;
               updateData(info.row.original.id, 'is_completed', newStatus);
             }}
-            className={`p-0.5 rounded-full transition-all shrink-0 ${info.row.original.is_completed ? 'text-green-500' : 'text-text-tertiary hover:text-brand-primary'}`}
+            className={`p-0.5 rounded-full transition-all shrink-0 ${info.row.original.is_completed ? 'text-green-500' : 'text-text-tertiary hover:text-primary'}`}
           >
             {info.row.original.is_completed ? <CheckCircle2 size={18} /> : <Circle size={18} />}
           </button>
@@ -290,9 +290,25 @@ const TableView = () => {
       },
     }),
     columnHelper.display({
+      id: 'automations',
+      header: 'Auto',
+      cell: (info) => (
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            dispatch(toggleModal({ modalName: 'automations', isOpen: true, data: { cardId: info.row.original.id } }));
+          }}
+          className="p-2 hover:bg-warning/10 text-warning rounded-xl transition-all"
+          title="Row Automations"
+        >
+          <Zap size={14} className="fill-current" />
+        </button>
+      ),
+    }),
+    columnHelper.display({
       id: 'actions',
       cell: (info) => (
-        <button className="p-2 hover:bg-bg-tertiary rounded-xl text-text-tertiary opacity-0 group-hover:opacity-100 transition-all hover:text-text-primary">
+        <button className="p-2 hover:bg-bg-tertiary rounded-xl text-text-tertiary opacity-0 group-hover:opacity-100 transition-all hover:text-foreground">
           <MoreVertical size={16} />
         </button>
       ),
@@ -306,8 +322,8 @@ const TableView = () => {
           header: field.name,
           cell: info => (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-bg-secondary/50 rounded-xl border border-border-light/50">
-               <Calculator size={12} className="text-brand-primary opacity-40 shrink-0" />
-               <span className="text-[11px] font-black text-text-primary tracking-tight">
+               <Calculator size={12} className="text-primary opacity-40 shrink-0" />
+               <span className="text-[11px] font-black text-foreground tracking-tight">
                  {info.getValue()}
                </span>
             </div>
@@ -333,28 +349,28 @@ const TableView = () => {
       <div className="h-16 border-b border-border-light px-8 flex items-center justify-between bg-white/50 backdrop-blur-sm sticky top-0 z-20">
         <div className="flex items-center gap-6 flex-1">
           <div className="relative group flex-1 max-w-md">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand-primary transition-colors" size={16} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-primary transition-colors" size={16} />
             <input
               type="text"
               value={globalFilter ?? ''}
               onChange={e => setGlobalFilter(e.target.value)}
               placeholder="Filter Nexus Grid..."
-              className="w-full pl-12 pr-4 py-2.5 bg-bg-secondary hover:bg-bg-tertiary rounded-2xl text-sm font-medium outline-none border border-transparent focus:border-brand-primary/20 focus:ring-4 focus:ring-brand-primary/5 transition-all shadow-inner"
+              className="w-full pl-12 pr-4 py-2.5 bg-bg-secondary hover:bg-bg-tertiary rounded-2xl text-sm font-medium outline-none border border-transparent focus:border-primary/20 focus:ring-4 focus:ring-primary/5 transition-all shadow-inner"
             />
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:bg-bg-secondary hover:text-text-primary transition-all">
+            <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:bg-bg-secondary hover:text-foreground transition-all">
               <Filter size={14} />
               Filter
             </button>
-            <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:bg-bg-secondary hover:text-text-primary transition-all">
+            <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:bg-bg-secondary hover:text-foreground transition-all">
               <ArrowUpDown size={14} />
               Sort
             </button>
             <button
               onClick={() => dispatch(toggleModal({ modalName: 'prismRules', isOpen: true }))}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-brand-primary bg-brand-primary/5 hover:bg-brand-primary/10 transition-all border border-brand-primary/10"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest text-primary bg-primary/5 hover:bg-primary/10 transition-all border border-primary/10"
             >
               <Zap size={14} />
               Prism
@@ -381,14 +397,14 @@ const TableView = () => {
                 {headerGroup.headers.map(header => (
                   <th
                     key={header.id}
-                    className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary select-none cursor-pointer hover:bg-bg-secondary transition-colors"
+                    className="px-8 py-5 text-[11px] font-black uppercase tracking-[0.2em] text-text-tertiary select-none cursor-pointer hover:bg-bg-secondary transition-colors"
                     onClick={header.column.getToggleSortingHandler()}
                   >
                     <div className="flex items-center gap-2">
                       {flexRender(header.column.columnDef.header, header.getContext())}
                       {{
-                        asc: <ArrowUp size={10} className="text-brand-primary" />,
-                        desc: <ArrowDown size={10} className="text-brand-primary" />,
+                        asc: <ArrowUp size={10} className="text-primary" />,
+                        desc: <ArrowDown size={10} className="text-primary" />,
                       }[header.column.getIsSorted()] ?? <ArrowUpDown size={10} className="opacity-20" />}
                     </div>
                   </th>
@@ -411,7 +427,7 @@ const TableView = () => {
                     color: prismStyles.textColor || 'inherit'
                   }}
                   whileHover={{ backgroundColor: prismStyles.rowBg ? `${prismStyles.rowBg}CC` : 'rgba(243, 244, 246, 0.2)' }}
-                  className={`transition-all group cursor-pointer border-l-2 hover:border-brand-primary ${prismStyles.glow ? 'shadow-[0_0_15px_rgba(59,130,246,0.1)]' : ''}`}
+                  className={`transition-all group cursor-pointer border-l-2 hover:border-primary ${prismStyles.glow ? 'shadow-[0_0_15px_rgba(59,130,246,0.1)]' : ''}`}
                   onClick={() => dispatch(setActiveCardId(row.original.id))}
                 >
                   {row.getVisibleCells().map(cell => (
@@ -435,7 +451,7 @@ const TableView = () => {
                   value={quickAddTitle}
                   onChange={e => setQuickAddTitle(e.target.value)}
                   onKeyDown={handleQuickAdd}
-                  className="bg-transparent border-none outline-none font-bold text-sm text-text-primary w-full placeholder:text-text-tertiary/40"
+                  className="bg-transparent border-none outline-none font-bold text-sm text-foreground w-full placeholder:text-text-tertiary/40"
                 />
               </td>
               <td colSpan={4} />
@@ -448,7 +464,7 @@ const TableView = () => {
             <div className="w-24 h-24 rounded-[28px] bg-bg-secondary flex items-center justify-center text-text-tertiary shadow-inner mb-8 rotate-12">
               <BarChart2 size={48} className="opacity-20" />
             </div>
-            <h3 className="text-2xl font-black text-text-primary tracking-tight">System Empty</h3>
+            <h3 className="text-2xl font-black text-foreground tracking-tight">System Empty</h3>
             <p className="text-sm text-text-tertiary mt-2 max-w-xs leading-relaxed font-medium">The Nexus Grid is clear. Use the quick add row or the board view to initialize tasks.</p>
           </div>
         )}

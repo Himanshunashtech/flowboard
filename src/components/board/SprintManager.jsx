@@ -55,12 +55,12 @@ const SprintManager = ({ onClose }) => {
   return (
     <div className="fixed top-0 right-0 bottom-0 w-[400px] bg-white shadow-2xl border-l border-border-light z-[60] flex flex-col p-8 animate-in slide-in-from-right duration-300">
       <div className="flex items-center justify-between mb-10">
-        <h2 className="text-xl font-bold flex items-center gap-3 text-text-primary">
-          <Calendar size={24} className="text-brand-primary" />
+        <h2 className="text-xl font-bold flex items-center gap-3 text-foreground">
+          <Calendar size={24} className="text-primary" />
           Sprints
         </h2>
         <button
-          className="p-2 hover:bg-bg-secondary rounded-xl text-text-tertiary hover:text-text-primary transition-all"
+          className="p-2 hover:bg-bg-secondary rounded-xl text-text-tertiary hover:text-foreground transition-all"
           onClick={onClose}
         >
           <X size={20} />
@@ -71,7 +71,7 @@ const SprintManager = ({ onClose }) => {
         <div className="space-y-3">
           <input
             placeholder="Sprint name (e.g. Iteration 1)"
-            className="w-full h-10 bg-bg-secondary border-none rounded-xl px-4 text-sm font-bold text-text-primary focus:bg-white focus:ring-2 focus:ring-brand-primary/10 transition-all outline-none"
+            className="w-full h-10 bg-bg-secondary border-none rounded-xl px-4 text-sm font-bold text-foreground focus:bg-white focus:ring-2 focus:ring-primary/10 transition-all outline-none"
             value={newSprintName}
             onChange={(e) => setNewSprintName(e.target.value)}
           />
@@ -80,7 +80,7 @@ const SprintManager = ({ onClose }) => {
               <label className="text-[9px] font-black uppercase tracking-widest text-text-tertiary ml-1">Start</label>
               <input 
                 type="date"
-                className="w-full h-10 bg-bg-secondary border-none rounded-xl px-3 text-[11px] font-bold text-text-primary outline-none"
+                className="w-full h-10 bg-bg-secondary border-none rounded-xl px-3 text-[11px] font-bold text-foreground outline-none"
                 value={startDate}
                 onChange={e => setStartDate(e.target.value)}
               />
@@ -89,7 +89,7 @@ const SprintManager = ({ onClose }) => {
               <label className="text-[9px] font-black uppercase tracking-widest text-text-tertiary ml-1">End</label>
               <input 
                 type="date"
-                className="w-full h-10 bg-bg-secondary border-none rounded-xl px-3 text-[11px] font-bold text-text-primary outline-none"
+                className="w-full h-10 bg-bg-secondary border-none rounded-xl px-3 text-[11px] font-bold text-foreground outline-none"
                 value={endDate}
                 onChange={e => setEndDate(e.target.value)}
               />
@@ -104,9 +104,9 @@ const SprintManager = ({ onClose }) => {
 
       <div className="flex-1 overflow-y-auto space-y-4 pr-1">
         {sprints.map(sprint => (
-          <div key={sprint.id} className="p-5 border border-border-light rounded-2xl bg-white hover:border-brand-primary/40 hover:shadow-md transition-all group">
+          <div key={sprint.id} className="p-5 border border-border-light rounded-2xl bg-white hover:border-primary/40 hover:shadow-md transition-all group">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-sm text-text-primary group-hover:text-brand-primary transition-colors">{sprint.name}</h3>
+              <h3 className="font-bold text-sm text-foreground group-hover:text-primary transition-colors">{sprint.name}</h3>
               <span className={`text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider ${sprint.status === 'ACTIVE' ? 'bg-success/10 text-success' : 'bg-bg-secondary text-text-tertiary'
                 }`}>
                 {sprint.status}
@@ -143,7 +143,7 @@ const SprintManager = ({ onClose }) => {
                   Complete Sprint
                 </button>
               )}
-              <button className="p-1.5 hover:bg-bg-secondary rounded-lg text-text-tertiary hover:text-text-primary transition-colors">
+              <button className="p-1.5 hover:bg-bg-secondary rounded-lg text-text-tertiary hover:text-foreground transition-colors">
                 <MoreVertical size={16} />
               </button>
             </div>

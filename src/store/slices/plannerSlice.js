@@ -90,6 +90,24 @@ export const fetchDailyPriorities = createAsyncThunk(
   }
 );
 
+// 5. Bulk insert time blocks
+export const bulkInsertTimeBlocks = createAsyncThunk(
+  'planner/bulkInsertTimeBlocks',
+  async ({ userId, blocks }, { rejectWithValue }) => {
+    try {
+      const { data, error } = await supabase
+        .from('planner_time_blocks')
+        .insert(blocks.map(b => ({ ...b, user_id: userId })))
+        .select();
+      
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
 const plannerSlice = createSlice({
   name: 'planner',
   initialState: {
@@ -130,6 +148,10 @@ const plannerSlice = createSlice({
       // Daily Priorities
       .addCase(fetchDailyPriorities.fulfilled, (state, action) => {
         state.dailyPriorities = action.payload;
+      })
+      // Bulk Insert Time Blocks
+      .addCase(bulkInsertTimeBlocks.fulfilled, (state, action) => {
+        state.timeBlocks = [...state.timeBlocks, ...action.payload];
       });
   }
 });

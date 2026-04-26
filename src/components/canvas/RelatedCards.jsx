@@ -43,7 +43,7 @@ const RelatedCards = ({ cardId, boardId, onCardSelect }) => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary flex items-center gap-2">
-          <Sparkles size={12} className="text-brand-primary" />
+          <Sparkles size={12} className="text-primary" />
           Related Suggestions
         </h3>
         <span className="text-[10px] font-bold text-text-tertiary opacity-40">Based on context</span>
@@ -58,20 +58,20 @@ const RelatedCards = ({ cardId, boardId, onCardSelect }) => {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.1 }}
               onClick={() => onCardSelect(card.id)}
-              className="group w-56 p-4 bg-white border border-border-light rounded-[24px] text-left shrink-0 hover:border-brand-primary hover:shadow-xl hover:shadow-brand-primary/5 transition-all relative overflow-hidden"
+              className="group w-56 p-4 bg-white border border-border-light rounded-[24px] text-left shrink-0 hover:border-primary hover:shadow-xl hover:shadow-primary/5 transition-all relative overflow-hidden"
             >
               <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-10 transition-opacity">
                  <Layout size={60} />
               </div>
               
               <div className="flex items-center gap-2 mb-2">
-                 <div className="w-1.5 h-1.5 rounded-full bg-brand-primary" />
+                 <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                  <span className="text-[9px] font-black uppercase tracking-widest text-text-tertiary truncate">
                     {card.list_title}
                  </span>
               </div>
               
-              <p className="text-xs font-bold text-text-primary mb-3 line-clamp-2 leading-snug group-hover:text-brand-primary transition-colors">
+              <p className="text-xs font-bold text-foreground mb-3 line-clamp-2 leading-snug group-hover:text-primary transition-colors">
                 {card.title}
               </p>
               
@@ -79,7 +79,7 @@ const RelatedCards = ({ cardId, boardId, onCardSelect }) => {
                 <div className="px-2 py-0.5 bg-bg-secondary rounded-lg text-[8px] font-black text-text-tertiary uppercase tracking-tighter">
                    {Math.round(card.similarity * 100)}% Match
                 </div>
-                <div className="text-brand-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
+                <div className="text-primary opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all">
                   <ArrowRight size={14} />
                 </div>
               </div>

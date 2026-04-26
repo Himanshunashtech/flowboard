@@ -17,7 +17,7 @@ import { supabase } from '../../lib/supabase';
 import { formatDistanceToNow } from 'date-fns';
 
 const NOTIFICATION_ICONS = {
-  CARD_ASSIGNED: { icon: UserPlus, color: 'text-brand-primary', bg: 'bg-brand-primary/10' },
+  CARD_ASSIGNED: { icon: UserPlus, color: 'text-primary', bg: 'bg-primary/10' },
   CARD_DUE_SOON: { icon: Clock, color: 'text-warning', bg: 'bg-warning/10' },
   COMMENT_ADDED: { icon: MessageSquare, color: 'text-info', bg: 'bg-info/10' },
   MENTION: { icon: AtSign, color: 'text-purple-500', bg: 'bg-purple-500/10' },
@@ -93,7 +93,7 @@ const NotificationDropdown = ({ user }) => {
     <div className="relative z-50">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`p-2 rounded-xl transition-all relative ${isOpen ? 'bg-brand-primary text-white' : 'hover:bg-bg-secondary text-text-tertiary hover:text-text-primary'}`}
+        className={`p-2 rounded-xl transition-all relative ${isOpen ? 'bg-primary text-white' : 'hover:bg-bg-secondary text-text-tertiary hover:text-foreground'}`}
       >
         <Bell size={20} />
         {unreadCount > 0 && (
@@ -114,11 +114,11 @@ const NotificationDropdown = ({ user }) => {
               className="absolute right-0 mt-3 w-80 bg-white rounded-3xl shadow-2xl border border-border-light z-[101] overflow-hidden"
             >
               <div className="p-5 border-b border-border-light flex items-center justify-between bg-bg-secondary/30">
-                <h3 className="text-sm font-black uppercase tracking-widest text-text-primary">Notifications</h3>
+                <h3 className="text-sm font-black uppercase tracking-widest text-foreground">Notifications</h3>
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllRead}
-                    className="text-[10px] font-bold text-brand-primary hover:underline"
+                    className="text-[10px] font-bold text-primary hover:underline"
                   >
                     Mark all read
                   </button>
@@ -133,13 +133,13 @@ const NotificationDropdown = ({ user }) => {
                     return (
                       <div
                         key={n.id}
-                        className={`p-4 border-b border-border-light flex gap-4 transition-colors relative group ${!n.is_read ? 'bg-brand-primary/5' : 'hover:bg-bg-secondary/50'}`}
+                        className={`p-4 border-b border-border-light flex gap-4 transition-colors relative group ${!n.is_read ? 'bg-primary/5' : 'hover:bg-bg-secondary/50'}`}
                       >
                         <div className={`w-10 h-10 shrink-0 rounded-2xl flex items-center justify-center ${style.bg} ${style.color}`}>
                           <Icon size={18} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className={`text-xs leading-relaxed ${!n.is_read ? 'font-bold text-text-primary' : 'text-text-secondary'}`}>
+                          <p className={`text-xs leading-relaxed ${!n.is_read ? 'font-bold text-foreground' : 'text-text-secondary'}`}>
                             {n.title}
                           </p>
                           {n.body && <p className="text-[11px] text-text-tertiary mt-1 line-clamp-2">{n.body}</p>}
@@ -150,7 +150,7 @@ const NotificationDropdown = ({ user }) => {
                         {!n.is_read && (
                           <button
                             onClick={() => markAsRead(n.id)}
-                            className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-2 bg-white rounded-lg shadow-sm text-brand-primary hover:scale-110 transition-all border border-border-light"
+                            className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 p-2 bg-white rounded-lg shadow-sm text-primary hover:scale-110 transition-all border border-border-light"
                           >
                             <Check size={14} strokeWidth={3} />
                           </button>
@@ -163,14 +163,14 @@ const NotificationDropdown = ({ user }) => {
                     <div className="w-16 h-16 bg-bg-secondary rounded-full flex items-center justify-center mx-auto mb-4 text-text-tertiary">
                       <Bell size={24} />
                     </div>
-                    <p className="text-sm font-bold text-text-primary mb-1">All caught up!</p>
+                    <p className="text-sm font-bold text-foreground mb-1">All caught up!</p>
                     <p className="text-xs text-text-tertiary">No new notifications for you.</p>
                   </div>
                 )}
               </div>
 
               <div className="p-4 bg-bg-secondary/30 text-center">
-                <button className="text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:text-brand-primary transition-colors">
+                <button className="text-[10px] font-black uppercase tracking-widest text-text-tertiary hover:text-primary transition-colors">
                   View Settings
                 </button>
               </div>

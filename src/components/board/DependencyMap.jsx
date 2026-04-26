@@ -39,7 +39,7 @@ const CardNode = ({ data }) => {
   };
 
   return (
-    <div className={`p-4 rounded-3xl bg-white border-2 transition-all hover:shadow-2xl min-w-[200px] shadow-sm relative overflow-hidden group ${isCompleted ? 'border-green-500/30' : 'border-slate-200 hover:border-brand-primary'}`}>
+    <div className={`p-4 rounded-3xl bg-white border-2 transition-all hover:shadow-2xl min-w-[200px] shadow-sm relative overflow-hidden group ${isCompleted ? 'border-green-500/30' : 'border-slate-200 hover:border-primary'}`}>
       <Handle type="target" position={Position.Left} className="!bg-slate-300 !w-2 !h-2" />
       
       <div className={`absolute top-0 left-0 w-1.5 h-full ${isCompleted ? 'bg-green-500' : priorityColors[priority]}`} />
@@ -51,7 +51,7 @@ const CardNode = ({ data }) => {
         {isCompleted ? <CheckCircle2 size={12} className="text-green-500" /> : <Clock size={12} className="text-text-tertiary" />}
       </div>
       
-      <h4 className="text-xs font-bold text-text-primary leading-tight line-clamp-2 mb-2 pr-2">
+      <h4 className="text-xs font-bold text-foreground leading-tight line-clamp-2 mb-2 pr-2">
         {data.card.title}
       </h4>
 
@@ -64,7 +64,7 @@ const CardNode = ({ data }) => {
         </div>
       </div>
 
-      <Handle type="source" position={Position.Right} className="!bg-brand-primary !w-2 !h-2" />
+      <Handle type="source" position={Position.Right} className="!bg-primary !w-2 !h-2" />
     </div>
   );
 };
@@ -168,8 +168,8 @@ const DependencyMap = () => {
           <div className="px-6 py-4 bg-white/80 backdrop-blur-md border border-white/40 shadow-xl rounded-3xl flex flex-col gap-1 min-w-[160px]">
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary">Dependency Graph</span>
             <div className="flex items-end gap-2">
-              <span className="text-3xl font-black text-text-primary">{edges.length}</span>
-              <Network className="text-brand-primary mb-1" size={18} />
+              <span className="text-3xl font-black text-foreground">{edges.length}</span>
+              <Network className="text-primary mb-1" size={18} />
             </div>
           </div>
           <div className="px-6 py-4 bg-white/80 backdrop-blur-md border border-white/40 shadow-xl rounded-3xl flex flex-col gap-1 min-w-[160px]">
@@ -182,7 +182,7 @@ const DependencyMap = () => {
         </div>
 
         <div className="pointer-events-auto flex items-center gap-3 bg-white/50 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/20 text-text-tertiary text-xs font-bold uppercase tracking-widest">
-           <Zap size={14} className="text-brand-primary" />
+           <Zap size={14} className="text-primary" />
            Interactive Flow Map
         </div>
       </div>
@@ -212,10 +212,10 @@ const DependencyMap = () => {
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-6">
             <div className="w-32 h-32 bg-white/50 backdrop-blur-xl rounded-[48px] shadow-2xl flex items-center justify-center border border-white/40">
-              <Network size={64} className="text-brand-primary/20" />
+              <Network size={64} className="text-primary/20" />
             </div>
             <div className="text-center space-y-2">
-              <h3 className="text-xl font-bold text-text-primary">No Network Established</h3>
+              <h3 className="text-xl font-bold text-foreground">No Network Established</h3>
               <p className="text-sm text-text-secondary max-w-xs mx-auto leading-relaxed italic">
                 Connect tasks in the card details to visualize your project's dependency flow.
               </p>
@@ -227,7 +227,7 @@ const DependencyMap = () => {
       {/* Legend */}
       <div className="p-6 border-t border-border-light bg-white/30 backdrop-blur-md shrink-0 flex items-center justify-center gap-8">
          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-brand-primary" />
+            <div className="w-3 h-3 rounded-full bg-primary" />
             <span className="text-[10px] font-black uppercase tracking-widest text-text-tertiary">Blocking Task</span>
          </div>
          <div className="flex items-center gap-2">

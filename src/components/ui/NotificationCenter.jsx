@@ -68,7 +68,7 @@ const NotificationCenter = () => {
     <div className="relative">
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2.5 text-text-tertiary hover:bg-bg-secondary hover:text-text-primary rounded-xl transition-all"
+        className="relative p-2.5 text-text-tertiary hover:bg-bg-secondary hover:text-foreground rounded-xl transition-all"
       >
         <Bell size={20} />
         {unreadCount > 0 && (
@@ -83,11 +83,11 @@ const NotificationCenter = () => {
           <div className="fixed inset-0 z-[100]" onClick={() => setIsOpen(false)}></div>
           <div className="absolute right-0 mt-4 w-[400px] bg-white border border-border-light rounded-[32px] shadow-2xl z-[101] overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-300">
             <div className="p-6 border-b border-border-light flex items-center justify-between bg-bg-secondary/30">
-              <h3 className="font-black text-text-primary tracking-tight">Notifications</h3>
+              <h3 className="font-black text-foreground tracking-tight">Notifications</h3>
               {unreadCount > 0 && (
                 <button 
                   onClick={markAllAsRead}
-                  className="text-xs font-bold text-brand-primary hover:underline flex items-center gap-1.5"
+                  className="text-xs font-bold text-primary hover:underline flex items-center gap-1.5"
                 >
                   <Check size={14} />
                   Mark all read
@@ -102,7 +102,7 @@ const NotificationCenter = () => {
                     <Inbox size={32} />
                   </div>
                   <div>
-                    <p className="font-bold text-text-primary">All caught up!</p>
+                    <p className="font-bold text-foreground">All caught up!</p>
                     <p className="text-xs text-text-tertiary">New notifications will appear here.</p>
                   </div>
                 </div>
@@ -111,15 +111,15 @@ const NotificationCenter = () => {
                   {notifications.map((n) => (
                     <div 
                       key={n.id} 
-                      className={`p-5 hover:bg-bg-secondary transition-colors relative flex gap-4 ${!n.is_read ? 'bg-brand-primary/[0.02]' : ''}`}
+                      className={`p-5 hover:bg-bg-secondary transition-colors relative flex gap-4 ${!n.is_read ? 'bg-primary/[0.02]' : ''}`}
                       onClick={() => !n.is_read && markAsRead(n.id)}
                     >
-                      <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${!n.is_read ? 'bg-brand-primary text-white' : 'bg-bg-tertiary text-text-tertiary'}`}>
+                      <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center ${!n.is_read ? 'bg-primary text-white' : 'bg-bg-tertiary text-text-tertiary'}`}>
                         <Bell size={18} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-0.5">
-                          <span className="text-sm font-bold text-text-primary truncate">{n.title}</span>
+                          <span className="text-sm font-bold text-foreground truncate">{n.title}</span>
                           <span className="text-[10px] font-bold text-text-tertiary flex items-center gap-1 shrink-0">
                             <Clock size={10} />
                             {new Date(n.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' })}
@@ -129,7 +129,7 @@ const NotificationCenter = () => {
                         {n.action_url && (
                           <a 
                             href={n.action_url}
-                            className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-brand-primary hover:underline"
+                            className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-primary hover:underline"
                             onClick={(e) => e.stopPropagation()}
                           >
                             View Details 
@@ -138,7 +138,7 @@ const NotificationCenter = () => {
                         )}
                       </div>
                       {!n.is_read && (
-                        <div className="absolute right-5 bottom-5 w-2 h-2 bg-brand-primary rounded-full"></div>
+                        <div className="absolute right-5 bottom-5 w-2 h-2 bg-primary rounded-full"></div>
                       )}
                     </div>
                   ))}
@@ -147,7 +147,7 @@ const NotificationCenter = () => {
             </div>
 
             <div className="p-4 border-t border-border-light bg-bg-secondary/30 text-center">
-              <button className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary hover:text-text-primary transition-colors">
+              <button className="text-[10px] font-black uppercase tracking-[0.2em] text-text-tertiary hover:text-foreground transition-colors">
                 View All Notifications
               </button>
             </div>

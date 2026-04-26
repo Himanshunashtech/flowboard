@@ -32,7 +32,7 @@ const MenuBar = ({ editor }) => {
     <button
       onClick={onClick}
       className={`p-1.5 rounded-lg transition-all flex items-center justify-center
-        ${isActive ? 'bg-brand-primary/10 text-brand-primary' : 'text-text-tertiary hover:bg-bg-secondary hover:text-text-primary'}
+        ${isActive ? 'bg-primary/10 text-primary' : 'text-text-tertiary hover:bg-bg-secondary hover:text-foreground'}
         ${danger ? 'hover:text-danger hover:bg-danger/10' : ''}`}
       title={label}
     >
@@ -80,14 +80,14 @@ const MenuBar = ({ editor }) => {
                 <button
                   key={level}
                   onClick={() => { editor.chain().focus().toggleHeading({ level }).run(); setActiveMenu(null); }}
-                  className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${editor.isActive('heading', { level }) ? 'bg-brand-primary text-white' : 'hover:bg-bg-secondary text-text-primary'}`}
+                  className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${editor.isActive('heading', { level }) ? 'bg-primary text-white' : 'hover:bg-bg-secondary text-foreground'}`}
                 >
                   Heading {level}
                 </button>
               ))}
               <button
                 onClick={() => { editor.chain().focus().setParagraph().run(); setActiveMenu(null); }}
-                className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${editor.isActive('paragraph') ? 'bg-brand-primary text-white' : 'hover:bg-bg-secondary text-text-primary'}`}
+                className={`w-full text-left px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${editor.isActive('paragraph') ? 'bg-primary text-white' : 'hover:bg-bg-secondary text-foreground'}`}
               >
                 Paragraph
               </button>
@@ -133,10 +133,10 @@ const MenuBar = ({ editor }) => {
                   value={linkUrl}
                   onChange={e => setLinkUrl(e.target.value)}
                   placeholder="https://..."
-                  className="flex-1 px-3 py-1.5 bg-bg-secondary border border-border-light rounded-lg text-xs font-bold outline-none focus:border-brand-primary"
+                  className="flex-1 px-3 py-1.5 bg-bg-secondary border border-border-light rounded-lg text-xs font-bold outline-none focus:border-primary"
                   onKeyDown={e => e.key === 'Enter' && setLink()}
                 />
-                <button onClick={setLink} className="px-3 py-1.5 bg-brand-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg">Apply</button>
+                <button onClick={setLink} className="px-3 py-1.5 bg-primary text-white text-[10px] font-black uppercase tracking-widest rounded-lg">Apply</button>
               </div>
             </div>
           )}
@@ -240,7 +240,7 @@ const AIMenu = ({ editor }) => {
       className="flex items-center gap-0.5 bg-white border border-border-light shadow-2xl rounded-xl p-1 overflow-hidden animate-in fade-in zoom-in-95 z-[1000]"
     >
       <div className="flex items-center border-r border-border-light pr-1 mr-1">
-        <div className="p-1.5 text-brand-primary bg-brand-primary/10 rounded-lg mr-1">
+        <div className="p-1.5 text-primary bg-primary/10 rounded-lg mr-1">
           {isGenerating ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
         </div>
         <span className="text-[10px] font-black uppercase tracking-wider text-text-tertiary">Ask AI</span>
@@ -249,7 +249,7 @@ const AIMenu = ({ editor }) => {
       <button
         disabled={isGenerating}
         onClick={() => handleAIAction('IMPROVE')}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-text-secondary hover:text-brand-primary hover:bg-brand-primary/5 rounded-lg transition-all disabled:opacity-50"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-text-secondary hover:text-primary hover:bg-primary/5 rounded-lg transition-all disabled:opacity-50"
       >
         <Wand2 size={13} />
         Improve
@@ -258,7 +258,7 @@ const AIMenu = ({ editor }) => {
       <button
         disabled={isGenerating}
         onClick={() => handleAIAction('FIX_GRAMMAR')}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-text-secondary hover:text-brand-primary hover:bg-brand-primary/5 rounded-lg transition-all disabled:opacity-50"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-text-secondary hover:text-primary hover:bg-primary/5 rounded-lg transition-all disabled:opacity-50"
       >
         <CheckCheck size={13} />
         Fix Grammar
@@ -267,7 +267,7 @@ const AIMenu = ({ editor }) => {
       <button
         disabled={isGenerating}
         onClick={() => handleAIAction('LENGTHEN')}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-text-secondary hover:text-brand-primary hover:bg-brand-primary/5 rounded-lg transition-all disabled:opacity-50"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-text-secondary hover:text-primary hover:bg-primary/5 rounded-lg transition-all disabled:opacity-50"
       >
         <Maximize2 size={13} />
         Make Longer
@@ -276,7 +276,7 @@ const AIMenu = ({ editor }) => {
       <button
         disabled={isGenerating}
         onClick={() => handleAIAction('SHORTEN')}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-text-secondary hover:text-brand-primary hover:bg-brand-primary/5 rounded-lg transition-all disabled:opacity-50"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-text-secondary hover:text-primary hover:bg-primary/5 rounded-lg transition-all disabled:opacity-50"
       >
         <Minimize2 size={13} />
         Make Shorter
@@ -285,7 +285,7 @@ const AIMenu = ({ editor }) => {
       <button
         disabled={isGenerating}
         onClick={() => handleAIAction('SUMMARIZE')}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-text-secondary hover:text-brand-primary hover:bg-brand-primary/5 rounded-lg transition-all disabled:opacity-50"
+        className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] font-bold text-text-secondary hover:text-primary hover:bg-primary/5 rounded-lg transition-all disabled:opacity-50"
       >
         <FileText size={13} />
         Summarize
@@ -307,7 +307,7 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Write something...' 
       Link.configure({ 
         openOnClick: false,
         HTMLAttributes: {
-          class: 'text-brand-primary underline cursor-pointer font-bold',
+          class: 'text-primary underline cursor-pointer font-bold',
         },
       }),
       TaskList,
@@ -333,7 +333,7 @@ const RichTextEditor = ({ content, onChange, placeholder = 'Write something...' 
   if (!editor) return null;
 
   return (
-    <div className="rich-text-editor bg-white rounded-2xl border border-border-light shadow-sm focus-within:border-brand-primary/40 focus-within:ring-4 focus-within:ring-brand-primary/5 transition-all relative">
+    <div className="rich-text-editor bg-white rounded-2xl border border-border-light shadow-sm focus-within:border-primary/40 focus-within:ring-4 focus-within:ring-primary/5 transition-all relative">
       <style>{`
         .rich-text-editor .ProseMirror h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 0.5em; }
         .rich-text-editor .ProseMirror h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 0.5em; }

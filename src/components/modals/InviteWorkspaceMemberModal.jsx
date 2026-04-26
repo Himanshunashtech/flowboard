@@ -60,22 +60,22 @@ const InviteWorkspaceMemberModal = () => {
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[300] flex items-center justify-center p-8 animate-in fade-in duration-500">
       <div
-        className="w-full max-w-5xl bg-white rounded-[48px] shadow-[0_48px_120px_-24px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col md:flex-row min-h-[560px] animate-in zoom-in-95 slide-in-from-bottom-10 duration-700"
+        className="w-full max-w-4xl bg-white rounded-[40px] shadow-[0_48px_120px_-24px_rgba(0,0,0,0.4)] overflow-hidden flex flex-col md:flex-row animate-in zoom-in-95 slide-in-from-bottom-10 duration-700"
         onClick={e => e.stopPropagation()}
       >
         {/* Visual Identity / Instructions Wing */}
-        <div className="w-full md:w-[40%] bg-gradient-to-br from-brand-primary to-indigo-700 p-12 text-white relative overflow-hidden flex flex-col justify-between">
+        <div className="w-full md:w-[40%] bg-gradient-to-br from-primary to-indigo-700 p-12 text-white relative overflow-hidden flex flex-col justify-between">
           {/* Abstract patterns */}
           <div className="absolute top-[-10%] left-[-10%] opacity-10 pointer-events-none">
             <Sparkles size={400} />
           </div>
 
           <div className="relative z-10">
-            <div className="w-16 h-16 bg-white/10 backdrop-blur-xl rounded-[24px] flex items-center justify-center mb-10 shadow-2xl border border-white/20">
-              <Users size={32} className="text-white" />
+            <div className="w-12 h-12 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center mb-8 shadow-2xl border border-white/20">
+              <Users size={24} className="text-white" />
             </div>
-            <h2 className="text-4xl font-black tracking-tighter leading-none mb-6">Build the Squad</h2>
-            <p className="text-white/70 text-lg font-medium tracking-tight leading-relaxed max-w-xs">
+            <h2 className="text-3xl font-black tracking-tighter leading-none mb-4">Build the Squad</h2>
+            <p className="text-white/70 text-base font-medium tracking-tight leading-relaxed max-w-xs">
               Invite your counterparts to unify communication and accelerate the execution cycle.
             </p>
           </div>
@@ -103,41 +103,41 @@ const InviteWorkspaceMemberModal = () => {
         <div className="flex-1 p-14 flex flex-col justify-center bg-white relative">
           <button
             onClick={handleClose}
-            className="absolute top-10 right-10 p-3 text-text-tertiary hover:bg-bg-secondary hover:text-text-primary rounded-2xl transition-all group"
+            className="absolute top-10 right-10 p-3 text-text-tertiary hover:bg-bg-secondary hover:text-foreground rounded-2xl transition-all group"
           >
             <X size={24} className="group-hover:rotate-90 transition-transform duration-300" />
           </button>
 
           {success ? (
             <div className="py-12 text-center space-y-6 animate-in zoom-in duration-500">
-              <div className="w-24 h-24 bg-brand-primary/10 text-brand-primary rounded-[32px] flex items-center justify-center mx-auto shadow-inner">
+              <div className="w-24 h-24 bg-primary/10 text-primary rounded-[32px] flex items-center justify-center mx-auto shadow-inner">
                 <Check size={48} strokeWidth={3} />
               </div>
               <div className="space-y-2">
-                <h3 className="text-3xl font-black text-text-primary tracking-tighter">Transmission Successful</h3>
+                <h3 className="text-3xl font-black text-foreground tracking-tighter">Transmission Successful</h3>
                 <p className="text-text-tertiary text-base font-medium max-w-xs mx-auto">Your invites have been deployed. Real-time collaboration is imminent.</p>
               </div>
             </div>
           ) : (
             <div className="max-w-xl mx-auto w-full space-y-12">
               <header className="space-y-3">
-                <div className="flex items-center gap-3 text-brand-primary">
-                  <Send size={20} />
-                  <span className="text-[10px] font-black uppercase tracking-[0.4em]">External Uplink</span>
+                <div className="flex items-center gap-3 text-primary">
+                  <Send size={18} />
+                  <span className="text-[9px] font-black uppercase tracking-[0.4em]">External Uplink</span>
                 </div>
-                <h3 className="text-4xl font-black text-text-primary tracking-tighter leading-none">Deploy Invitations</h3>
-                <p className="text-text-tertiary font-medium">Select the access tier for your new subordinates.</p>
+                <h3 className="text-3xl font-black text-foreground tracking-tighter leading-none">Deploy Invitations</h3>
+                <p className="text-text-tertiary text-sm font-medium">Select the access tier for your new subordinates.</p>
               </header>
 
               <form onSubmit={handleSubmit} className="space-y-8">
                 <div className="space-y-3">
                   <div className="relative group">
-                    <Mail className="absolute left-8 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-brand-primary transition-colors" size={28} />
+                    <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-text-tertiary group-focus-within:text-primary transition-colors" size={20} />
                     <input
                       type="email"
                       multiple
                       placeholder="agent1@company.com, agent2@company.com..."
-                      className="w-full h-24 bg-bg-secondary border-none rounded-[32px] pl-20 pr-8 text-xl font-black text-text-primary focus:bg-white focus:ring-8 focus:ring-brand-primary/5 transition-all outline-none shadow-inner placeholder:text-text-tertiary/30"
+                      className="w-full h-16 bg-bg-secondary border-none rounded-2xl pl-16 pr-8 text-lg font-black text-foreground focus:bg-white focus:ring-8 focus:ring-primary/5 transition-all outline-none shadow-inner placeholder:text-text-tertiary/30"
                       value={emails}
                       onChange={e => setEmails(e.target.value)}
                       required
@@ -151,17 +151,17 @@ const InviteWorkspaceMemberModal = () => {
                       key={r.id}
                       type="button"
                       onClick={() => setRole(r.id)}
-                      className={`flex flex-col gap-4 p-6 rounded-[32px] border-2 transition-all text-left group relative overflow-hidden ${role === r.id ? 'border-brand-primary bg-brand-primary/5 shadow-xl shadow-brand-primary/5' : 'border-border-light hover:border-brand-primary/30 bg-white'}`}
+                      className={`flex flex-col gap-4 p-6 rounded-[32px] border-2 transition-all text-left group relative overflow-hidden ${role === r.id ? 'border-primary bg-primary/5 shadow-xl shadow-primary/5' : 'border-border-light hover:border-primary/30 bg-white'}`}
                     >
-                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${role === r.id ? 'bg-brand-primary text-white shadow-lg' : 'bg-bg-secondary text-text-tertiary'}`}>
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all ${role === r.id ? 'bg-primary text-white shadow-lg' : 'bg-bg-secondary text-text-tertiary'}`}>
                         <r.icon size={20} />
                       </div>
                       <div className="space-y-1">
-                        <p className="text-xs font-black uppercase tracking-widest text-text-primary">{r.label}</p>
+                        <p className="text-xs font-black uppercase tracking-widest text-foreground">{r.label}</p>
                         <p className="text-[9px] font-bold text-text-tertiary uppercase leading-tight">{r.desc}</p>
                       </div>
                       {role === r.id && (
-                        <div className="absolute top-4 right-4 text-brand-primary animate-in zoom-in">
+                        <div className="absolute top-4 right-4 text-primary animate-in zoom-in">
                           <Check size={16} strokeWidth={3} />
                         </div>
                       )}
@@ -173,13 +173,13 @@ const InviteWorkspaceMemberModal = () => {
                   <button
                     type="submit"
                     disabled={!emails || loading}
-                    className="w-full h-32 bg-brand-primary text-white rounded-[32px] font-black uppercase tracking-widest text-lg shadow-2xl shadow-brand-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 flex flex-col items-center justify-center gap-3 group"
+                    className="w-full h-16 bg-primary text-white rounded-2xl font-black uppercase tracking-widest text-xs shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 flex items-center justify-center gap-3 group"
                   >
                     {loading ? (
-                      <div className="w-8 h-8 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+                      <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     ) : (
                       <>
-                        <Sparkles size={28} className="fill-current group-hover:rotate-12 transition-transform mb-1" />
+                        <Sparkles size={20} className="fill-current group-hover:rotate-12 transition-transform" />
                         <span>Initialize Collaboration</span>
                       </>
                     )}
